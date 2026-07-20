@@ -1133,6 +1133,49 @@ document.getElementById('captionKo').addEventListener('input', e => { if(generat
 document.getElementById('captionSv').addEventListener('input', e => { if(generatedCaptions) generatedCaptions.caption_sv = e.target.value; });
 
 // ============ Shared Claude API helper ============
+// Cloudflare Worker 중계 서버 주소 (API 키를 안전하게 보관하고 요청을 대신 전달해줌)
+const RELAY_SERVER_URL = "https://kkc-api-relay.bada-c87.workers.dev/";
+const STORAGE_URL = "https://kkc-api-relay.bada-c87.workers.dev/storage";
+
+// kkcStorage와 동일한 사용법으로 쓸 수 있는 저장소 래퍼
+// (참고: 로그인 시스템이 없어서 개인/공유 구분(shared) 없이 전부 공유 저장소로 동작합니다)
+const kkcStorage = {
+  async set(key, value, shared){
+    const res = await fetch(STORAGE_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'set', key, value })
+    });
+    if(!res.ok) throw new Error('저장 실패');
+    return res.json();
+  },
+  async get(key, shared){
+    const res = await fetch(STORAGE_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'get', key })
+    });
+    if(!res.ok) throw new Error('조회 실패');
+    const data = await res.json();
+    if(data.value === null || data.value === undefined) throw new Error('키를 찾을 수 없습니다');
+    return { value: data.value };
+  },
+  async delete(key, shared){
+    const res = await fetch(STORAGE_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'delete', key })
+    });
+    if(!res.ok) throw new Error('삭제 실패');
+    return res.json();
+  },
+  async list(prefix, shared){
+    const res = await fetch(STORAGE_URL, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'list', prefix })
+    });
+    if(!res.ok) throw new Error('목록 조회 실패');
+    return res.json();
+  }
+};
+
 async function callClaude(systemPrompt, userPrompt, useWebSearch){
   async function attempt(){
     const body = {
@@ -1144,7 +1187,7 @@ async function callClaude(systemPrompt, userPrompt, useWebSearch){
     if(useWebSearch){
       body.tools = [{ type: "web_search_20250305", name: "web_search" }];
     }
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch(RELAY_SERVER_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -1218,7 +1261,7 @@ async function saveToArchiveAuto(){
     const thumb = thumbCanvas.toDataURL('image/jpeg', 0.82);
 
     const key = 'kkc:archive:' + Date.now();
-    await window.storage.set(key, JSON.stringify({
+    await kkcStorage.set(key, JSON.stringify({
       eventName: info.eventName,
       category: info.category,
       dateplace: info.dateplace,
@@ -1299,7 +1342,7 @@ document.getElementById('saveRefBtn').addEventListener('click', async () => {
   if(!text){ alert('저장할 레퍼런스 내용을 먼저 입력해주세요.'); return; }
   try{
     const key = 'kkc:reflib:' + Date.now();
-    await window.storage.set(key, JSON.stringify({ text, addedAt: new Date().toISOString() }), true);
+    await kkcStorage.set(key, JSON.stringify({ text, addedAt: new Date().toISOString() }), true);
     document.getElementById('refInput').value = '';
     await loadRefLibrary();
   } catch(err){
@@ -1310,14 +1353,14 @@ document.getElementById('saveRefBtn').addEventListener('click', async () => {
 async function loadRefLibrary(){
   const wrap = document.getElementById('refLibraryList');
   try{
-    const listResult = await window.storage.list('kkc:reflib:', true);
+    const listResult = await kkcStorage.list('kkc:reflib:', true);
     if(!listResult || !listResult.keys || listResult.keys.length === 0){
       wrap.innerHTML = '<div class="empty-hist">아직 저장된 레퍼런스가 없습니다.</div>';
       return;
     }
     const items = [];
     for(const key of listResult.keys){
-      try{ const res = await window.storage.get(key, true); if(res) items.push({key, ...JSON.parse(res.value)}); } catch(e){}
+      try{ const res = await kkcStorage.get(key, true); if(res) items.push({key, ...JSON.parse(res.value)}); } catch(e){}
     }
     items.sort((a,b) => new Date(b.addedAt) - new Date(a.addedAt));
     wrap.innerHTML = '';
@@ -1334,7 +1377,7 @@ async function loadRefLibrary(){
     wrap.querySelectorAll('.ref-del').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        try{ await window.storage.delete(btn.dataset.key, true); await loadRefLibrary(); } catch(err){}
+        try{ await kkcStorage.delete(btn.dataset.key, true); await loadRefLibrary(); } catch(err){}
       });
     });
   } catch(err){
@@ -1347,20 +1390,20 @@ loadRefLibrary();
 async function saveSuggestionHistory(eventName, category, suggestions){
   try{
     const key = 'kkc:suggestion:' + Date.now();
-    await window.storage.set(key, JSON.stringify({eventName, category, suggestions, createdAt: new Date().toISOString()}), false);
+    await kkcStorage.set(key, JSON.stringify({eventName, category, suggestions, createdAt: new Date().toISOString()}), false);
   } catch(err){ console.error('저장 실패:', err); }
 }
 async function loadHistory(){
   const historyList = document.getElementById('historyList');
   try{
-    const listResult = await window.storage.list('kkc:suggestion:', false);
+    const listResult = await kkcStorage.list('kkc:suggestion:', false);
     if(!listResult || !listResult.keys || listResult.keys.length === 0){
       historyList.innerHTML = '<div class="empty-hist">아직 저장된 제안이 없습니다.</div>';
       return;
     }
     const items = [];
     for(const key of listResult.keys){
-      try{ const res = await window.storage.get(key, false); if(res) items.push({key, ...JSON.parse(res.value)}); } catch(e){}
+      try{ const res = await kkcStorage.get(key, false); if(res) items.push({key, ...JSON.parse(res.value)}); } catch(e){}
     }
     items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     historyList.innerHTML = '';
@@ -1379,7 +1422,7 @@ async function loadHistory(){
     historyList.querySelectorAll('.hist-del').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        try{ await window.storage.delete(btn.dataset.key, false); await loadHistory(); } catch(err){}
+        try{ await kkcStorage.delete(btn.dataset.key, false); await loadHistory(); } catch(err){}
       });
     });
   } catch(err){
@@ -1471,7 +1514,7 @@ document.getElementById('csSaveTemplate').addEventListener('click', async () => 
   if(!reply_ko && !reply_en && !reply_sv){ alert('저장할 답변 초안이 없습니다.'); return; }
   try{
     const key = 'kkc:cstemplate:' + Date.now();
-    await window.storage.set(key, JSON.stringify({
+    await kkcStorage.set(key, JSON.stringify({
       csType, csInquiry, reply_ko, reply_en, reply_sv, createdAt: new Date().toISOString()
     }), true);
     await loadCsTemplates();
@@ -1486,14 +1529,14 @@ document.getElementById('csSaveTemplate').addEventListener('click', async () => 
 async function loadCsTemplates(){
   const list = document.getElementById('csTemplateList');
   try{
-    const listResult = await window.storage.list('kkc:cstemplate:', true);
+    const listResult = await kkcStorage.list('kkc:cstemplate:', true);
     if(!listResult || !listResult.keys || listResult.keys.length === 0){
       list.innerHTML = '<div class="empty-hist">아직 저장된 답변 템플릿이 없습니다.</div>';
       return;
     }
     const items = [];
     for(const key of listResult.keys){
-      try{ const res = await window.storage.get(key, true); if(res) items.push({key, ...JSON.parse(res.value)}); } catch(e){}
+      try{ const res = await kkcStorage.get(key, true); if(res) items.push({key, ...JSON.parse(res.value)}); } catch(e){}
     }
     items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     list.innerHTML = '';
@@ -1526,7 +1569,7 @@ async function loadCsTemplates(){
     list.querySelectorAll('.hist-del').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        try{ await window.storage.delete(btn.dataset.key, true); await loadCsTemplates(); } catch(err){}
+        try{ await kkcStorage.delete(btn.dataset.key, true); await loadCsTemplates(); } catch(err){}
       });
     });
   } catch(err){
@@ -1551,11 +1594,11 @@ document.getElementById('archFilters').addEventListener('click', (e) => {
 
 async function loadArchive(){
   try{
-    const listResult = await window.storage.list('kkc:archive:', true);
+    const listResult = await kkcStorage.list('kkc:archive:', true);
     archiveItems = [];
     if(listResult && listResult.keys && listResult.keys.length){
       for(const key of listResult.keys){
-        try{ const res = await window.storage.get(key, true); if(res) archiveItems.push({key, ...JSON.parse(res.value)}); } catch(e){}
+        try{ const res = await kkcStorage.get(key, true); if(res) archiveItems.push({key, ...JSON.parse(res.value)}); } catch(e){}
       }
       archiveItems.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
@@ -1609,7 +1652,7 @@ function renderArchive(){
 
   grid.querySelectorAll('.gallery-del').forEach(btn => {
     btn.addEventListener('click', async () => {
-      try{ await window.storage.delete(btn.dataset.key, true); await loadArchive(); } catch(err){}
+      try{ await kkcStorage.delete(btn.dataset.key, true); await loadArchive(); } catch(err){}
     });
   });
 }
