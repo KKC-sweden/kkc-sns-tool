@@ -215,7 +215,7 @@
   .hashtag{font-size:12px;font-weight:600;background:#fff;color:var(--navy-soft);padding:5px 12px;border-radius:999px;border:1px solid var(--line);}
 
   /* Checklist modal */
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(9,20,38,.6);z-index:100;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(9,20,38,.6);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);}
   .modal-overlay.open{display:flex;}
   .modal{background:rgba(255,255,255,.75);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,.75);border-radius:26px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;padding:34px;box-shadow:0 24px 60px rgba(8,47,87,.2), inset 0 1px 0 rgba(255,255,255,.7);}
   .modal h2{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;font-size:24px;font-weight:700;color:var(--navy-deep);margin:0 0 6px;}
@@ -403,7 +403,7 @@
     <div class="sidebar-nav">
       <button class="nav-item active" data-tab="tab-sns">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1V15a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4.5a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1V10"/></svg>
-        콘텐츠 허브
+        콘텐츠 홈
       </button>
       <button class="nav-item" data-tab="tab-cs">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -437,8 +437,8 @@
   <div id="dashboardView">
     <header>
       <div class="eyebrow">KKC Sweden</div>
-      <h1>콘텐츠 허브</h1>
-      <p class="sub">행사 현황을 한눈에 확인하고, 행사별로 콘텐츠를 관리하세요.</p>
+      <h1>콘텐츠 홈</h1>
+      <p class="sub">콘텐츠 현황을 한눈에 확인하고 행사별로 콘텐츠를 관리하세요.</p>
     </header>
 
     <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
@@ -457,12 +457,22 @@
       </div>
 
       <div class="card" id="chartCard">
-        <h3 class="dash-chart-title">최근 6개월 콘텐츠 업로드 횟수</h3>
+        <h3 class="dash-chart-title">최근 6개월간 콘텐츠 업로드 횟수</h3>
         <div class="dash-bar-chart" id="barChart"></div>
       </div>
     </div>
 
     <div class="step-label"><div class="step-num">★</div><div class="step-title">등록된 행사</div></div>
+    <div class="gallery-filters" id="eventFilters">
+      <button class="filter-chip active" data-filter="전체">전체</button>
+      <button class="filter-chip" data-filter="축제">축제</button>
+      <button class="filter-chip" data-filter="공연">공연</button>
+      <button class="filter-chip" data-filter="전시">전시</button>
+      <button class="filter-chip" data-filter="영화">영화</button>
+      <button class="filter-chip" data-filter="강좌">강좌</button>
+      <button class="filter-chip" data-filter="체험">체험</button>
+      <button class="filter-chip" data-filter="기타">기타</button>
+    </div>
     <div class="gallery-grid" id="eventListGrid" style="grid-template-columns:1fr;"></div>
     <div id="eventListEmpty" class="placeholder-empty" style="display:none;margin-top:10px;">아직 등록된 행사가 없습니다. "+ 새 행사 등록"으로 시작해보세요.</div>
   </div>
@@ -491,11 +501,12 @@
       <div class="field">
         <label for="category">카테고리</label>
         <select id="category">
+          <option value="축제">축제</option>
           <option value="공연">공연</option>
           <option value="전시">전시</option>
-          <option value="워크숍/체험">워크숍 · 체험</option>
-          <option value="페스티벌">페스티벌</option>
-          <option value="강연/교육">강연 · 교육</option>
+          <option value="영화">영화</option>
+          <option value="강좌">강좌</option>
+          <option value="체험">체험</option>
           <option value="기타">기타</option>
         </select>
       </div>
@@ -717,9 +728,9 @@
 
     <p class="disabled-note" id="mbsDisabledNote" style="margin-top:18px;">1~5단계와 보안 체크리스트를 먼저 완료해주세요.</p>
     <div class="mbs-grid" id="mbsGrid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));">
-      <button class="secondary" id="downloadFeed">피드 이미지 다운로드</button>
+      <button class="secondary" id="downloadFeed">인스타그램 피드 이미지 다운로드</button>
+      <button class="secondary" id="downloadStory">인스타그램 스토리 이미지 다운로드</button>
       <button class="secondary" id="downloadFb">페이스북 이미지 다운로드</button>
-      <button class="secondary" id="downloadStory">스토리 이미지 다운로드</button>
       <button class="secondary" id="copyCaption">캡션+해시태그 전체 복사</button>
     </div>
     <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.</div>
@@ -851,11 +862,12 @@
   <div class="step-label"><div class="step-num">★</div><div class="step-title">등록된 콘텐츠</div><div class="step-hint" id="archFilterHint">전체 보기</div></div>
   <div class="gallery-filters" id="archFilters">
     <button class="filter-chip active" data-filter="전체">전체</button>
+    <button class="filter-chip" data-filter="축제">축제</button>
     <button class="filter-chip" data-filter="공연">공연</button>
     <button class="filter-chip" data-filter="전시">전시</button>
-    <button class="filter-chip" data-filter="워크숍/체험">워크숍 · 체험</button>
-    <button class="filter-chip" data-filter="페스티벌">페스티벌</button>
-    <button class="filter-chip" data-filter="강연/교육">강연 · 교육</button>
+    <button class="filter-chip" data-filter="영화">영화</button>
+    <button class="filter-chip" data-filter="강좌">강좌</button>
+    <button class="filter-chip" data-filter="체험">체험</button>
     <button class="filter-chip" data-filter="기타">기타</button>
   </div>
   <div class="gallery-grid" id="archiveGrid"></div>
@@ -1044,6 +1056,10 @@ document.getElementById('saveEventBtn').addEventListener('click', async () => {
     currentEditingEventKey = key;
     statusEl.style.color = 'var(--green)';
     statusEl.textContent = '✓ 저장되었습니다.';
+    setTimeout(() => {
+      closeWorkflow();
+      loadEvents();
+    }, 500);
   } catch(err){
     statusEl.style.color = 'var(--danger)';
     statusEl.textContent = '저장 실패: ' + err.message;
@@ -1142,7 +1158,7 @@ document.getElementById('calNext').addEventListener('click', () => {
   renderCalendar();
 });
 
-// ============ 막대그래프 (최근 6개월 콘텐츠 업로드 횟수) ============
+// ============ 막대그래프 (최근 6개월간 콘텐츠 업로드 횟수) ============
 function renderBarChart(){
   const chart = document.getElementById('barChart');
   const now = new Date();
@@ -1168,16 +1184,39 @@ function renderBarChart(){
 }
 
 // ============ 등록된 행사 목록 ============
+let eventFilterCategory = '전체';
+
+document.getElementById('eventFilters').addEventListener('click', (e) => {
+  const chip = e.target.closest('.filter-chip');
+  if(!chip) return;
+  document.querySelectorAll('#eventFilters .filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  eventFilterCategory = chip.dataset.filter;
+  renderEventList();
+});
+
 function renderEventList(){
   const grid = document.getElementById('eventListGrid');
   const empty = document.getElementById('eventListEmpty');
   if(!registeredEvents.length){
     grid.innerHTML = '';
     empty.style.display = 'block';
+    empty.textContent = '아직 등록된 행사가 없습니다. "+ 새 행사 등록"으로 시작해보세요.';
+    return;
+  }
+  const filtered = eventFilterCategory === '전체'
+    ? registeredEvents
+    : registeredEvents.filter(ev => ev.category === eventFilterCategory);
+
+  if(!filtered.length){
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    empty.textContent = '이 카테고리로 등록된 행사가 없습니다.';
     return;
   }
   empty.style.display = 'none';
-  const sorted = [...registeredEvents].sort((a,b) => (a.eventDate||'').localeCompare(b.eventDate||''));
+  // 가장 최근 행사(날짜 최신순)가 맨 위로
+  const sorted = [...filtered].sort((a,b) => (b.eventDate||'').localeCompare(a.eventDate||''));
   grid.innerHTML = sorted.map(ev => `
     <div class="hist-item" data-key="${ev.key}" style="cursor:pointer;">
       <div>
