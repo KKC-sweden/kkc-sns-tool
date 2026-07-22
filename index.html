@@ -35,17 +35,17 @@
     min-height:100vh;
   }
   .wrap{max-width:1000px;margin:0 auto;padding:56px 28px 120px;}
-  header{margin-bottom:40px;}
+  header{margin-bottom:34px;}
   .eyebrow{
     display:inline-flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;
     color:var(--navy);font-weight:700;margin-bottom:14px;background:#fff;border:1px solid var(--line);
     padding:6px 14px;border-radius:999px;box-shadow:var(--shadow-sm);
   }
   .eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0;}
-  h1{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;font-weight:700;font-size:38px;line-height:1.2;margin:0 0 12px;color:var(--navy-deep);}
+  h1{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;font-weight:700;font-size:38px;line-height:1.2;margin:0 0 20px;color:var(--navy-deep);}
   .sub{color:var(--ink-soft);font-size:14.5px;line-height:1.65;max-width:620px;font-weight:500;}
 
-  .step-label{display:flex;align-items:center;gap:12px;margin:44px 0 18px;}
+  .step-label{display:flex;align-items:center;gap:12px;margin:38px 0 18px;}
   .step-num{
     width:34px;height:34px;border-radius:11px;
     background:linear-gradient(150deg,var(--navy),var(--navy-deep));
@@ -53,7 +53,7 @@
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;flex-shrink:0;box-shadow:0 4px 10px rgba(8,47,87,.35);
   }
   .step-title{font-size:17.5px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;color:var(--navy-deep);}
-  .step-hint{font-size:12px;color:var(--ink-soft);margin-left:auto;font-weight:600;background:var(--line-soft);padding:5px 12px;border-radius:999px;}
+  .step-hint{font-size:12.5px;color:var(--ink-soft);margin-left:auto;font-weight:700;background:var(--line-soft);padding:8px 16px;border-radius:999px;}
 
   .card{
     background:rgba(255,255,255,.55);
@@ -292,7 +292,7 @@
   .workflow-back-btn:hover{opacity:.7;}
   .workflow-save-status{display:block;font-size:12.5px;font-weight:600;margin-bottom:20px;min-height:16px;}
 
-  .dash-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .dash-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;height:32px;box-sizing:border-box;}
   .dash-cal-title{font-family:'Gowun Batang',serif;font-weight:700;font-size:16px;color:var(--navy-deep);}
   .dash-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
   .dash-cal-dow{text-align:center;font-size:11px;color:var(--ink-soft);font-weight:700;padding-bottom:6px;}
@@ -313,9 +313,10 @@
     vertical-align:middle;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;
   }
 
-  .dash-chart-title{font-family:'Gowun Batang',serif;font-size:15px;font-weight:700;color:var(--navy-deep);margin:0 0 18px;}
+  .dash-chart-title{font-family:'Gowun Batang',serif;font-size:16px;font-weight:700;color:var(--navy-deep);margin:0 0 14px;text-align:center;height:32px;line-height:32px;box-sizing:border-box;}
   .dash-bar-chart{display:flex;align-items:flex-end;gap:10px;height:160px;}
-  #chartCard{display:flex;flex-direction:column;justify-content:center;}
+  #chartCard{display:flex;flex-direction:column;}
+  #chartCard .dash-bar-chart{margin-top:auto;}
   .dash-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
   .dash-bar-count{font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;}
   .dash-bar{
@@ -323,7 +324,7 @@
     background:linear-gradient(180deg,var(--navy-soft),var(--navy));
     border-radius:6px 6px 2px 2px;min-height:3px;
   }
-  .dash-bar-label{font-size:10.5px;color:var(--ink-soft);margin-top:8px;font-weight:600;}
+  .dash-bar-label{font-size:11.5px;color:var(--ink-soft);margin-top:8px;font-weight:700;}
 
   @media (max-width: 780px){
     .dash-grid{grid-template-columns:1fr;}
@@ -839,7 +840,7 @@
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
       <div>
         <h1>CS 답변 초안 생성</h1>
-        <p class="sub">고객 문의 내용을 입력하면 학습된 CS 매뉴얼을 반영해 한국어, 영어, 스웨덴어 답변 초안을 생성합니다. 초안은 검토 후 그대로 또는 수정해서 사용하세요.</p>
+        <p class="sub" style="max-width:760px;">고객 문의 내용을 입력하면 학습된 CS 매뉴얼을 반영해 한국어, 영어, 스웨덴어 답변 초안을 생성합니다.<br>초안은 검토 후 그대로 또는 수정해서 사용하세요.</p>
       </div>
       <button class="secondary" id="openCsManualBtn" style="white-space:nowrap;">⚙ CS 매뉴얼 설정</button>
     </div>
@@ -932,7 +933,7 @@
   <header>
     <div class="eyebrow">KKC Sweden Archive</div>
     <h1>콘텐츠 아카이브</h1>
-    <p class="sub">지금까지 이 도구로 만든 SNS 콘텐츠를 한눈에 모아봅니다. SNS 콘텐츠 제작 탭에서 완료하면 자동으로 저장됩니다.</p>
+    <p class="sub" style="max-width:700px;">지금까지 이 도구로 만든 SNS 콘텐츠를 한눈에 모아봅니다.<br>SNS 콘텐츠 제작 탭에서 완료하면 자동으로 저장됩니다.</p>
   </header>
 
   <div class="step-label"><div class="step-num">★</div><div class="step-title">등록된 콘텐츠</div><div class="step-hint" id="archFilterHint">전체 보기</div></div>
@@ -1196,6 +1197,17 @@ async function loadEvents(){
   renderCalendar();
   renderBarChart();
   renderEventList();
+  requestAnimationFrame(alignChartWithCalendar);
+}
+
+// 캘린더 그리드+하단 여백의 실제 렌더링 높이를 재서, 막대그래프 영역 높이를 정확히 맞춤
+function alignChartWithCalendar(){
+  const calGrid = document.getElementById('calGrid');
+  const calDayEvents = document.getElementById('calDayEvents');
+  const barChart = document.getElementById('barChart');
+  if(!calGrid || !calDayEvents || !barChart) return;
+  const targetHeight = calGrid.offsetHeight + calDayEvents.offsetHeight + 12; // 12 = calDayEvents margin-top
+  barChart.style.height = targetHeight + 'px';
 }
 
 // ============ 캘린더 ============
@@ -1252,6 +1264,7 @@ function renderCalendar(){
         box.innerHTML = eventsByDate[dateStr].map(ev =>
           `<div class="ev-item"><span class="dday-badge">${computeDday(ev.eventDate)}</span><strong>${escapeHtml(ev.eventName)}</strong> · ${escapeHtml(ev.category)}</div>`
         ).join('');
+        requestAnimationFrame(alignChartWithCalendar);
       });
     }
     grid.appendChild(el);
@@ -1261,11 +1274,13 @@ document.getElementById('calPrev').addEventListener('click', () => {
   calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()-1, 1);
   document.getElementById('calDayEvents').innerHTML = '';
   renderCalendar();
+  requestAnimationFrame(alignChartWithCalendar);
 });
 document.getElementById('calNext').addEventListener('click', () => {
   calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()+1, 1);
   document.getElementById('calDayEvents').innerHTML = '';
   renderCalendar();
+  requestAnimationFrame(alignChartWithCalendar);
 });
 
 // ============ 막대그래프 (최근 6개월간 콘텐츠 업로드 횟수) ============
