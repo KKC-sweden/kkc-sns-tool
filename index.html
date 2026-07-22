@@ -84,12 +84,16 @@
 
   /* Timeline */
   .timeline{display:flex;gap:6px;border-radius:999px;padding:6px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);}
-  .stage{flex:1;padding:12px 8px;text-align:center;cursor:pointer;border-radius:999px;transition:all .18s ease;}
+  .stage{flex:1;padding:12px 8px;text-align:center;cursor:pointer;border-radius:999px;transition:all .18s ease;position:relative;}
   .stage .d{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;font-size:19px;font-weight:700;color:var(--navy-deep);}
   .stage .label{font-size:10.5px;color:var(--ink-soft);margin-top:1px;display:block;font-weight:600;}
   .stage.active{background:linear-gradient(150deg,var(--navy),var(--navy-deep));box-shadow:0 6px 16px rgba(8,47,87,.30);}
   .stage.active .d{color:#fff;} .stage.active .label{color:#BFD6EC;}
   .stage:hover:not(.active){background:var(--line-soft);}
+  .stage.done:not(.active){background:var(--warn-bg);}
+  .stage.done:not(.active) .d{color:var(--warn);}
+  .stage-done-dot{position:absolute;top:6px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px #fff;}
+  .stage.active .stage-done-dot{box-shadow:0 0 0 2px var(--navy);}
 
   /* Buttons */
   button.primary{
@@ -301,6 +305,11 @@
   .dash-cal-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);margin-top:2px;}
   .dash-cal-day-events{margin-top:12px;font-size:12.5px;color:var(--ink);min-height:20px;}
   .dash-cal-day-events .ev-item{padding:6px 10px;background:var(--line-soft);border-radius:8px;margin-bottom:6px;}
+  .dday-badge{
+    display:inline-block;font-size:10.5px;font-weight:800;color:#fff;
+    background:var(--navy);border-radius:999px;padding:2px 8px;margin-right:7px;
+    vertical-align:middle;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;
+  }
 
   .dash-chart-title{font-family:'Gowun Batang',serif;font-size:15px;font-weight:700;color:var(--navy-deep);margin:0 0 18px;}
   .dash-bar-chart{display:flex;align-items:flex-end;gap:10px;height:160px;}
@@ -1080,6 +1089,16 @@ function resetWorkflowForm(){
   document.getElementById('saveEventStatus').textContent = '';
 }
 
+// 새 행사를 열거나 다른 행사를 이어서 열 때마다 단계별 저장소를 초기화
+function resetStageSystem(eventName){
+  stageStore = {};
+  selectedStage = 'D-4';
+  document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === 'D-4'));
+  document.getElementById('suggestSection').classList.remove('hidden');
+  computeCompletedStages(eventName || '');
+  restoreStageState(undefined);
+}
+
 function openWorkflow(){
   document.getElementById('dashboardView').style.display = 'none';
   const wf = document.getElementById('workflowView');
@@ -1097,6 +1116,7 @@ function closeWorkflow(){
 
 document.getElementById('newEventBtn').addEventListener('click', () => {
   resetWorkflowForm();
+  resetStageSystem('');
   openWorkflow();
 });
 document.getElementById('backToDashboardBtn').addEventListener('click', () => {
@@ -1177,6 +1197,18 @@ async function loadEvents(){
 let calViewDate = new Date();
 const DOW = ['일','월','화','수','목','금','토'];
 
+// yyyy-mm-dd → "D-14" / "D-DAY" / "D+3" 형태로 변환
+function computeDday(eventDateStr){
+  if(!eventDateStr) return '';
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const target = new Date(eventDateStr + 'T00:00:00');
+  if(isNaN(target.getTime())) return '';
+  const diffDays = Math.round((target - today) / 86400000);
+  if(diffDays === 0) return 'D-DAY';
+  return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
+}
+
 function renderCalendar(){
   const grid = document.getElementById('calGrid');
   const title = document.getElementById('calTitle');
@@ -1213,7 +1245,7 @@ function renderCalendar(){
       el.addEventListener('click', () => {
         const box = document.getElementById('calDayEvents');
         box.innerHTML = eventsByDate[dateStr].map(ev =>
-          `<div class="ev-item"><strong>${escapeHtml(ev.eventName)}</strong> · ${escapeHtml(ev.category)}</div>`
+          `<div class="ev-item"><span class="dday-badge">${computeDday(ev.eventDate)}</span><strong>${escapeHtml(ev.eventName)}</strong> · ${escapeHtml(ev.category)}</div>`
         ).join('');
       });
     }
@@ -1293,7 +1325,7 @@ function renderEventList(){
   grid.innerHTML = sorted.map(ev => `
     <div class="hist-item" data-key="${ev.key}" style="cursor:pointer;">
       <div>
-        <div class="hi-name">${escapeHtml(ev.eventName)}</div>
+        <div class="hi-name">${ev.eventDate ? `<span class="dday-badge">${computeDday(ev.eventDate)}</span>` : ''}${escapeHtml(ev.eventName)}</div>
         <div class="hi-meta">${escapeHtml(ev.eventDate || '날짜 미정')} · ${escapeHtml(ev.category)} ${ev.ownerName ? '· 담당: '+escapeHtml(ev.ownerName) : ''}</div>
       </div>
       <button class="hist-del" data-key="${ev.key}">✕</button>
@@ -1315,6 +1347,7 @@ function renderEventList(){
       document.getElementById('descKo').value = ev.descKo || '';
       currentEditingEventKey = ev.key;
       document.getElementById('saveEventStatus').textContent = '';
+      resetStageSystem(ev.eventName || '');
       openWorkflow();
     });
   });
@@ -1328,14 +1361,137 @@ function renderEventList(){
 
 loadEvents();
 
-// ============ STEP 2: Timeline ============
+// ============ STEP 2: Timeline (단계별 콘텐츠 분리 저장) ============
+let stageStore = {}; // 이번 세션 동안 단계별(D-14/D-7/D-4/D+3/D+5) 업로드·캡션·체크리스트 상태 보관
+let completedStages = new Set(); // 이 행사에서 실제로 완료(아카이브)된 단계들
+
+function snapshotStageState(){
+  return {
+    uploadedImages, feedIndex, storyIndex, feedMode, storyMode, fbMode,
+    feedRatio: document.getElementById('feedRatio').value,
+    fbRatio: document.getElementById('fbRatio').value,
+    captionMode, resultsRevealed,
+    origLang: document.getElementById('origLang').value,
+    generatedCaptions,
+    captionOrig: document.getElementById('captionOrig').value,
+    captionSv: document.getElementById('captionSv').value,
+    captionEn: document.getElementById('captionEn').value,
+    hashtagListHTML: document.getElementById('hashtagList').innerHTML,
+    feedCaptionPreview: document.getElementById('feedCaptionPreview').textContent,
+    fbCaptionPreview: document.getElementById('fbCaptionPreview').textContent,
+    checklistComplete,
+    checklistChecks: checkboxes.map(cb => cb.checked)
+  };
+}
+
+function restoreStageState(snap){
+  if(!snap){
+    uploadedImages = []; feedIndex = 0; storyIndex = 0;
+    feedMode = 'contain'; storyMode = 'contain'; fbMode = 'contain';
+    document.getElementById('feedRatio').value = '4:5';
+    document.getElementById('fbRatio').value = '1:1';
+    captionMode = 'ai-write'; resultsRevealed = false;
+    document.getElementById('origLang').value = '한국어';
+    generatedCaptions = null;
+    document.getElementById('captionOrig').value = '';
+    document.getElementById('captionSv').value = '';
+    document.getElementById('captionEn').value = '';
+    document.getElementById('hashtagList').innerHTML = '';
+    document.getElementById('feedCaptionPreview').textContent = '캡션이 여기 표시됩니다';
+    document.getElementById('fbCaptionPreview').textContent = '캡션이 여기 표시됩니다';
+    checklistComplete = false;
+    checkboxes.forEach(cb => cb.checked = false);
+    document.getElementById('uploadedInfo').style.display = 'none';
+    document.getElementById('editEmpty').style.display = 'flex';
+    document.getElementById('editGrid').style.display = 'none';
+    document.getElementById('thumbStrip').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+  } else {
+    uploadedImages = snap.uploadedImages; feedIndex = snap.feedIndex; storyIndex = snap.storyIndex;
+    feedMode = snap.feedMode; storyMode = snap.storyMode; fbMode = snap.fbMode;
+    document.getElementById('feedRatio').value = snap.feedRatio;
+    document.getElementById('fbRatio').value = snap.fbRatio;
+    captionMode = snap.captionMode; resultsRevealed = snap.resultsRevealed;
+    document.getElementById('origLang').value = snap.origLang;
+    generatedCaptions = snap.generatedCaptions;
+    document.getElementById('captionOrig').value = snap.captionOrig;
+    document.getElementById('captionSv').value = snap.captionSv;
+    document.getElementById('captionEn').value = snap.captionEn;
+    document.getElementById('hashtagList').innerHTML = snap.hashtagListHTML;
+    document.getElementById('feedCaptionPreview').textContent = snap.feedCaptionPreview;
+    document.getElementById('fbCaptionPreview').textContent = snap.fbCaptionPreview;
+    checklistComplete = snap.checklistComplete;
+    checkboxes.forEach((cb,i) => cb.checked = snap.checklistChecks[i]);
+
+    if(uploadedImages.length){
+      document.getElementById('uploadedInfo').style.display = 'flex';
+      document.getElementById('fileName').textContent = uploadedImages.length + '장 업로드됨';
+      document.getElementById('editEmpty').style.display = 'none';
+      document.getElementById('editGrid').style.display = 'block';
+      renderThumbs(); renderCrops();
+    } else {
+      document.getElementById('uploadedInfo').style.display = 'none';
+      document.getElementById('editEmpty').style.display = 'flex';
+      document.getElementById('editGrid').style.display = 'none';
+      document.getElementById('thumbStrip').style.display = 'none';
+    }
+  }
+
+  // 모드 토글 버튼 활성 표시 동기화
+  [['feedModeToggle',feedMode],['storyModeToggle',storyMode],['fbModeToggle',fbMode],['captionModeToggle',captionMode]].forEach(([id,mode]) => {
+    document.querySelectorAll('#'+id+' .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  });
+  document.getElementById('feedCropControls').style.display = feedMode==='cover' ? 'block' : 'none';
+  document.getElementById('storyCropControls').style.display = storyMode==='cover' ? 'block' : 'none';
+  document.getElementById('fbCropControls').style.display = fbMode==='cover' ? 'block' : 'none';
+
+  updateOrigLangUI();
+  moveGenerateBtn(captionMode);
+  document.getElementById('generateBtn').textContent = captionMode==='ai-write' ? 'AI 캡션, 해시태그, 번역 생성' : '번역 + 해시태그 생성';
+  updateCaptionVisibility();
+  updateChecklistProgress();
+
+  const statusEl = document.getElementById('checklistStatus');
+  if(checklistComplete){
+    statusEl.textContent = '✓ 보안 체크리스트 확인 완료';
+    statusEl.classList.remove('pending'); statusEl.classList.add('done');
+  } else {
+    statusEl.textContent = '⏺ 업로드 전 보안 체크리스트를 확인해주세요';
+    statusEl.classList.remove('done'); statusEl.classList.add('pending');
+  }
+  updateMbsState();
+}
+
+function computeCompletedStages(eventName){
+  completedStages = new Set(
+    contentUploads.filter(item => item.eventName === eventName).map(item => item.stage)
+  );
+  renderStageDoneDots();
+}
+function renderStageDoneDots(){
+  document.querySelectorAll('#timeline .stage').forEach(el => {
+    el.classList.toggle('done', completedStages.has(el.dataset.stage));
+    const existingDot = el.querySelector('.stage-done-dot');
+    if(completedStages.has(el.dataset.stage) && !existingDot){
+      const dot = document.createElement('span');
+      dot.className = 'stage-done-dot';
+      el.appendChild(dot);
+    } else if(!completedStages.has(el.dataset.stage) && existingDot){
+      existingDot.remove();
+    }
+  });
+}
+
 document.getElementById('timeline').addEventListener('click', (e) => {
   const stage = e.target.closest('.stage');
   if(!stage) return;
+  if(stage.dataset.stage === selectedStage) return;
+  stageStore[selectedStage] = snapshotStageState();
   document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
   stage.classList.add('active');
   selectedStage = stage.dataset.stage;
   document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-4');
+  restoreStageState(stageStore[selectedStage]);
 });
 document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-4');
 
@@ -1931,7 +2087,7 @@ async function saveToArchiveAuto(){
     const thumb = thumbCanvas.toDataURL('image/jpeg', 0.82);
 
     const key = 'kkc:archive:' + Date.now();
-    await kkcStorage.set(key, JSON.stringify({
+    const archiveRecord = {
       eventName: info.eventName,
       category: info.category,
       eventDateText: info.eventDateText,
@@ -1943,7 +2099,13 @@ async function saveToArchiveAuto(){
       thumb,
       ...getCurrentCaptionData(),
       createdAt: new Date().toISOString()
-    }), true);
+    };
+    await kkcStorage.set(key, JSON.stringify(archiveRecord), true);
+
+    // 완료 표시(노란 점) 즉시 반영
+    contentUploads.push(archiveRecord);
+    completedStages.add(selectedStage);
+    renderStageDoneDots();
 
     if(typeof loadArchive === 'function') await loadArchive();
   } catch(err){
