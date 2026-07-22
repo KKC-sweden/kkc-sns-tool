@@ -536,8 +536,18 @@
     </div>
     <div class="row2">
       <div class="field">
-        <label for="dateplace">일시 및 장소</label>
-        <input type="text" id="dateplace" placeholder="Saturday, 17 October 2026">
+        <label for="eventDateText">날짜 (SNS 본문 표기용)</label>
+        <input type="text" id="eventDateText" placeholder="Wednesday, 25 November 2026">
+      </div>
+      <div class="field">
+        <label for="eventTime">시간</label>
+        <input type="text" id="eventTime" placeholder="13:00–17:00">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="eventVenue">장소</label>
+        <input type="text" id="eventVenue" placeholder="Korean Cultural Center in Sweden">
       </div>
       <div class="field">
         <label for="ownerName">담당자 이름</label>
@@ -1051,7 +1061,9 @@ function getEventInfo(){
     eventName: document.getElementById('eventName').value.trim(),
     category: document.getElementById('category').value,
     eventDate: document.getElementById('eventDate').value,
-    dateplace: document.getElementById('dateplace').value.trim(),
+    eventDateText: document.getElementById('eventDateText').value.trim(),
+    eventTime: document.getElementById('eventTime').value.trim(),
+    eventVenue: document.getElementById('eventVenue').value.trim(),
     descKo: document.getElementById('descKo').value.trim(),
     ownerName: document.getElementById('ownerName').value.trim(),
     ownerEmail: document.getElementById('ownerEmail').value.trim()
@@ -1060,7 +1072,7 @@ function getEventInfo(){
 
 // ============ 대시보드 ↔ 작업 화면 전환 ============
 function resetWorkflowForm(){
-  ['eventName','dateplace','ownerName','ownerEmail','descKo'].forEach(id => document.getElementById(id).value = '');
+  ['eventName','eventDateText','eventTime','eventVenue','ownerName','ownerEmail','descKo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('eventDate').value = '';
   document.getElementById('category').selectedIndex = 0;
   currentEditingEventKey = null;
@@ -1109,7 +1121,8 @@ document.getElementById('saveEventBtn').addEventListener('click', async () => {
   try{
     await kkcStorage.set(key, JSON.stringify({
       eventName: info.eventName, category: info.category, eventDate: info.eventDate,
-      dateplace: info.dateplace, ownerName: info.ownerName, ownerEmail: info.ownerEmail,
+      eventDateText: info.eventDateText, eventTime: info.eventTime, eventVenue: info.eventVenue,
+      ownerName: info.ownerName, ownerEmail: info.ownerEmail,
       descKo: info.descKo, updatedAt: new Date().toISOString()
     }), true);
     currentEditingEventKey = key;
@@ -1294,7 +1307,9 @@ function renderEventList(){
       document.getElementById('eventName').value = ev.eventName || '';
       document.getElementById('category').value = ev.category || '공연';
       document.getElementById('eventDate').value = ev.eventDate || '';
-      document.getElementById('dateplace').value = ev.dateplace || '';
+      document.getElementById('eventDateText').value = ev.eventDateText || '';
+      document.getElementById('eventTime').value = ev.eventTime || '';
+      document.getElementById('eventVenue').value = ev.eventVenue || '';
       document.getElementById('ownerName').value = ev.ownerName || '';
       document.getElementById('ownerEmail').value = ev.ownerEmail || '';
       document.getElementById('descKo').value = ev.descKo || '';
@@ -1375,7 +1390,7 @@ document.getElementById('openSuggestBtn').addEventListener('click', async () => 
 
   const useWebSearch = document.getElementById('webSearchToggle').checked;
 
-  let userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n일시/장소: ${info.dateplace || '미정'}\n행사 설명: ${info.descKo || '미입력'}${refText}`;
+  let userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n날짜: ${info.eventDateText || '미정'}\n시간: ${info.eventTime || '미정'}\n장소: ${info.eventVenue || '미정'}\n행사 설명: ${info.descKo || '미입력'}${refText}`;
   if(useWebSearch){
     userPrompt += `\n\n(참고: 최신 인스타그램/숏폼 콘텐츠 트렌드를 웹에서 검색해서 제안에 반영해주세요. 단, 원문을 그대로 인용하지 말고 요지만 자신의 말로 반영하세요.)`;
   }
@@ -1775,7 +1790,7 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
   try{
     let parsed;
     if(captionMode === 'ai-write'){
-      const userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n일시/장소: ${info.dateplace || '미정'}\n행사 설명: ${info.descKo}`;
+      const userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n날짜: ${info.eventDateText || '미정'}\n시간: ${info.eventTime || '미정'}\n장소: ${info.eventVenue || '미정'}\n행사 설명: ${info.descKo}`;
       const data = await callClaude(buildWriteSystemPrompt(origLang), userPrompt);
       parsed = extractJson(data);
       captionOrigEl.value = parsed.caption_orig || '';
@@ -1919,7 +1934,9 @@ async function saveToArchiveAuto(){
     await kkcStorage.set(key, JSON.stringify({
       eventName: info.eventName,
       category: info.category,
-      dateplace: info.dateplace,
+      eventDateText: info.eventDateText,
+      eventTime: info.eventTime,
+      eventVenue: info.eventVenue,
       stage: selectedStage,
       ownerName: info.ownerName,
       imageCount: uploadedImages.length,
