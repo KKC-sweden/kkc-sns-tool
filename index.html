@@ -530,40 +530,33 @@
         </select>
       </div>
       <div class="field">
-        <label for="eventDate">행사 날짜 <span style="font-weight:400;">(캘린더 표시용)</span></label>
+        <label for="eventDate">행사 날짜</label>
         <input type="date" id="eventDate">
       </div>
     </div>
     <div class="row2">
       <div class="field">
-        <label for="eventDateText">날짜 (SNS 본문 표기용)</label>
-        <input type="text" id="eventDateText" placeholder="Wednesday, 25 November 2026">
-      </div>
-      <div class="field">
         <label for="eventTime">시간</label>
         <input type="text" id="eventTime" placeholder="13:00–17:00">
       </div>
-    </div>
-    <div class="row2">
       <div class="field">
         <label for="eventVenue">장소</label>
         <input type="text" id="eventVenue" placeholder="Korean Cultural Center in Sweden">
       </div>
-      <div class="field">
-        <label for="ownerName">담당자 이름</label>
-        <input type="text" id="ownerName" placeholder="홍길동">
-      </div>
     </div>
     <div class="row2">
+      <div class="field">
+        <label for="ownerName">담당자 이름</label>
+        <input type="text" id="ownerName" placeholder="최가은">
+      </div>
       <div class="field">
         <label for="ownerEmail">담당자 이메일</label>
         <input type="text" id="ownerEmail" placeholder="name@kkultur.org">
       </div>
-      <div></div>
     </div>
     <div class="field">
-      <label for="descKo">행사 설명 (AI 콘텐츠 제안 및 캡션 제안에 활용됩니다)</label>
-      <textarea id="descKo" placeholder="예: 한국 전통 가야금 공연과 함께하는 여름밤 축제. 자원봉사자 모집 중."></textarea>
+      <label for="descKo">행사 주요 정보(AI 콘텐츠 제안 및 캡션 제안에 활용됩니다)</label>
+      <textarea id="descKo" placeholder="10주년 무대, K-Pop 결선, 전통 공연, 태권도 시범, 특별 라이브 진행, 무료 야외 행사"></textarea>
     </div>
   </div>
 
@@ -864,7 +857,7 @@
     </div>
     <div class="field">
       <label for="csInquiry">문의 내용 (원문 그대로 붙여넣어도 됩니다)</label>
-      <textarea id="csInquiry" rows="4" placeholder="다음 주 가야금 공연 티켓이 아직 남아있나요? 그리고 몇 시에 시작하는지도 알고 싶어요."></textarea>
+      <textarea id="csInquiry" rows="4" placeholder="Finns det biljetter kvar?"></textarea>
     </div>
     <div class="field">
       <label for="csMustInclude">답변 내용에 포함되어야 할 정보 (선택)</label>
@@ -1056,12 +1049,20 @@ let generatedCaptions = null;
 let checklistComplete = false;
 let currentEditingEventKey = null; // 이어서 작업 중인 등록 행사의 저장 키 (신규면 null)
 
+// yyyy-mm-dd → "Wednesday, 25 November 2026" 형식으로 자동 변환 (SNS 본문용)
+function formatEventDateText(isoDate){
+  if(!isoDate) return '';
+  const d = new Date(isoDate + 'T00:00:00');
+  if(isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+
 function getEventInfo(){
   return {
     eventName: document.getElementById('eventName').value.trim(),
     category: document.getElementById('category').value,
     eventDate: document.getElementById('eventDate').value,
-    eventDateText: document.getElementById('eventDateText').value.trim(),
+    eventDateText: formatEventDateText(document.getElementById('eventDate').value),
     eventTime: document.getElementById('eventTime').value.trim(),
     eventVenue: document.getElementById('eventVenue').value.trim(),
     descKo: document.getElementById('descKo').value.trim(),
@@ -1072,7 +1073,7 @@ function getEventInfo(){
 
 // ============ 대시보드 ↔ 작업 화면 전환 ============
 function resetWorkflowForm(){
-  ['eventName','eventDateText','eventTime','eventVenue','ownerName','ownerEmail','descKo'].forEach(id => document.getElementById(id).value = '');
+  ['eventName','eventTime','eventVenue','ownerName','ownerEmail','descKo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('eventDate').value = '';
   document.getElementById('category').selectedIndex = 0;
   currentEditingEventKey = null;
@@ -1307,7 +1308,6 @@ function renderEventList(){
       document.getElementById('eventName').value = ev.eventName || '';
       document.getElementById('category').value = ev.category || '공연';
       document.getElementById('eventDate').value = ev.eventDate || '';
-      document.getElementById('eventDateText').value = ev.eventDateText || '';
       document.getElementById('eventTime').value = ev.eventTime || '';
       document.getElementById('eventVenue').value = ev.eventVenue || '';
       document.getElementById('ownerName').value = ev.ownerName || '';
