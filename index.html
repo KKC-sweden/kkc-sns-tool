@@ -538,7 +538,7 @@
       <button class="filter-chip" data-filter="강좌">강좌</button>
       <button class="filter-chip" data-filter="체험">체험</button>
       <button class="filter-chip" data-filter="기타">기타</button>
-      <button class="filter-chip" data-filter="지난 행사" style="margin-left:auto;">지난 행사</button>
+      <button class="filter-chip" data-filter="지난 행사">지난 행사</button>
     </div>
     <div class="gallery-grid" id="eventListGrid" style="grid-template-columns:1fr;"></div>
     <div id="eventListEmpty" class="placeholder-empty" style="display:none;margin-top:10px;">아직 등록된 행사가 없습니다. "+ 새 행사 등록"으로 시작해보세요.</div>
@@ -655,11 +655,7 @@
   <!-- STEP 3: Upload -->
   <div class="step-label"><div class="step-num">3</div><div class="step-title">사진 업로드 <span class="step-hint">여러 장 업로드 가능</span></div></div>
   <div class="card">
-    <div class="field">
-      <label for="stageDesc">콘텐츠에 꼭 들어가야 할 정보 <span style="font-weight:400;color:var(--ink-soft);">(AI 콘텐츠 제안 및 캡션 생성에 활용됩니다)</span></label>
-      <textarea id="stageDesc" rows="5" placeholder="10주년 기념 행사, 자원봉사자 모집, 신청 링크는 바이오에"></textarea>
-    </div>
-    <div class="dropzone" id="dropzone" style="padding:56px 20px;margin-top:16px;">
+    <div class="dropzone" id="dropzone" style="padding:56px 20px;">
       <div style="font-size:40px;">🖼️</div>
       <p><strong>클릭해서 이미지 선택</strong> 또는 파일을 여기로 드래그하세요 (여러 장 동시 선택 가능)</p>
       <p>JPG, PNG 권장</p>
@@ -669,6 +665,10 @@
     <div class="uploaded-info" id="uploadedInfo" style="display:none;">
       <span id="fileName"></span>
       <button id="resetImage">전체 초기화</button>
+    </div>
+    <div class="field" style="margin-top:18px;">
+      <label for="stageDesc">콘텐츠에 꼭 들어가야 할 정보 <span style="font-weight:400;color:var(--ink-soft);">(AI 콘텐츠 제안 및 캡션 생성에 활용됩니다)</span></label>
+      <textarea id="stageDesc" rows="5" placeholder="10주년 기념 행사, 자원봉사자 모집, 신청 링크는 바이오에"></textarea>
     </div>
   </div>
 
@@ -696,13 +696,13 @@
     <div class="caption-block" id="enCaptionBlock" style="display:none;"><h4>영어 캡션</h4><textarea id="captionEn" rows="4"></textarea></div>
     <div class="caption-block" id="hashtagBlock" style="display:none;"><h4>추천 해시태그</h4><div class="hashtag-list" id="hashtagList"></div></div>
 
-    <div id="captionSaveRow" style="display:none;align-items:center;gap:12px;margin:14px 0;">
+    <div id="captionSaveRow" style="display:none;align-items:center;gap:12px;margin:14px 0;justify-content:flex-end;">
       <button class="secondary" id="saveCaptionBtn">캡션 저장</button>
       <span id="captionSaveStatus" style="font-size:12.5px;color:var(--ink-soft);"></span>
     </div>
 
     <div id="genBtnAnchorBottom"></div>
-    <button class="primary" id="generateBtn" style="margin-top:6px;">AI 캡션, 해시태그, 번역 생성</button>
+    <button class="primary" id="generateBtn" style="margin-top:6px;display:block;margin-left:auto;">AI 캡션, 해시태그, 번역 생성</button>
     <div class="loading" id="captionLoading"><div class="spinner"></div>생성하는 중입니다…</div>
     <div class="error" id="captionError"></div>
   </div>
@@ -1597,6 +1597,7 @@ function restoreStageState(snap){
       document.getElementById('editGrid').style.display = 'none';
       document.getElementById('thumbStrip').style.display = 'none';
     }
+    migrateHashtagMarkup();
   }
 
   // 모드 토글 버튼 활성 표시 동기화
@@ -2228,6 +2229,15 @@ function updatePreviewCaptions(){
   feedEl.textContent = ' ' + preview;
   fbEl.textContent = text;
 }
+// 예전 버전에서 저장된 해시태그(삭제 버튼 없이 텍스트만 있던 형식)를 새 형식으로 업그레이드
+function migrateHashtagMarkup(){
+  document.querySelectorAll('#hashtagList .hashtag').forEach(span => {
+    if(span.querySelector('.tag-text')) return; // 이미 새 형식
+    const text = span.textContent.trim();
+    span.innerHTML = `<span class="tag-text"></span><button class="tag-del" type="button" title="이 해시태그 삭제">×</button>`;
+    span.querySelector('.tag-text').textContent = text;
+  });
+}
 document.getElementById('previewLang').addEventListener('change', updatePreviewCaptions);
 document.getElementById('hashtagList').addEventListener('click', (e) => {
   const delBtn = e.target.closest('.tag-del');
@@ -2572,6 +2582,8 @@ loadHistory();
 
 // ============ Tab switching ============
 function switchToTab(target){
+  const wf = document.getElementById('workflowView');
+  if(wf.classList.contains('open')) closeWorkflow();
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === target));
   document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
   document.getElementById(target).style.display = 'block';
@@ -2582,8 +2594,6 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 });
 
 document.getElementById('sidebarBrand').addEventListener('click', () => {
-  const wf = document.getElementById('workflowView');
-  if(wf.classList.contains('open')) closeWorkflow();
   switchToTab('tab-sns');
 });
 
