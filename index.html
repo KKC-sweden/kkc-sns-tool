@@ -427,6 +427,8 @@
   .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;}
   #eventListGrid{gap:8px;}
   #eventListGrid .hist-item{margin-bottom:0;}
+  #eventListGrid .hist-item > div:first-child{flex:1;min-width:0;}
+  #eventListGrid .hi-name, #eventListGrid .hi-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .gallery-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .15s ease, box-shadow .15s ease;}
   .gallery-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);}
   .gallery-thumb{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--line-soft);}
@@ -654,11 +656,11 @@
   <div class="step-label"><div class="step-num">3</div><div class="step-title">사진 업로드 <span class="step-hint">여러 장 업로드 가능</span></div></div>
   <div class="card">
     <div class="field">
-      <label for="stageDesc">이 단계 콘텐츠 설명 <span style="font-weight:400;color:var(--ink-soft);">(AI 콘텐츠 제안 및 캡션 생성에 활용됩니다 · 단계별로 다르게 입력하세요)</span></label>
-      <textarea id="stageDesc" placeholder="예: D-4 리마인더용 — 10주년 무대, K-Pop 결선, 전통 공연, 태권도 시범, 특별 라이브 진행, 무료 야외 행사"></textarea>
+      <label for="stageDesc">콘텐츠에 꼭 들어가야 할 정보 <span style="font-weight:400;color:var(--ink-soft);">(AI 콘텐츠 제안 및 캡션 생성에 활용됩니다)</span></label>
+      <textarea id="stageDesc" rows="5" placeholder="10주년 기념 행사, 자원봉사자 모집, 신청 링크는 바이오에"></textarea>
     </div>
-    <div class="dropzone" id="dropzone">
-      <div style="font-size:28px;">🖼️</div>
+    <div class="dropzone" id="dropzone" style="padding:56px 20px;margin-top:16px;">
+      <div style="font-size:40px;">🖼️</div>
       <p><strong>클릭해서 이미지 선택</strong> 또는 파일을 여기로 드래그하세요 (여러 장 동시 선택 가능)</p>
       <p>JPG, PNG 권장</p>
     </div>
@@ -1744,14 +1746,23 @@ document.getElementById('openSuggestBtn').addEventListener('click', async () => 
 
   const useWebSearch = document.getElementById('webSearchToggle').checked;
 
-  let userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n날짜: ${info.eventDateText || '미정'}\n시간: ${info.eventTime || '미정'}\n장소: ${info.eventVenue || '미정'}\n현재 콘텐츠 단계: ${selectedStage}\n이 단계 콘텐츠 설명: ${getStageDesc() || '미입력'}${refText}`;
+  // 이미 D-14/D-7 단계에서 발행한(또는 작성해둔) 콘텐츠가 있으면 반복되지 않도록 함께 전달
+  const priorStageNotes = ['D-14', 'D-7'].map(stage => {
+    const snap = stageStore[stage];
+    const text = snap && (snap.captionOrig || snap.stageDesc);
+    return text ? `- ${stage}: ${text}` : null;
+  }).filter(Boolean);
+  const priorText = priorStageNotes.length
+    ? `\n\n이미 이전 단계에서 작성/발행한 콘텐츠 (2차 콘텐츠는 이 내용과 겹치지 않게 새로운 정보나 각도를 제시하세요):\n${priorStageNotes.join('\n')}`
+    : '';
+
+  let userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n날짜: ${info.eventDateText || '미정'}\n시간: ${info.eventTime || '미정'}\n장소: ${info.eventVenue || '미정'}\n현재 콘텐츠 단계: ${selectedStage}\n이 단계 콘텐츠 설명: ${getStageDesc() || '미입력'}${priorText}${refText}`;
   if(useWebSearch){
     userPrompt += `\n\n(참고: 최신 인스타그램/숏폼 콘텐츠 트렌드를 웹에서 검색해서 제안에 반영해주세요. 단, 원문을 그대로 인용하지 말고 요지만 자신의 말로 반영하세요.)`;
   }
 
   try{
-    const data = await callClaude(SUGGEST_SYSTEM_PROMPT_BASE, userPrompt, useWebSearch);
-    const parsed = extractJson(data);
+    const parsed = await callClaudeJson(SUGGEST_SYSTEM_PROMPT_BASE, userPrompt, useWebSearch, useWebSearch ? 4000 : 2500);
     renderSuggestions(parsed.suggestions, info.eventName);
     await saveSuggestionHistory(info.eventName, info.category, parsed.suggestions);
     await loadHistory();
@@ -2152,13 +2163,11 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     let parsed;
     if(captionMode === 'ai-write'){
       const userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n날짜: ${info.eventDateText || '미정'}\n시간: ${info.eventTime || '미정'}\n장소: ${info.eventVenue || '미정'}\n현재 콘텐츠 단계: ${selectedStage}\n이 단계 콘텐츠 설명: ${getStageDesc()}`;
-      const data = await callClaude(buildWriteSystemPrompt(origLang), userPrompt);
-      parsed = extractJson(data);
+      parsed = await callClaudeJson(buildWriteSystemPrompt(origLang), userPrompt, false, 2000);
       captionOrigEl.value = parsed.caption_orig || '';
     } else {
       const userPrompt = `원본 캡션(${origLang}):\n${captionOrigEl.value.trim()}`;
-      const data = await callClaude(buildTranslateSystemPrompt(origLang), userPrompt);
-      parsed = extractJson(data);
+      parsed = await callClaudeJson(buildTranslateSystemPrompt(origLang), userPrompt, false, 2000);
       parsed.caption_orig = captionOrigEl.value.trim(); // 사용자가 쓴 원문 유지
     }
 
@@ -2243,11 +2252,11 @@ function getCurrentCaptionData(){
 // ============ Shared Claude API helper ============
 
 
-async function callClaude(systemPrompt, userPrompt, useWebSearch){
+async function callClaude(systemPrompt, userPrompt, useWebSearch, maxTokens){
   async function attempt(){
     const body = {
       model: "claude-sonnet-5",
-      max_tokens: useWebSearch ? 3000 : 2000,
+      max_tokens: maxTokens || (useWebSearch ? 3000 : 2000),
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }]
     };
@@ -2267,6 +2276,17 @@ async function callClaude(systemPrompt, userPrompt, useWebSearch){
   }
   try{ return await attempt(); }
   catch(e){ await new Promise(r=>setTimeout(r,1200)); return await attempt(); }
+}
+// callClaude + extractJson을 합치고, 응답이 잘려서(truncation) JSON 파싱이 실패하는 경우
+// API를 한 번 더 호출해서 재시도함 (단순 재파싱이 아니라 새 응답을 다시 받음)
+async function callClaudeJson(systemPrompt, userPrompt, useWebSearch, maxTokens){
+  try{
+    const data = await callClaude(systemPrompt, userPrompt, useWebSearch, maxTokens);
+    return extractJson(data);
+  } catch(err){
+    const data2 = await callClaude(systemPrompt, userPrompt, useWebSearch, maxTokens);
+    return extractJson(data2);
+  }
 }
 // JSON 문자열 값 안에 모델이 실수로 넣은 이스케이프 안 된 줄바꿈(raw \n)이 있으면
 // "Unterminated string in JSON" 에러가 남 — 문자열 내부에서만 줄바꿈을 \n으로 치환해 복구 시도
@@ -2641,8 +2661,7 @@ document.getElementById('csGenerateBtn').addEventListener('click', async () => {
   const userPrompt = `문의 유형: ${csType}\n문의 채널: ${csChannel}\n문의 내용: ${csInquiry}${csMustInclude ? '\n답변에 포함되어야 할 정보: ' + csMustInclude : ''}`;
 
   try{
-    const data = await callClaude(buildCsSystemPrompt(csSelectedLangs), userPrompt);
-    const parsed = extractJson(data);
+    const parsed = await callClaudeJson(buildCsSystemPrompt(csSelectedLangs), userPrompt, false, 2000);
     document.getElementById('csReplyKo').value = parsed.reply_ko || '';
     document.getElementById('csReplyEn').value = parsed.reply_en || '';
     document.getElementById('csReplySv').value = parsed.reply_sv || '';
