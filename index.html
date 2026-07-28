@@ -661,6 +661,7 @@
       <div style="font-size:40px;">🖼️</div>
       <p><strong>클릭해서 이미지·영상 선택</strong> 또는 파일을 여기로 드래그하세요 (여러 개 동시 선택 가능)</p>
       <p>JPG, PNG, MP4, MOV 권장 (릴스·숏폼 영상 업로드 가능)</p>
+      <p style="color:var(--danger);font-weight:600;">⚠️ 영상은 저장 시 파일이 유지되지 않아요 — 같은 방문 안에서 확인 및 다운로드까지 마쳐주세요.</p>
     </div>
     <input type="file" id="fileInput" accept="image/*,video/*" multiple>
     <div class="thumb-strip" id="thumbStrip" style="display:none;"></div>
@@ -863,7 +864,7 @@
       <button class="secondary" id="downloadFb">페이스북 이미지 다운로드</button>
       <button class="secondary" id="copyCaption">캡션+해시태그 전체 복사</button>
     </div>
-    <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.<br><br>⚠️ 영상 콘텐츠는 구도 확인 및 아카이빙용입니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.</div>
+    <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.<br><br>⚠️ 영상 콘텐츠는 구도 확인 및 아카이빙용입니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.<br>⚠️ 영상 파일 자체는 저장되지 않으니, 창을 닫기 전에 꼭 다운로드해두세요.</div>
     <a class="secondary" id="openMbs" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:14px;">Meta Business Suite 바로가기 ↗</a>
   </div>
 
@@ -1192,21 +1193,6 @@ document.getElementById('backToDashboardBtn').addEventListener('click', () => {
   loadEvents();
 });
 
-// 업로드 직후 백그라운드에서 진행 중인 영상→base64 변환이 끝날 때까지 기다림 (최대 15초)
-function waitForVideoSaves(items){
-  const pending = (items || []).filter(it => it.kind === 'video' && !it.savedSrc);
-  if(!pending.length) return Promise.resolve();
-  return new Promise(resolve => {
-    const start = Date.now();
-    const check = () => {
-      const stillPending = pending.some(it => !it.savedSrc);
-      if(!stillPending || Date.now() - start > 15000) return resolve();
-      setTimeout(check, 200);
-    };
-    check();
-  });
-}
-
 async function saveCurrentEvent(statusEl, closeAfter){
   const info = getEventInfo();
   statusEl.style.color = 'var(--danger)';
@@ -1226,7 +1212,6 @@ async function saveCurrentEvent(statusEl, closeAfter){
 
   const key = currentEditingEventKey || ('kkc:event:' + Date.now());
   try{
-    await waitForVideoSaves(uploadedImages);
     // 현재 보고 있는 단계(사진·캡션·체크리스트)를 먼저 스냅샷에 반영한 뒤 전체 단계를 함께 저장
     stageStore[selectedStage] = snapshotStageState();
     const stageData = stageStoreToJSON(stageStore);
@@ -1618,6 +1603,10 @@ function restoreStageState(snap){
       document.getElementById('thumbStrip').style.display = 'none';
     }
     migrateHashtagMarkup();
+
+    if(snap.droppedVideoNames && snap.droppedVideoNames.length){
+      alert('영상 파일은 저장소 용량 제한으로 다시 불러올 수 없어요. 아래 영상을 다시 업로드해주세요:\n' + snap.droppedVideoNames.join('\n'));
+    }
   }
 
   // 모드 토글 버튼 활성 표시 동기화
@@ -1653,9 +1642,12 @@ function stageStoreToJSON(store){
     out[stageKey] = {
       ...snap,
       uploadedImages: (snap.uploadedImages || []).map(item => {
-        const { img, savedSrc, ...rest } = item;
-        const src = item.kind === 'video' ? (savedSrc || null) : img.src;
-        return { ...rest, src };
+        const { img, ...rest } = item;
+        if(item.kind === 'video'){
+          // 영상 파일 자체는 저장하지 않음 (용량 제한) — 이름만 기록해 재업로드 안내에 사용
+          return { ...rest, src: null };
+        }
+        return { ...rest, src: img.src };
       })
     };
   }
@@ -1669,20 +1661,18 @@ function stageStoreFromJSON(json){
     return Promise.all((snap.uploadedImages || []).map(item => new Promise(resolve => {
       const { src, ...rest } = item;
       if(rest.kind === 'video'){
-        const video = document.createElement('video');
-        video.muted = true; video.playsInline = true; video.loop = true; video.preload = 'auto';
-        if(!src){ resolve({ ...rest, img: video, savedSrc: null }); return; } // 저장 당시 변환이 안 끝난 경우
-        video.addEventListener('loadeddata', () => resolve({ ...rest, img: video, savedSrc: src }), { once:true });
-        video.addEventListener('error', () => resolve({ ...rest, img: video, savedSrc: src }), { once:true });
-        video.src = src;
-      } else {
-        const img = new Image();
-        img.onload = () => resolve({ ...rest, img });
-        img.onerror = () => resolve({ ...rest, img });
-        img.src = src;
+        // 영상은 저장소에 파일 자체가 없으므로(용량 제한) 복원하지 않고, 재업로드가 필요하다는 표시만 남김
+        resolve({ dropped: true, name: rest.name });
+        return;
       }
-    }))).then(uploadedImages => {
-      return [stageKey, { ...snap, uploadedImages }];
+      const img = new Image();
+      img.onload = () => resolve({ ...rest, img });
+      img.onerror = () => resolve({ ...rest, img });
+      img.src = src;
+    }))).then(results => {
+      const droppedVideoNames = results.filter(r => r.dropped).map(r => r.name);
+      const uploadedImages = results.filter(r => !r.dropped);
+      return [stageKey, { ...snap, uploadedImages, droppedVideoNames }];
     });
   })).then(entries => {
     const store = {};
@@ -1860,8 +1850,8 @@ function handleFiles(fileList){
     const ext = (file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')).toLowerCase();
 
     if(isVideo){
-      // 영상은 base64 dataURL 변환이 크고 느려서(때로는 브라우저에서 아예 멈춤) blob URL로 먼저 즉시 재생 가능하게 하고,
-      // 저장(kkcStorage)에 필요한 dataURL 변환은 별도로 비동기 진행
+      // 영상은 현재 세션 안에서만 미리보기/편집 가능 (저장소에 영상 파일 자체를 영구 저장하지 않음 —
+      // KV 저장소 용량 제한과 무거운 변환 부담 때문에 안정적이지 않아 제외함. 자세한 안내는 uploadedInfo 문구 참고)
       const blobUrl = URL.createObjectURL(file);
       const video = document.createElement('video');
       video.muted = true; video.playsInline = true; video.loop = true; video.preload = 'auto';
@@ -1876,14 +1866,8 @@ function handleFiles(fileList){
         if(settled) return;
         settled = true;
         clearTimeout(timeoutId);
-        const item = { img: video, kind:'video', ext, name: file.name, savedSrc: null, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 };
-        uploadedImages.push(item);
+        uploadedImages.push({ img: video, kind:'video', ext, name: file.name, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 });
         checkDone();
-        // 저장용 dataURL은 백그라운드에서 준비 (업로드/미리보기 표시를 막지 않음)
-        const reader = new FileReader();
-        reader.onload = (e) => { item.savedSrc = e.target.result; };
-        reader.onerror = () => { console.error('영상 저장용 데이터 변환 실패:', file.name); };
-        reader.readAsDataURL(file);
       }, { once:true });
       video.addEventListener('error', () => {
         if(settled) return;
