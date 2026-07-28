@@ -172,6 +172,8 @@
   .thumb-item:hover{transform:translateY(-2px);}
   .thumb-item.active{border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,79,140,.18);}
   .thumb-item img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb-item video{width:100%;height:100%;object-fit:cover;display:block;background:#000;}
+  .thumb-video-badge{position:absolute;top:3px;left:3px;font-size:9px;font-weight:700;color:#fff;background:rgba(18,27,46,.75);padding:2px 6px;border-radius:999px;letter-spacing:.2px;}
   .thumb-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(18,27,46,.8);color:#fff;border:none;font-size:11px;cursor:pointer;line-height:1;}
   .thumb-order{position:absolute;bottom:2px;left:3px;font-size:10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;}
 
@@ -653,14 +655,14 @@
   </div>
 
   <!-- STEP 3: Upload -->
-  <div class="step-label"><div class="step-num">3</div><div class="step-title">사진 업로드 <span class="step-hint">여러 장 업로드 가능</span></div></div>
+  <div class="step-label"><div class="step-num">3</div><div class="step-title">사진·영상 업로드 <span class="step-hint">여러 개 업로드 가능</span></div></div>
   <div class="card">
     <div class="dropzone" id="dropzone" style="padding:56px 20px;">
       <div style="font-size:40px;">🖼️</div>
-      <p><strong>클릭해서 이미지 선택</strong> 또는 파일을 여기로 드래그하세요 (여러 장 동시 선택 가능)</p>
-      <p>JPG, PNG 권장</p>
+      <p><strong>클릭해서 이미지·영상 선택</strong> 또는 파일을 여기로 드래그하세요 (여러 개 동시 선택 가능)</p>
+      <p>JPG, PNG, MP4, MOV 권장 (릴스·숏폼 영상 업로드 가능)</p>
     </div>
-    <input type="file" id="fileInput" accept="image/*" multiple>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple>
     <div class="thumb-strip" id="thumbStrip" style="display:none;"></div>
     <div class="uploaded-info" id="uploadedInfo" style="display:none;">
       <span id="fileName"></span>
@@ -861,7 +863,7 @@
       <button class="secondary" id="downloadFb">페이스북 이미지 다운로드</button>
       <button class="secondary" id="copyCaption">캡션+해시태그 전체 복사</button>
     </div>
-    <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.</div>
+    <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.<br><br>⚠️ 영상 콘텐츠는 화면의 확대·위치 조정은 미리보기(구도 확인)용이며, 다운로드 시에는 원본 영상 파일 그대로 받아집니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.</div>
     <a class="secondary" id="openMbs" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:14px;">Meta Business Suite 바로가기 ↗</a>
   </div>
 
@@ -1587,7 +1589,7 @@ function restoreStageState(snap){
 
     if(uploadedImages.length){
       document.getElementById('uploadedInfo').style.display = 'flex';
-      document.getElementById('fileName').textContent = uploadedImages.length + '장 업로드됨';
+      document.getElementById('fileName').textContent = uploadedImages.length + '개 업로드됨';
       document.getElementById('editEmpty').style.display = 'none';
       document.getElementById('editGrid').style.display = 'block';
       renderThumbs(); renderCrops();
@@ -1640,17 +1642,25 @@ function stageStoreToJSON(store){
   }
   return out;
 }
-// 저장된 JSON을 다시 stageStore 형태로 복원 (dataURL → Image 객체, 로드 대기)
+// 저장된 JSON을 다시 stageStore 형태로 복원 (dataURL → Image/Video 객체, 로드 대기)
 function stageStoreFromJSON(json){
   const stageKeys = Object.keys(json || {});
   return Promise.all(stageKeys.map(stageKey => {
     const snap = json[stageKey];
     return Promise.all((snap.uploadedImages || []).map(item => new Promise(resolve => {
       const { src, ...rest } = item;
-      const img = new Image();
-      img.onload = () => resolve({ ...rest, img });
-      img.onerror = () => resolve({ ...rest, img });
-      img.src = src;
+      if(rest.kind === 'video'){
+        const video = document.createElement('video');
+        video.muted = true; video.playsInline = true; video.loop = true; video.preload = 'auto';
+        video.addEventListener('loadeddata', () => resolve({ ...rest, img: video }), { once:true });
+        video.addEventListener('error', () => resolve({ ...rest, img: video }), { once:true });
+        video.src = src;
+      } else {
+        const img = new Image();
+        img.onload = () => resolve({ ...rest, img });
+        img.onerror = () => resolve({ ...rest, img });
+        img.src = src;
+      }
     }))).then(uploadedImages => {
       return [stageKey, { ...snap, uploadedImages }];
     });
@@ -1821,26 +1831,46 @@ dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classLis
 fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFiles(e.target.files); });
 
 function handleFiles(fileList){
-  const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-  if(!files.length){ alert('이미지 파일만 업로드할 수 있습니다.'); return; }
+  const files = Array.from(fileList).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+  if(!files.length){ alert('이미지 또는 영상 파일만 업로드할 수 있습니다.'); return; }
   let loadedCount = 0;
   files.forEach(file => {
+    const isVideo = file.type.startsWith('video/');
+    const ext = (file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')).toLowerCase();
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        uploadedImages.push({ img, name: file.name, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 });
-        loadedCount++;
-        if(loadedCount === files.length) onImagesReady();
-      };
-      img.src = e.target.result;
+      if(isVideo){
+        const video = document.createElement('video');
+        video.muted = true; video.playsInline = true; video.loop = true; video.preload = 'auto';
+        video.addEventListener('loadeddata', () => {
+          uploadedImages.push({ img: video, kind:'video', ext, name: file.name, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 });
+          loadedCount++;
+          if(loadedCount === files.length) onImagesReady();
+        }, { once:true });
+        video.src = e.target.result;
+      } else {
+        const img = new Image();
+        img.onload = () => {
+          uploadedImages.push({ img, kind:'image', ext, name: file.name, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 });
+          loadedCount++;
+          if(loadedCount === files.length) onImagesReady();
+        };
+        img.src = e.target.result;
+      }
     };
     reader.readAsDataURL(file);
   });
 }
+// <img>/<video> 공통으로 실제 픽셀 크기를 가져오는 헬퍼 (video는 naturalWidth 대신 videoWidth를 씀)
+function getMediaSize(el){
+  return {
+    w: el.videoWidth || el.naturalWidth || el.width,
+    h: el.videoHeight || el.naturalHeight || el.height
+  };
+}
 
 function onImagesReady(){
-  document.getElementById('fileName').textContent = uploadedImages.length + '장 업로드됨';
+  document.getElementById('fileName').textContent = uploadedImages.length + '개 업로드됨';
   document.getElementById('uploadedInfo').style.display = 'flex';
   document.getElementById('editEmpty').style.display = 'none';
   document.getElementById('editGrid').style.display = 'grid';
@@ -1859,7 +1889,11 @@ function renderThumbs(){
   uploadedImages.forEach((item, idx) => {
     const div = document.createElement('div');
     div.className = 'thumb-item' + (idx === feedIndex ? ' active' : '');
-    div.innerHTML = `<img src="${item.img.src}"><span class="thumb-order">${idx+1}</span><button class="thumb-del" data-idx="${idx}">✕</button>`;
+    if(item.kind === 'video'){
+      div.innerHTML = `<video src="${item.img.src}" muted playsinline preload="metadata"></video><span class="thumb-video-badge">▶ 영상</span><span class="thumb-order">${idx+1}</span><button class="thumb-del" data-idx="${idx}">✕</button>`;
+    } else {
+      div.innerHTML = `<img src="${item.img.src}"><span class="thumb-order">${idx+1}</span><button class="thumb-del" data-idx="${idx}">✕</button>`;
+    }
     div.addEventListener('click', (e) => {
       if(e.target.classList.contains('thumb-del')) return;
       feedIndex = idx; storyIndex = idx;
@@ -1870,6 +1904,7 @@ function renderThumbs(){
   strip.querySelectorAll('.thumb-del').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      pauseAllVideos([uploadedImages[Number(btn.dataset.idx)]]);
       uploadedImages.splice(Number(btn.dataset.idx), 1);
       if(!uploadedImages.length){ resetAllImages(); return; }
       feedIndex = Math.min(feedIndex, uploadedImages.length-1);
@@ -1879,7 +1914,12 @@ function renderThumbs(){
   });
 }
 
+function pauseAllVideos(items){
+  (items || []).forEach(item => { if(item && item.kind === 'video' && item.img.pause) item.img.pause(); });
+}
+
 function resetAllImages(){
+  pauseAllVideos(uploadedImages);
   uploadedImages = []; feedIndex = 0; storyIndex = 0;
   document.getElementById('uploadedInfo').style.display = 'none';
   document.getElementById('editEmpty').style.display = 'flex';
@@ -1896,40 +1936,42 @@ let feedMode = 'contain', storyMode = 'contain', fbMode = 'contain';
 function drawCoverCrop(img, canvas, targetW, targetH, zoomPercent, offsetXPercent, offsetYPercent){
   const ctx = canvas.getContext('2d');
   canvas.width = targetW; canvas.height = targetH;
-  const targetRatio = targetW/targetH, imgRatio = img.width/img.height;
+  const { w: mediaW, h: mediaH } = getMediaSize(img);
+  const targetRatio = targetW/targetH, imgRatio = mediaW/mediaH;
   const zoom = Math.max(1, (zoomPercent || 100) / 100);
 
   // 목표 비율에 맞는 최소 크롭 크기 계산
   let baseW, baseH;
-  if(imgRatio > targetRatio){ baseH = img.height; baseW = baseH*targetRatio; }
-  else { baseW = img.width; baseH = baseW/targetRatio; }
+  if(imgRatio > targetRatio){ baseH = mediaH; baseW = baseH*targetRatio; }
+  else { baseW = mediaW; baseH = baseW/targetRatio; }
 
   // 확대(zoom)만큼 실제로 잘라낼 영역을 줄임 (더 확대해서 보여줌)
   const sw = baseW / zoom;
   const sh = baseH / zoom;
-  const maxOffsetX = img.width - sw;
-  const maxOffsetY = img.height - sh;
+  const maxOffsetX = mediaW - sw;
+  const maxOffsetY = mediaH - sh;
   const sx = Math.max(0, maxOffsetX) * ((offsetXPercent||50) / 100);
   const sy = Math.max(0, maxOffsetY) * ((offsetYPercent||50) / 100);
 
   ctx.clearRect(0,0,targetW,targetH);
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+  try{ ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH); }catch(e){ /* 비디오가 아직 준비 안 된 프레임이면 무시 */ }
 }
 function drawContainWithBlur(img, canvas, targetW, targetH){
   const ctx = canvas.getContext('2d');
   canvas.width = targetW; canvas.height = targetH;
+  const { w: mediaW, h: mediaH } = getMediaSize(img);
   ctx.clearRect(0,0,targetW,targetH);
   ctx.save();
   ctx.filter = 'blur(24px)';
-  const bgScale = Math.max(targetW/img.width, targetH/img.height) * 1.15;
-  const bw = img.width*bgScale, bh = img.height*bgScale;
-  ctx.drawImage(img, (targetW-bw)/2, (targetH-bh)/2, bw, bh);
+  const bgScale = Math.max(targetW/mediaW, targetH/mediaH) * 1.15;
+  const bw = mediaW*bgScale, bh = mediaH*bgScale;
+  try{ ctx.drawImage(img, (targetW-bw)/2, (targetH-bh)/2, bw, bh); }catch(e){}
   ctx.restore();
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
   ctx.fillRect(0,0,targetW,targetH);
-  const fgScale = Math.min(targetW/img.width, targetH/img.height);
-  const fw = img.width*fgScale, fh = img.height*fgScale;
-  ctx.drawImage(img, (targetW-fw)/2, (targetH-fh)/2, fw, fh);
+  const fgScale = Math.min(targetW/mediaW, targetH/mediaH);
+  const fw = mediaW*fgScale, fh = mediaH*fgScale;
+  try{ ctx.drawImage(img, (targetW-fw)/2, (targetH-fh)/2, fw, fh); }catch(e){}
 }
 function getFeedDims(){
   const r = document.getElementById('feedRatio').value;
@@ -1978,6 +2020,32 @@ function renderCrops(){
   document.getElementById('fbZoom').value = feedItem.fbZoom;
   document.getElementById('fbOffsetX').value = feedItem.fbOffsetX;
   document.getElementById('fbOffsetY').value = feedItem.fbOffsetY;
+
+  ensureVideoPreviewLoop();
+}
+
+// ============ 영상 미리보기 실시간 재생 ============
+// 캔버스에 정적 프레임만 그리면 영상이 멈춰있는 것처럼 보이므로,
+// 현재 보이는 슬롯(피드/스토리/페이스북) 중 영상이 있으면 재생하면서 매 프레임 다시 그려줌
+let videoLoopRAF = null;
+function anyActiveIsVideo(){
+  if(!uploadedImages.length) return false;
+  const feedItem = uploadedImages[feedIndex];
+  const storyItem = uploadedImages[storyIndex];
+  return (feedItem && feedItem.kind === 'video') || (storyItem && storyItem.kind === 'video');
+}
+function ensureVideoPreviewLoop(){
+  [feedIndex, storyIndex].forEach(idx => {
+    const item = uploadedImages[idx];
+    if(item && item.kind === 'video') item.img.play().catch(()=>{});
+  });
+  if(videoLoopRAF) return; // 이미 루프가 돌고 있음
+  function loop(){
+    if(!anyActiveIsVideo()){ videoLoopRAF = null; return; }
+    renderCrops();
+    videoLoopRAF = requestAnimationFrame(loop);
+  }
+  videoLoopRAF = requestAnimationFrame(loop);
 }
 
 function renderDots(containerId, activeIdx){
@@ -2435,34 +2503,47 @@ function downloadDataUrl(dataUrl, filename){
   document.body.removeChild(link);
 }
 function downloadAllFeed(){
-  if(!uploadedImages.length){ alert('업로드된 사진이 없습니다.'); return; }
+  if(!uploadedImages.length){ alert('업로드된 콘텐츠가 없습니다.'); return; }
   const fd = getFeedDims();
   const ratio = document.getElementById('feedRatio').value.replace(':','_');
   const tempCanvas = document.createElement('canvas');
   // 대기시간 없이 동일한 클릭 이벤트 안에서 전부 처리 (지연을 두면 브라우저가 다운로드를 막을 수 있음)
   uploadedImages.forEach((item, i) => {
+    const suffix = uploadedImages.length > 1 ? `_${i+1}` : '';
+    if(item.kind === 'video'){
+      // 영상은 크롭 캡처가 아니라 원본 파일 그대로 다운로드 (실제 업로드는 MBS에서 진행)
+      downloadDataUrl(item.img.src, `KKC_피드영상${suffix}.${item.ext}`);
+      return;
+    }
     if(feedMode==='cover') drawCoverCrop(item.img, tempCanvas, fd.w, fd.h, item.feedZoom, item.feedOffsetX, item.feedOffsetY);
     else drawContainWithBlur(item.img, tempCanvas, fd.w, fd.h);
-    const suffix = uploadedImages.length > 1 ? `_${i+1}` : '';
     downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_피드이미지_${ratio}${suffix}.jpg`);
   });
 }
 function downloadAllStory(){
-  if(!uploadedImages.length){ alert('업로드된 사진이 없습니다.'); return; }
+  if(!uploadedImages.length){ alert('업로드된 콘텐츠가 없습니다.'); return; }
   const tempCanvas = document.createElement('canvas');
   uploadedImages.forEach((item, i) => {
+    const suffix = uploadedImages.length > 1 ? `_${i+1}` : '';
+    if(item.kind === 'video'){
+      downloadDataUrl(item.img.src, `KKC_스토리영상${suffix}.${item.ext}`);
+      return;
+    }
     if(storyMode==='cover') drawCoverCrop(item.img, tempCanvas, 1080, 1920, item.storyZoom, item.storyOffsetX, item.storyOffsetY);
     else drawContainWithBlur(item.img, tempCanvas, 1080, 1920);
-    const suffix = uploadedImages.length > 1 ? `_${i+1}` : '';
     downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_스토리이미지${suffix}.jpg`);
   });
 }
 function downloadFbImage(){
-  if(!uploadedImages.length){ alert('업로드된 사진이 없습니다.'); return; }
+  if(!uploadedImages.length){ alert('업로드된 콘텐츠가 없습니다.'); return; }
   const fbd = getFbDims();
   const ratio = document.getElementById('fbRatio').value.replace(':','_');
   const tempCanvas = document.createElement('canvas');
   const item = uploadedImages[feedIndex];
+  if(item.kind === 'video'){
+    downloadDataUrl(item.img.src, `KKC_페이스북영상.${item.ext}`);
+    return;
+  }
   if(fbMode==='cover') drawCoverCrop(item.img, tempCanvas, fbd.w, fbd.h, item.fbZoom, item.fbOffsetX, item.fbOffsetY);
   else drawContainWithBlur(item.img, tempCanvas, fbd.w, fbd.h);
   downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_페이스북이미지_${ratio}.jpg`);
@@ -2902,7 +2983,7 @@ function renderArchive(){
         </div>
         <div class="gallery-note"><strong>${escapeHtml(item.eventName || '(제목 없음)')}</strong><br>${captionSnippet}</div>
         <div class="gallery-footer">
-          <span class="gallery-link" style="color:var(--ink-soft);">${dateStr} · 사진 ${item.imageCount}장</span>
+          <span class="gallery-link" style="color:var(--ink-soft);">${dateStr} · 콘텐츠 ${item.imageCount}개</span>
           <button class="gallery-del" data-key="${item.key}">✕</button>
         </div>
       </div>
