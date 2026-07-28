@@ -1190,6 +1190,21 @@ document.getElementById('backToDashboardBtn').addEventListener('click', () => {
   loadEvents();
 });
 
+// 업로드 직후 백그라운드에서 진행 중인 영상→base64 변환이 끝날 때까지 기다림 (최대 15초)
+function waitForVideoSaves(items){
+  const pending = (items || []).filter(it => it.kind === 'video' && !it.savedSrc);
+  if(!pending.length) return Promise.resolve();
+  return new Promise(resolve => {
+    const start = Date.now();
+    const check = () => {
+      const stillPending = pending.some(it => !it.savedSrc);
+      if(!stillPending || Date.now() - start > 15000) return resolve();
+      setTimeout(check, 200);
+    };
+    check();
+  });
+}
+
 async function saveCurrentEvent(statusEl, closeAfter){
   const info = getEventInfo();
   statusEl.style.color = 'var(--danger)';
@@ -1209,6 +1224,7 @@ async function saveCurrentEvent(statusEl, closeAfter){
 
   const key = currentEditingEventKey || ('kkc:event:' + Date.now());
   try{
+    await waitForVideoSaves(uploadedImages);
     // 현재 보고 있는 단계(사진·캡션·체크리스트)를 먼저 스냅샷에 반영한 뒤 전체 단계를 함께 저장
     stageStore[selectedStage] = snapshotStageState();
     const stageData = stageStoreToJSON(stageStore);
@@ -1635,8 +1651,9 @@ function stageStoreToJSON(store){
     out[stageKey] = {
       ...snap,
       uploadedImages: (snap.uploadedImages || []).map(item => {
-        const { img, ...rest } = item;
-        return { ...rest, src: img.src };
+        const { img, savedSrc, ...rest } = item;
+        const src = item.kind === 'video' ? (savedSrc || null) : img.src;
+        return { ...rest, src };
       })
     };
   }
@@ -1652,8 +1669,9 @@ function stageStoreFromJSON(json){
       if(rest.kind === 'video'){
         const video = document.createElement('video');
         video.muted = true; video.playsInline = true; video.loop = true; video.preload = 'auto';
-        video.addEventListener('loadeddata', () => resolve({ ...rest, img: video }), { once:true });
-        video.addEventListener('error', () => resolve({ ...rest, img: video }), { once:true });
+        if(!src){ resolve({ ...rest, img: video, savedSrc: null }); return; } // 저장 당시 변환이 안 끝난 경우
+        video.addEventListener('loadeddata', () => resolve({ ...rest, img: video, savedSrc: src }), { once:true });
+        video.addEventListener('error', () => resolve({ ...rest, img: video, savedSrc: src }), { once:true });
         video.src = src;
       } else {
         const img = new Image();
@@ -1834,31 +1852,65 @@ function handleFiles(fileList){
   const files = Array.from(fileList).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
   if(!files.length){ alert('이미지 또는 영상 파일만 업로드할 수 있습니다.'); return; }
   let loadedCount = 0;
+  const checkDone = () => { loadedCount++; if(loadedCount === files.length) onImagesReady(); };
   files.forEach(file => {
     const isVideo = file.type.startsWith('video/');
     const ext = (file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')).toLowerCase();
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if(isVideo){
-        const video = document.createElement('video');
-        video.muted = true; video.playsInline = true; video.loop = true; video.preload = 'auto';
-        video.addEventListener('loadeddata', () => {
-          uploadedImages.push({ img: video, kind:'video', ext, name: file.name, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 });
-          loadedCount++;
-          if(loadedCount === files.length) onImagesReady();
-        }, { once:true });
-        video.src = e.target.result;
-      } else {
+
+    if(isVideo){
+      // 영상은 base64 dataURL 변환이 크고 느려서(때로는 브라우저에서 아예 멈춤) blob URL로 먼저 즉시 재생 가능하게 하고,
+      // 저장(kkcStorage)에 필요한 dataURL 변환은 별도로 비동기 진행
+      const blobUrl = URL.createObjectURL(file);
+      const video = document.createElement('video');
+      video.muted = true; video.playsInline = true; video.loop = true; video.preload = 'auto';
+      let settled = false;
+      const timeoutId = setTimeout(() => {
+        if(settled) return;
+        settled = true;
+        alert(`"${file.name}" 영상을 불러오지 못했습니다 (시간 초과). 파일 형식을 확인해주세요 (MP4 권장).`);
+        checkDone();
+      }, 20000);
+      video.addEventListener('loadeddata', () => {
+        if(settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        const item = { img: video, kind:'video', ext, name: file.name, savedSrc: null, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 };
+        uploadedImages.push(item);
+        checkDone();
+        // 저장용 dataURL은 백그라운드에서 준비 (업로드/미리보기 표시를 막지 않음)
+        const reader = new FileReader();
+        reader.onload = (e) => { item.savedSrc = e.target.result; };
+        reader.onerror = () => { console.error('영상 저장용 데이터 변환 실패:', file.name); };
+        reader.readAsDataURL(file);
+      }, { once:true });
+      video.addEventListener('error', () => {
+        if(settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        alert(`"${file.name}" 영상을 재생할 수 없습니다. 다른 형식(MP4)으로 시도해주세요.`);
+        checkDone();
+      }, { once:true });
+      video.src = blobUrl;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
           uploadedImages.push({ img, kind:'image', ext, name: file.name, feedZoom:100, feedOffsetX:50, feedOffsetY:50, storyZoom:100, storyOffsetX:50, storyOffsetY:50, fbZoom:100, fbOffsetX:50, fbOffsetY:50 });
-          loadedCount++;
-          if(loadedCount === files.length) onImagesReady();
+          checkDone();
+        };
+        img.onerror = () => {
+          alert(`"${file.name}" 이미지를 불러오지 못했습니다.`);
+          checkDone();
         };
         img.src = e.target.result;
-      }
-    };
-    reader.readAsDataURL(file);
+      };
+      reader.onerror = () => {
+        alert(`"${file.name}" 파일을 읽지 못했습니다.`);
+        checkDone();
+      };
+      reader.readAsDataURL(file);
+    }
   });
 }
 // <img>/<video> 공통으로 실제 픽셀 크기를 가져오는 헬퍼 (video는 naturalWidth 대신 videoWidth를 씀)
