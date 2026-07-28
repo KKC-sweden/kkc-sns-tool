@@ -863,7 +863,7 @@
       <button class="secondary" id="downloadFb">페이스북 이미지 다운로드</button>
       <button class="secondary" id="copyCaption">캡션+해시태그 전체 복사</button>
     </div>
-    <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.<br><br>⚠️ 영상 콘텐츠는 화면의 확대·위치 조정은 미리보기(구도 확인)용이며, 다운로드 시에는 원본 영상 파일 그대로 받아집니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.</div>
+    <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.<br><br>⚠️ 영상 콘텐츠는 구도 확인 및 아카이빙용입니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.</div>
     <a class="secondary" id="openMbs" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:14px;">Meta Business Suite 바로가기 ↗</a>
   </div>
 
@@ -1178,6 +1178,8 @@ function closeWorkflow(){
   wf.classList.remove('open');
   document.body.style.overflow = '';
   document.getElementById('dashboardView').style.display = 'block';
+  if(videoLoopRAF){ cancelAnimationFrame(videoLoopRAF); videoLoopRAF = null; }
+  pauseAllVideos(uploadedImages);
 }
 
 document.getElementById('newEventBtn').addEventListener('click', () => {
@@ -2078,7 +2080,9 @@ function renderCrops(){
 
 // ============ 영상 미리보기 실시간 재생 ============
 // 캔버스에 정적 프레임만 그리면 영상이 멈춰있는 것처럼 보이므로,
-// 현재 보이는 슬롯(피드/스토리/페이스북) 중 영상이 있으면 재생하면서 매 프레임 다시 그려줌
+// 현재 보이는 슬롯(피드/스토리/페이스북) 중 영상이 있으면 재생하면서 다시 그려줌.
+// 주의: renderCrops() 전체를 매 프레임 부르면 슬라이더 값 갱신, 점 표시 등 불필요한 DOM 작업까지 반복되어
+// 느려지고 스크롤까지 버벅이므로, 캔버스 픽셀만 가볍게 다시 그리고 초당 프레임 수도 제한한다.
 let videoLoopRAF = null;
 function anyActiveIsVideo(){
   if(!uploadedImages.length) return false;
@@ -2086,15 +2090,40 @@ function anyActiveIsVideo(){
   const storyItem = uploadedImages[storyIndex];
   return (feedItem && feedItem.kind === 'video') || (storyItem && storyItem.kind === 'video');
 }
+function redrawVideoCanvasesOnly(){
+  if(!uploadedImages.length) return;
+  const feedItem = uploadedImages[feedIndex];
+  const storyItem = uploadedImages[storyIndex];
+  if(feedItem && feedItem.kind === 'video'){
+    const fd = getFeedDims();
+    const feedCanvas = document.getElementById('feedCanvas');
+    if(feedMode==='cover') drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
+    else drawContainWithBlur(feedItem.img, feedCanvas, fd.w, fd.h);
+    const fbd = getFbDims();
+    const fbCanvas = document.getElementById('fbCanvas');
+    if(fbMode==='cover') drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
+    else drawContainWithBlur(feedItem.img, fbCanvas, fbd.w, fbd.h);
+  }
+  if(storyItem && storyItem.kind === 'video'){
+    const storyCanvas = document.getElementById('storyCanvas');
+    if(storyMode==='cover') drawCoverCrop(storyItem.img, storyCanvas, 1080, 1920, storyItem.storyZoom, storyItem.storyOffsetX, storyItem.storyOffsetY);
+    else drawContainWithBlur(storyItem.img, storyCanvas, 1080, 1920);
+  }
+}
 function ensureVideoPreviewLoop(){
   [feedIndex, storyIndex].forEach(idx => {
     const item = uploadedImages[idx];
     if(item && item.kind === 'video') item.img.play().catch(()=>{});
   });
   if(videoLoopRAF) return; // 이미 루프가 돌고 있음
-  function loop(){
+  let lastDraw = 0;
+  const FRAME_INTERVAL = 100; // 약 10fps — 미리보기용으로 충분히 부드럽고 부담은 훨씬 적음
+  function loop(ts){
     if(!anyActiveIsVideo()){ videoLoopRAF = null; return; }
-    renderCrops();
+    if(!lastDraw || ts - lastDraw >= FRAME_INTERVAL){
+      redrawVideoCanvasesOnly();
+      lastDraw = ts;
+    }
     videoLoopRAF = requestAnimationFrame(loop);
   }
   videoLoopRAF = requestAnimationFrame(loop);
