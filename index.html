@@ -862,7 +862,14 @@
       <button class="secondary" id="downloadFeed">인스타그램 피드 이미지 다운로드</button>
       <button class="secondary" id="downloadStory">인스타그램 스토리 이미지 다운로드</button>
       <button class="secondary" id="downloadFb">페이스북 이미지 다운로드</button>
-      <button class="secondary" id="copyCaption">캡션+해시태그 전체 복사</button>
+      <div style="display:flex;gap:6px;align-items:stretch;">
+        <select id="copyLang" style="flex:0 0 auto;border:1px solid var(--line);border-radius:10px;padding:0 8px;font-size:12.5px;color:var(--ink);background:#fff;">
+          <option value="한국어">한국어</option>
+          <option value="영어">영어</option>
+          <option value="스웨덴어">스웨덴어</option>
+        </select>
+        <button class="secondary" id="copyCaption" style="flex:1;">캡션+해시태그 복사</button>
+      </div>
     </div>
     <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.<br><br>⚠️ 영상 콘텐츠는 구도 확인 및 아카이빙용입니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.<br>⚠️ 영상 파일 자체는 저장되지 않으니, 창을 닫기 전에 꼭 다운로드해두세요.</div>
     <a class="secondary" id="openMbs" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:14px;">Meta Business Suite 바로가기 ↗</a>
@@ -1533,6 +1540,7 @@ function snapshotStageState(){
     origLang: document.getElementById('origLang').value,
     stageDesc: document.getElementById('stageDesc').value,
     previewLang: document.getElementById('previewLang') ? document.getElementById('previewLang').value : '한국어',
+    copyLang: document.getElementById('copyLang') ? document.getElementById('copyLang').value : '한국어',
     generatedCaptions,
     captionOrig: document.getElementById('captionOrig').value,
     captionSv: document.getElementById('captionSv').value,
@@ -1563,6 +1571,7 @@ function restoreStageState(snap){
     document.getElementById('feedCaptionPreview').textContent = '캡션이 여기 표시됩니다';
     document.getElementById('fbCaptionPreview').textContent = '캡션이 여기 표시됩니다';
     if(document.getElementById('previewLang')) document.getElementById('previewLang').value = '한국어';
+    if(document.getElementById('copyLang')) document.getElementById('copyLang').value = '한국어';
     checklistComplete = false;
     checkboxes.forEach(cb => cb.checked = false);
     document.getElementById('uploadedInfo').style.display = 'none';
@@ -1580,6 +1589,7 @@ function restoreStageState(snap){
     document.getElementById('origLangField').style.display = snap.captionMode === 'ai-translate' ? 'block' : 'none';
     document.getElementById('stageDesc').value = snap.stageDesc || '';
     if(document.getElementById('previewLang')) document.getElementById('previewLang').value = snap.previewLang || '한국어';
+    if(document.getElementById('copyLang')) document.getElementById('copyLang').value = snap.copyLang || '한국어';
     generatedCaptions = snap.generatedCaptions;
     document.getElementById('captionOrig').value = snap.captionOrig;
     document.getElementById('captionSv').value = snap.captionSv;
@@ -2617,13 +2627,14 @@ document.getElementById('downloadFeed').addEventListener('click', downloadAllFee
 document.getElementById('downloadStory').addEventListener('click', downloadAllStory);
 document.getElementById('downloadFb').addEventListener('click', downloadFbImage);
 document.getElementById('copyCaption').addEventListener('click', () => {
-  const current = getCurrentCaptionData();
-  if(!current.caption_orig && !current.caption_sv) return;
-  const hashtags = current.hashtags.join(' ');
-  const parts = [current.caption_orig];
-  if(current.origLang === '한국어') parts.push(current.caption_en);
-  parts.push(current.caption_sv, hashtags);
-  const text = parts.filter(Boolean).join('\n\n');
+  const lang = document.getElementById('copyLang').value;
+  const caption = getCaptionByLang(lang);
+  const hashtags = getCurrentCaptionData().hashtags.join(' ');
+  if(!caption){
+    alert(`${lang}로 생성된 캡션이 없습니다. 다른 언어를 선택하거나, 원본 캡션 언어 설정을 확인해주세요.`);
+    return;
+  }
+  const text = [caption, hashtags].filter(Boolean).join('\n\n');
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById('copyCaption');
     const original = btn.textContent; btn.textContent = '복사됨 ✓';
