@@ -456,6 +456,107 @@
     .nav-item{white-space:nowrap;}
     .tab-content .wrap{padding:36px 20px 100px;}
   }
+
+  /* ============ 행사 현황판 (bd- prefixed to avoid colliding with app theme) ============ */
+  #tab-board{
+    --bd-navy2:#1f2f4d; --bd-brass:#b08a3e;
+    --bd-done:#2f8f5b; --bd-done-bg:#e7f4ec; --bd-soon:#c98a12; --bd-soon-bg:#fbf1dc;
+    --bd-late:#c0392b; --bd-late-bg:#fbe7e4; --bd-next:#2b6fb0; --bd-next-bg:#e6f0f8; --bd-hollow:#cbd2db;
+    --bd-line:#e3e7ee; --bd-muted:#8a93a3;
+  }
+  .bd-tasksbar{display:flex;gap:8px;background:#fff;border:1px solid var(--bd-line);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(20,32,55,.05);margin-bottom:16px;flex-wrap:wrap;}
+  .bd-tcol{flex:1;min-width:150px;border:1px solid var(--bd-line);border-radius:9px;padding:9px 10px;background:#fbfcfd;display:flex;flex-direction:column;gap:6px}
+  .bd-tcol .bd-thd{font-size:12px;font-weight:800;color:var(--bd-navy2);letter-spacing:-.02em;padding-bottom:5px;border-bottom:1px solid var(--bd-line)}
+  .bd-tcol ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+  .bd-tcol li{font-size:10.5px;line-height:1.35;color:#43506a;font-weight:600}
+  .bd-tcol li .bd-o{display:inline-block;font-size:9px;font-weight:800;color:var(--bd-muted);margin-right:4px}
+  .bd-tcol.hl{background:var(--bd-next-bg);border-color:var(--bd-next);box-shadow:0 0 0 2px rgba(43,111,176,.12)}
+  .bd-tcol.hl .bd-thd{color:var(--bd-next)}
+  .bd-tcol.hl.late{background:var(--bd-late-bg);border-color:var(--bd-late);box-shadow:0 0 0 2px rgba(192,57,43,.14)}
+  .bd-tcol.hl.late .bd-thd{color:var(--bd-late)}
+
+  .bd-board{background:#fff;border:1px solid var(--bd-line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(20,32,55,.05)}
+  .bd-ghead,.bd-grow{display:flex;align-items:stretch;}
+  .bd-ghead{background:var(--bd-navy2);color:#fff;}
+  .bd-grow{border-top:1px solid var(--bd-line);cursor:pointer;}
+  .bd-grow.sel{background:#f2f7fc}
+  .bd-grow.is-late{background:var(--bd-late-bg)}
+  .bd-grow.is-late.sel{background:#f7dfda}
+  .bd-c-ev{flex:0 0 210px;padding:14px 16px;border-right:1px solid var(--bd-line);display:flex;flex-direction:column;justify-content:center;gap:3px}
+  .bd-ghead .bd-c-ev{border-right-color:rgba(255,255,255,.12);justify-content:center}
+  .bd-ghead .bd-lb{font-size:12px;font-weight:800}
+  .bd-c-ev .bd-name{font-size:15px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+  .bd-c-ev .bd-date{font-size:11px;color:var(--bd-muted);font-weight:600}
+  .bd-c-ev .bd-d{font-size:20px;font-weight:800;color:var(--bd-navy2);font-variant-numeric:tabular-nums;margin-top:2px}
+  .bd-grow.is-late .bd-c-ev .bd-d{color:var(--bd-late)}
+
+  .bd-c-mid{flex:1 1 auto;padding:14px 18px;display:flex;flex-direction:column;justify-content:center;gap:8px;border-right:1px solid var(--bd-line)}
+  .bd-ghead .bd-c-mid{justify-content:center;border-right-color:rgba(255,255,255,.12)}
+  .bd-statusrow{display:flex;align-items:center;gap:10px}
+  .bd-status{font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px;white-space:nowrap}
+  .bd-status.late{background:var(--bd-late);color:#fff}.bd-status.soon{background:var(--bd-soon);color:#fff}
+  .bd-status.next{background:var(--bd-next-bg);color:var(--bd-next)}.bd-status.done{background:var(--bd-done-bg);color:var(--bd-done)}
+  .bd-bar{flex:1;height:8px;background:#eef1f5;border-radius:99px;overflow:hidden;min-width:80px}
+  .bd-bar > i{display:block;height:100%;background:linear-gradient(90deg,#2f8f5b,#3aa869);border-radius:99px}
+  .bd-pct{font-size:12px;font-weight:800;color:var(--bd-muted);font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+
+  .bd-c-chk{flex:0 0 372px;padding:11px 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  .bd-gate{flex:1;min-width:52px;border:1.5px solid var(--bd-line);background:#fff;border-radius:8px;padding:8px 3px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer}
+  .bd-gate .bd-mk{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--bd-hollow);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800}
+  .bd-gate .bd-gl{font-size:10px;font-weight:800;color:var(--bd-navy2);letter-spacing:-.03em;white-space:nowrap}
+  .bd-gate.done{background:var(--bd-done-bg);border-color:var(--bd-done)}
+  .bd-gate.done .bd-mk{background:var(--bd-done);border-color:var(--bd-done)}
+  .bd-gate.done .bd-mk::after{content:"✓"}
+  .bd-gate.cur{border-color:var(--bd-next);box-shadow:0 0 0 2px rgba(43,111,176,.12)}
+  .bd-gate.cur.late{border-color:var(--bd-late);box-shadow:0 0 0 2px rgba(192,57,43,.14)}
+
+  .bd-reserve{background:#fff;border:1px solid var(--bd-line);border-radius:12px;overflow:hidden;margin-top:16px;}
+  .bd-reserve .bd-rhd{padding:11px 18px;font-size:13px;font-weight:800;color:var(--bd-muted);cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}
+  .bd-reserve .bd-rhd .bd-cnt{font-weight:700;color:var(--bd-navy2)}
+  .bd-reserve .bd-rhd .bd-caret{margin-left:auto;transition:transform .15s}
+  .bd-reserve.open .bd-rhd .bd-caret{transform:rotate(90deg)}
+  .bd-reserve .bd-rbody{display:none;border-top:1px solid var(--bd-line)}
+  .bd-reserve.open .bd-rbody{display:block}
+  .bd-rrow{display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid #f1f3f7;font-size:13px}
+  .bd-rrow:first-child{border-top:none}
+  .bd-rrow .bd-rn{font-weight:800;flex:1}
+  .bd-rrow .bd-rd{color:var(--bd-muted);font-weight:600}
+  .bd-rrow .bd-rdd{font-weight:800;color:var(--bd-navy2);font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+
+  .bd-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px 6px 0;}
+  .bd-legend{display:flex;gap:16px;flex-wrap:wrap}
+  .bd-lg{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#43506a}
+  .bd-lg .bd-sw{width:13px;height:13px;border-radius:4px}
+  .bd-note{font-size:11px;color:var(--bd-muted);font-weight:600}
+
+  .bd-page{padding:28px 32px 60px;max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+  .bd-headerbar{background:var(--navy-deep,#152037);border-radius:14px;color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;}
+  .bd-wm .bd-kr{font-size:23px;font-weight:800;letter-spacing:-.02em;display:block}
+  .bd-wm .bd-en{font-size:10px;letter-spacing:.28em;color:var(--bd-brass);font-weight:600}
+  .bd-htitle{text-align:center;flex:1}
+  .bd-htitle .bd-t{font-size:17px;font-weight:700}
+  .bd-htitle .bd-s{font-size:11px;color:#9fb0c8;margin-top:3px}
+  .bd-clock{text-align:right}
+  .bd-clock .bd-time{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}
+  .bd-clock .bd-date{font-size:11px;color:#9fb0c8;margin-top:2px}
+
+  .bd-add{background:#fff;border:1px solid var(--bd-line);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .bd-add label{font-size:12px;font-weight:800;color:var(--bd-muted)}
+  .bd-add input{font-family:inherit;font-size:14px;border:1px solid var(--bd-line);border-radius:8px;padding:9px 12px;color:#0f1626;}
+  .bd-add input#bdName{flex:1;min-width:200px}
+  .bd-add button{font-family:inherit;font-size:14px;font-weight:800;border:none;border-radius:8px;padding:10px 20px;background:var(--bd-navy2);color:#fff;cursor:pointer}
+  .bd-add button:hover{background:var(--navy-deep,#152037)}
+
+  .bd-c-del{flex:0 0 44px;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--bd-line)}
+  .bd-ghead .bd-c-del{border-left-color:rgba(255,255,255,.12)}
+  .bd-del{background:none;border:none;color:var(--bd-muted);font-size:18px;cursor:pointer;padding:6px;border-radius:6px;line-height:1}
+  .bd-del:hover{background:var(--bd-late-bg);color:var(--bd-late)}
+  .bd-rrow .bd-del{font-size:16px;}
+
+  @media(max-width:820px){
+    .bd-c-ev{flex:0 0 150px;}
+    .bd-c-chk{flex:0 0 auto;width:100%;}
+  }
 </style>
 </head>
 <body>
@@ -481,6 +582,10 @@
       <button class="nav-item" data-tab="tab-archive">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
         콘텐츠 아카이브
+      </button>
+      <button class="nav-item" data-tab="tab-board">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 4v5"/><path d="M8 13h3"/><path d="M8 17h6"/></svg>
+        행사 현황판
       </button>
     </div>
 
@@ -531,6 +636,7 @@
     </div>
 
     <div class="step-label"><div class="step-num">★</div><div class="step-title">등록된 행사</div></div>
+    <div id="loadErrorBanner" style="display:none;background:#FFF3D6;border:1px solid #F0C36D;color:#8A5A00;padding:12px 16px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
     <div class="gallery-filters" id="eventFilters">
       <button class="filter-chip active" data-filter="전체">전체</button>
       <button class="filter-chip" data-filter="축제">축제</button>
@@ -615,18 +721,21 @@
   <!-- STEP 2: Timeline -->
   <div class="step-label"><div class="step-num">2</div><div class="step-title">콘텐츠 단계 선택</div></div>
   <div class="timeline" id="timeline">
-    <div class="stage" data-stage="D-14"><span class="d">D-14</span><span class="label">사전 티저</span></div>
-    <div class="stage" data-stage="D-7"><span class="d">D-7</span><span class="label">상세 모집</span></div>
-    <div class="stage active" data-stage="D-4"><span class="d">D-4</span><span class="label">리마인더</span></div>
-    <div class="stage" data-stage="D+3"><span class="d">D+3</span><span class="label">베스트컷</span></div>
+    <div class="stage" data-stage="6주전"><span class="d">6주전</span><span class="label">정보입력</span></div>
+    <div class="stage" data-stage="5주전"><span class="d">5주전</span><span class="label">티저생성</span></div>
+    <div class="stage" data-stage="4주전"><span class="d">4주전</span><span class="label">1차업로드</span></div>
+    <div class="stage" data-stage="2주전"><span class="d">2주전</span><span class="label">2차발송</span></div>
+    <div class="stage active" data-stage="D-10"><span class="d">D-10</span><span class="label">리마인더</span></div>
+    <div class="stage" data-stage="D-3"><span class="d">D-3</span><span class="label">현장콘텐츠</span></div>
     <div class="stage" data-stage="D+5"><span class="d">D+5</span><span class="label">클로징</span></div>
   </div>
 
-  <!-- AI Suggestion (D-4 only) -->
+  <!-- AI Suggestion (D-10 only) -->
+
   <div id="suggestSection" style="margin-top:16px;">
     <div class="suggest-banner" id="suggestBanner">
       <div class="suggest-banner-text">
-        <h3>D-4 리마인더 — 2차 콘텐츠 방향이 필요하신가요?</h3>
+        <h3>D-10 리마인더 — 2차 콘텐츠 방향이 필요하신가요?</h3>
         <p>타 지점 벤치마킹 데이터와 KKC Sweden 자체 데이터를 참고해 이번 행사에 맞는 콘텐츠 방향을 제안합니다</p>
       </div>
       <button id="openSuggestBtn">AI 제안 받기</button>
@@ -1018,6 +1127,51 @@
   </div>
   <!-- /tab-archive -->
 
+  <div class="tab-content" id="tab-board" style="display:none;">
+  <div class="bd-page">
+
+  <div class="bd-headerbar">
+    <div class="bd-wm"><span class="bd-kr">주스웨덴한국문화원</span><span class="bd-en">KOREAN CULTURAL CENTRE · SWEDEN</span></div>
+    <div class="bd-htitle"><div class="bd-t">행사 진행 상황판</div><div class="bd-s">행사일 입력 → 자동 D-표시·지연·진행 · 게이트 클릭 = 원장 완료 체크</div></div>
+    <div class="bd-clock"><div class="bd-time" id="bdClock">--:--</div><div class="bd-date" id="bdToday">—</div></div>
+  </div>
+
+  <div id="bdTasksbar" class="bd-tasksbar"></div>
+
+  <div class="bd-add">
+    <label for="bdName">사업명</label>
+    <input id="bdName" type="text" placeholder="예: 북카페 오픈" />
+    <label for="bdDate">행사일</label>
+    <input id="bdDate" type="date" />
+    <button id="bdAddBtn">+ 사업 추가</button>
+  </div>
+
+  <div class="bd-board">
+    <div class="bd-ghead">
+      <div class="bd-c-ev"><span class="bd-lb">사업 / 행사일 / D-</span></div>
+      <div class="bd-c-mid"><span class="bd-lb">현재 상황 · 진행률</span></div>
+      <div class="bd-c-chk"><span class="bd-lb">게이트 완료 (원장 체크)</span></div>
+      <div class="bd-c-del"></div>
+    </div>
+    <div id="bdRows"></div>
+  </div>
+
+  <div class="bd-reserve" id="bdReserve"></div>
+
+  <div class="bd-footer">
+    <div class="bd-legend">
+      <div class="bd-lg"><span class="bd-sw" style="background:var(--bd-done-bg);border:1px solid var(--bd-done)"></span>완료</div>
+      <div class="bd-lg"><span class="bd-sw" style="background:var(--bd-late-bg);border:1px solid var(--bd-late)"></span>지연</div>
+      <div class="bd-lg"><span class="bd-sw" style="background:var(--bd-next-bg);border:1px solid var(--bd-next)"></span>다음 게이트</div>
+      <div class="bd-lg"><span class="bd-sw" style="background:#fff;border:1px solid var(--bd-hollow)"></span>대기</div>
+    </div>
+    <div class="bd-note">콘텐츠 홈에 등록된 행사와 실시간 연동됩니다 (여기서 추가·삭제하면 콘텐츠 홈에도 반영돼요)</div>
+  </div>
+
+  </div>
+  </div>
+  <!-- /tab-board -->
+
   </main>
 </div>
 
@@ -1122,7 +1276,7 @@ const kkcStorage = {
 };
 
 // ============ Shared state ============
-let selectedStage = 'D-4';
+let selectedStage = 'D-10';
 let selectedSuggestion = null;
 let generatedCaptions = null;
 let checklistComplete = false;
@@ -1168,8 +1322,8 @@ function resetWorkflowForm(){
 // 새 행사를 열거나 다른 행사를 이어서 열 때마다 단계별 저장소를 초기화
 function resetStageSystem(eventName){
   stageStore = {};
-  selectedStage = 'D-4';
-  document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === 'D-4'));
+  selectedStage = 'D-10';
+  document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === 'D-10'));
   document.getElementById('suggestSection').classList.remove('hidden');
   computeCompletedStages(eventName || '');
   restoreStageState(undefined);
@@ -1262,18 +1416,62 @@ document.getElementById('saveCaptionBtn').addEventListener('click', async () => 
 let registeredEvents = [];
 let contentUploads = []; // 아카이브(완료된 콘텐츠) 기준 - 막대그래프용
 
+// 구버전 콘텐츠 단계(D-14/D-7/D-4/D+3)를 새 게이트 체계(6주전~D-3, D+5)로 1회 이관
+// 매핑 근거: 행사일 기준 날짜 차이가 가장 가까운 새 단계로 옮김.
+// D+5는 새 체계에도 그대로 남아있는 단계라 이관 불필요. D+3는 대응하는 단계가 없어 그대로 삭제(요청에 따름).
+const BD_STAGE_MIGRATION = { 'D-14':'2주전', 'D-4':'D-3', 'D-7':'D-10' };
+async function migrateOldStageData(ev){
+  if(!ev.stageData) return false;
+  const hasOldKey = Object.keys(BD_STAGE_MIGRATION).some(k => ev.stageData[k]) || ev.stageData['D+3'];
+  if(!hasOldKey) return false;
+  const newStageData = { ...ev.stageData };
+  for(const oldKey in BD_STAGE_MIGRATION){
+    if(newStageData[oldKey]){
+      const newKey = BD_STAGE_MIGRATION[oldKey];
+      if(!newStageData[newKey]) newStageData[newKey] = newStageData[oldKey]; // 새 키에 이미 데이터 있으면 최신 것 우선, 덮어쓰지 않음
+      delete newStageData[oldKey];
+    }
+  }
+  delete newStageData['D+3']; // 대응하는 새 단계가 없어 삭제
+  ev.stageData = newStageData;
+  const { key, ...rest } = ev;
+  try{ await kkcStorage.set(ev.key, JSON.stringify(rest), true); }
+  catch(e){ console.error('단계 마이그레이션 저장 실패:', ev.key, e); }
+  return true;
+}
+
 async function loadEvents(){
+  const failedEvents = [];
   try{
     const listResult = await kkcStorage.list('kkc:event:', true);
     registeredEvents = [];
     if(listResult && listResult.keys && listResult.keys.length){
       for(const key of listResult.keys){
-        try{ const res = await kkcStorage.get(key, true); if(res && res.value) registeredEvents.push({key, ...JSON.parse(res.value)}); } catch(e){}
+        try{
+          const res = await kkcStorage.get(key, true);
+          if(res && res.value){
+            const ev = {key, ...JSON.parse(res.value)};
+            await migrateOldStageData(ev);
+            registeredEvents.push(ev);
+          }
+        } catch(e){
+          console.error('행사 로드 실패:', key, e);
+          failedEvents.push({ key, message: e.message });
+        }
       }
     }
   } catch(err){
     console.error('행사 목록 로드 실패:', err);
     registeredEvents = [];
+  }
+  const loadErrorBanner = document.getElementById('loadErrorBanner');
+  if(loadErrorBanner){
+    if(failedEvents.length){
+      loadErrorBanner.style.display = 'block';
+      loadErrorBanner.textContent = `⚠️ 행사 ${failedEvents.length}건을 불러오지 못했습니다 (저장된 사진 용량이 너무 크거나 네트워크 문제일 수 있어요). 새로고침해서 다시 시도해보시고, 계속되면 알려주세요.`;
+    } else {
+      loadErrorBanner.style.display = 'none';
+    }
   }
   try{
     const archListResult = await kkcStorage.list('kkc:archive:', true);
@@ -1441,7 +1639,11 @@ document.getElementById('eventFilters').addEventListener('click', (e) => {
 });
 
 function isPastEvent(ev){
-  return contentUploads.some(c => c.eventName === ev.eventName && c.stage === 'D+5');
+  if(!ev.eventDate) return false;
+  const endDate = ev.eventEndDate && ev.eventEndDate >= ev.eventDate ? ev.eventEndDate : ev.eventDate;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = new Date(endDate + 'T00:00:00');
+  return end < today;
 }
 
 function renderEventList(){
@@ -1504,8 +1706,8 @@ function renderEventList(){
       currentEditingEventKey = ev.key;
       document.getElementById('saveEventStatus').textContent = '';
 
-      selectedStage = 'D-4';
-      document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === 'D-4'));
+      selectedStage = 'D-10';
+      document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === 'D-10'));
       document.getElementById('suggestSection').classList.remove('hidden');
       computeCompletedStages(ev.eventName || '');
 
@@ -1515,7 +1717,7 @@ function renderEventList(){
       } else {
         stageStore = {};
       }
-      restoreStageState(stageStore['D-4']);
+      restoreStageState(stageStore['D-10']);
       renderStageDoneDots();
       openWorkflow();
     });
@@ -1648,6 +1850,25 @@ function restoreStageState(snap){
 }
 
 // stageStore를 JSON 저장 가능한 형태로 변환 (Image 객체 → dataURL 문자열)
+// 저장 시에만 사진을 압축(최대 1600px, JPEG 82%)해서 용량을 줄임 — 현재 세션에서 쓰는
+// 원본 화질 img는 그대로 두고, kkcStorage에 들어갈 사본만 작게 만듦(저장 실패 방지)
+function compressImageForStorage(img, maxDim, quality){
+  const { w, h } = getMediaSize(img);
+  if(!w || !h) return img.src; // 크기를 못 가져오면 원본 그대로 저장(안전장치)
+  const scale = Math.min(1, maxDim / Math.max(w, h));
+  const cw = Math.max(1, Math.round(w * scale));
+  const ch = Math.max(1, Math.round(h * scale));
+  try{
+    const canvas = document.createElement('canvas');
+    canvas.width = cw; canvas.height = ch;
+    canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
+    return canvas.toDataURL('image/jpeg', quality);
+  } catch(e){
+    console.error('이미지 압축 실패, 원본으로 저장:', e);
+    return img.src;
+  }
+}
+
 function stageStoreToJSON(store){
   const out = {};
   for(const stageKey in store){
@@ -1660,7 +1881,7 @@ function stageStoreToJSON(store){
           // 영상 파일 자체는 저장하지 않음 (용량 제한) — 이름만 기록해 재업로드 안내에 사용
           return { ...rest, src: null };
         }
-        return { ...rest, src: img.src };
+        return { ...rest, src: compressImageForStorage(img, 1600, 0.82) };
       })
     };
   }
@@ -1723,11 +1944,11 @@ document.getElementById('timeline').addEventListener('click', (e) => {
   document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
   stage.classList.add('active');
   selectedStage = stage.dataset.stage;
-  document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-4');
+  document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
   restoreStageState(stageStore[selectedStage]);
   renderStageDoneDots();
 });
-document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-4');
+document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
 
 // ============ AI Suggestion (Module 4-A logic) ============
 const SUGGEST_SYSTEM_PROMPT_BASE = `당신은 주스웨덴한국문화원(KKC Sweden) SNS 콘텐츠 전략 어시스턴트입니다. 지금은 행사 D-4 시점(리마인더/2차 콘텐츠) 방향을 제안하는 상황입니다.
@@ -1780,8 +2001,8 @@ document.getElementById('openSuggestBtn').addEventListener('click', async () => 
 
   const useWebSearch = document.getElementById('webSearchToggle').checked;
 
-  // 이미 D-14/D-7 단계에서 발행한(또는 작성해둔) 콘텐츠가 있으면 반복되지 않도록 함께 전달
-  const priorStageNotes = ['D-14', 'D-7'].map(stage => {
+  // 이미 이전 단계에서 발행한(또는 작성해둔) 콘텐츠가 있으면 반복되지 않도록 함께 전달
+  const priorStageNotes = ['6주전', '5주전', '4주전', '2주전'].map(stage => {
     const snap = stageStore[stage];
     const text = snap && (snap.captionOrig || snap.stageDesc);
     return text ? `- ${stage}: ${text}` : null;
@@ -2764,6 +2985,7 @@ function switchToTab(target){
   document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
   document.getElementById(target).style.display = 'block';
   window.scrollTo({top:0});
+  if(target === 'tab-board') bdRender();
 }
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => switchToTab(btn.dataset.tab));
@@ -3077,6 +3299,201 @@ function renderArchive(){
   });
 }
 loadArchive();
+
+// ============================================================
+// 행사 현황판 (원장님 제공 HTML 기반, 등록된 행사와 연동)
+// ============================================================
+const BD_GATES=[
+  {k:"6주전", off:-42},
+  {k:"5주전", off:-35},
+  {k:"4주전", off:-28},
+  {k:"2주전", off:-14},
+  {k:"D-10",  off:-10},
+  {k:"D-3",   off:-3},
+  {k:"D+5",   off:5},
+];
+const BD_TASKS={
+  "6주전":[["사업계획 확정 · 행사정보 입력","사업담당"],["포스터 발주 조율(희망시) · 현지언론 리스트업·1차 컨택","홍보담당"],["행사정보 입력 후 자동화 생성 확인","홍보자동화"],["사업계획 검토·승인","원장"]],
+  "5주전":[["2차 홍보콘텐츠 기획","사업담당"],["포스터 시안 검수","홍보담당"],["인스타 티저 생성 확인","홍보자동화"],["콘텐츠 방향 점검","원장"]],
+  "4주전":[["티켓 세팅·오픈준비","사업담당"],["완성 포스터 확보·검수 · 원내외 게시","홍보담당"],["인스타1차 예약업로드 · 인스타2차 생성 확인","홍보자동화"],["인스타1차·포스터 최종컷 승인 · 티켓 오픈 go","원장"]],
+  "2주전":[["보도자료 최종감수 · 업무분장 회의 · 더코어 착석","사업담당"],["국내 보도자료 작성·배포 · 현지언론 팔로업 · 더코어 소집","홍보담당"],["인스타2차 예약발송 · 홈페이지 갱신","홍보자동화"],["보도자료 최종승인 · 업무분장 주재","원장"]],
+  "D-10":[["현장 운영계획 점검","사업담당"],["더코어 배치 초안","홍보담당"],["리마인더 예약 · 홈페이지 갱신","홍보자동화"],["운영계획 확인","원장"]],
+  "D-3":[["현장 준비완료 보고","사업담당"],["더코어 현장 배치표 확정","홍보담당"],["리마인더(인스타3차) 예약발송 · 현장 콘텐츠 준비","홍보자동화"],["최종 go/no-go · 더코어 2차 주재","원장"]],
+  "D+5":[["행사 결과 정리 · 후속 조치","사업담당"],["행사 사진 정리 · 베스트컷 선별","홍보담당"],["클로징 콘텐츠(베스트컷) 업로드 · 감사 인사","홍보자동화"],["행사 결과 보고","원장"]],
+};
+const BD_MS=86400000;
+let bdSelKey=null;
+let bdReserveOpen=false;
+
+function bdToday0(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
+function bdParseD(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+function bdAddDays(dt,n){return new Date(dt.getTime()+n*BD_MS);}
+function bdDiffDays(a,b){return Math.round((b-a)/BD_MS);}
+function bdDdayLabel(n){return n>0?("D-"+n): n===0?"D-day":"종료";}
+function bdFmtDate(s){const [y,m,d]=s.split("-").map(Number);const wd=["일","월","화","수","목","금","토"];return `${m}.${d} (${wd[new Date(y,m-1,d).getDay()]})`;}
+
+function bdCompute(ev){
+  const t=bdToday0(), d=bdParseD(ev.eventDate);
+  const dday=bdDiffDays(t,d);
+  const done=ev.gateDone||{};
+  const gates=BD_GATES.map(g=>{
+    const gd=bdAddDays(d,g.off);
+    const isDone=!!done[g.k];
+    const overdue=gd<t && !isDone;
+    return {k:g.k, date:gd, done:isDone, overdue, upcoming:gd>=t && !isDone};
+  });
+  const doneCount=gates.filter(g=>g.done).length;
+  const progress=Math.round(doneCount/BD_GATES.length*100);
+  const delayed=gates.some(g=>g.overdue);
+  let cur=gates.find(g=>g.date>=t);
+  let curKey, curStatus;
+  if(delayed){ const od=gates.find(g=>g.overdue); curKey=od.k; curStatus="late"; }
+  else if(cur){ curKey=cur.k; curStatus="next"; const near=bdDiffDays(t,cur.date); if(near<=7) curStatus="soon"; }
+  else { curKey=dday>=0?"D-day":"종료"; curStatus=dday>=0?"soon":"done"; }
+  return {dday,gates,progress,delayed,curKey,curStatus};
+}
+
+async function bdToggleGate(eventKey, gateKey){
+  const ev = registeredEvents.find(e => e.key === eventKey);
+  if(!ev) return;
+  ev.gateDone = ev.gateDone || {};
+  ev.gateDone[gateKey] = !ev.gateDone[gateKey];
+  bdRender();
+  const { key, ...rest } = ev;
+  try{ await kkcStorage.set(eventKey, JSON.stringify(rest), true); }
+  catch(err){ console.error('게이트 저장 실패:', err); alert('게이트 저장에 실패했습니다. 다시 시도해주세요.'); }
+}
+
+function bdRender(){
+  const withDates = registeredEvents.filter(ev => ev.eventDate);
+  withDates.sort((a,b) => bdParseD(a.eventDate) - bdParseD(b.eventDate));
+  const main=[], reserve=[];
+  const WINDOW=60;
+  withDates.forEach(ev => {
+    const c = bdCompute(ev);
+    if(c.dday>=0 && c.dday<=WINDOW) main.push([ev,c]); else reserve.push([ev,c]);
+  });
+
+  const rows = document.getElementById('bdRows');
+  if(!rows) return; // 탭이 아직 렌더링 안 된 초기 상태 방어
+  rows.innerHTML='';
+  if(!main.length){
+    rows.innerHTML = '<div style="padding:22px;text-align:center;color:var(--bd-muted);font-weight:600;font-size:13px">60일 이내 등록된 행사가 없습니다 · 콘텐츠 홈에서 행사를 등록해보세요</div>';
+  }
+  main.forEach(([ev,c]) => {
+    const row = document.createElement('div');
+    row.className = 'bd-grow' + (c.delayed ? ' is-late' : '') + (ev.key===bdSelKey ? ' sel' : '');
+    const statusTxt = c.curStatus==="late" ? ("지연 · "+c.curKey) : c.curStatus==="done" ? "종료" : ((c.curStatus==="soon"?"임박 · ":"다음 · ")+c.curKey);
+    let gatesHtml='';
+    c.gates.forEach(g => {
+      const cur = (g.k===c.curKey);
+      gatesHtml += `<div class="bd-gate${g.done?' done':''}${cur?(' cur'+(c.delayed?' late':'')):''}" data-key="${ev.key}" data-gate="${g.k}"><span class="bd-mk"></span><span class="bd-gl">${g.k}</span></div>`;
+    });
+    row.innerHTML = `
+      <div class="bd-c-ev" data-open="${ev.key}"><div class="bd-name">${escapeHtml(ev.eventName)}</div><div class="bd-date">${bdFmtDate(ev.eventDate)}</div><div class="bd-d">${bdDdayLabel(c.dday)}</div></div>
+      <div class="bd-c-mid" data-open="${ev.key}">
+        <div class="bd-statusrow"><span class="bd-status ${c.curStatus}">${statusTxt}</span></div>
+        <div class="bd-statusrow"><div class="bd-bar"><i style="width:${c.progress}%"></i></div><span class="bd-pct">${c.progress}%</span></div>
+      </div>
+      <div class="bd-c-chk">${gatesHtml}</div>
+      <div class="bd-c-del"><button class="bd-del" data-del="${ev.key}" title="삭제">×</button></div>`;
+    rows.appendChild(row);
+  });
+
+  bdRenderReserve(reserve);
+  bdRenderTasksbar();
+}
+
+function bdRenderTasksbar(){
+  let hlGate=null, hlLate=false;
+  const sel = registeredEvents.find(e => e.key === bdSelKey);
+  if(sel){ const c=bdCompute(sel); hlGate=c.curKey; hlLate=c.delayed; }
+  const bar = document.getElementById('bdTasksbar');
+  if(!bar) return;
+  bar.innerHTML = BD_GATES.map(g => {
+    const hl = (g.k===hlGate);
+    const items = (BD_TASKS[g.k]||[]).map(([t,o]) => `<li><span class="bd-o">${escapeHtml(o)}</span>${escapeHtml(t)}</li>`).join('');
+    return `<div class="bd-tcol${hl?(' hl'+(hlLate?' late':'')):''}"><div class="bd-thd">${g.k}</div><ul>${items}</ul></div>`;
+  }).join('');
+}
+
+function bdRenderReserve(list){
+  const box = document.getElementById('bdReserve');
+  if(!box) return;
+  const body = list.length
+    ? list.map(([ev,c]) => `<div class="bd-rrow"><span class="bd-rn">${escapeHtml(ev.eventName)}</span><span class="bd-rd">${bdFmtDate(ev.eventDate)}</span><span class="bd-rdd">${bdDdayLabel(c.dday)}</span><button class="bd-del" data-del="${ev.key}" title="삭제">×</button></div>`).join('')
+    : '<div class="bd-rrow" style="color:var(--bd-muted);font-weight:600">예비 명단 없음</div>';
+  box.className = 'bd-reserve' + (bdReserveOpen ? ' open' : '');
+  box.innerHTML = `<div class="bd-rhd" data-toggle="1">예비 명단 <span class="bd-cnt">${list.length}건</span> · 60일 이후 행사 <span class="bd-caret">▶</span></div><div class="bd-rbody">${body}</div>`;
+}
+
+async function bdDeleteEvent(eventKey){
+  const ev = registeredEvents.find(e => e.key === eventKey);
+  if(!ev) return;
+  if(!confirm(`"${ev.eventName}" 행사를 삭제할까요? 콘텐츠 홈에서도 함께 삭제됩니다.`)) return;
+  try{
+    await kkcStorage.delete(eventKey, true);
+    if(bdSelKey===eventKey) bdSelKey=null;
+    await loadEvents(); // registeredEvents 갱신 + 콘텐츠 홈 목록도 함께 최신화
+    bdRender();
+  } catch(err){
+    console.error('행사 삭제 실패:', err);
+    alert('삭제에 실패했습니다. 다시 시도해주세요.');
+  }
+}
+
+document.getElementById('bdRows').addEventListener('click', e => {
+  const g = e.target.closest('.bd-gate');
+  if(g){ bdToggleGate(g.dataset.key, g.dataset.gate); return; }
+  const del = e.target.closest('[data-del]');
+  if(del){ bdDeleteEvent(del.dataset.del); return; }
+  const op = e.target.closest('[data-open]');
+  if(op){ bdSelKey = (bdSelKey===op.dataset.open) ? null : op.dataset.open; bdRender(); }
+});
+document.getElementById('bdReserve').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if(del){ bdDeleteEvent(del.dataset.del); return; }
+  if(e.target.closest('[data-toggle]')){
+    bdReserveOpen = !bdReserveOpen;
+    document.getElementById('bdReserve').classList.toggle('open', bdReserveOpen);
+  }
+});
+
+// 사업 추가 — 콘텐츠 홈과 동일한 실제 행사 레코드를 최소 정보로 생성 (나중에 콘텐츠 홈에서 나머지 정보 보완 가능)
+document.getElementById('bdAddBtn').addEventListener('click', async () => {
+  const nameEl = document.getElementById('bdName');
+  const dateEl = document.getElementById('bdDate');
+  const name = nameEl.value.trim();
+  const date = dateEl.value;
+  if(!name || !date){ alert('사업명과 행사일을 모두 입력하세요.'); return; }
+  const key = 'kkc:event:' + Date.now();
+  try{
+    await kkcStorage.set(key, JSON.stringify({
+      eventName: name, category: '기타', eventDate: date, eventEndDate: '',
+      eventDateText: formatEventDateText(date), eventTime: '', eventVenue: '',
+      ownerName: '', ownerEmail: '', stageData: {}, gateDone: {}, updatedAt: new Date().toISOString()
+    }), true);
+    nameEl.value=''; dateEl.value='';
+    await loadEvents();
+    bdRender();
+  } catch(err){
+    console.error('사업 추가 실패:', err);
+    alert('추가에 실패했습니다. 다시 시도해주세요.');
+  }
+});
+document.getElementById('bdName').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('bdAddBtn').click(); });
+
+// 상단 시계
+const BD_WD=["일","월","화","수","목","금","토"];
+function bdHHMM(){const n=new Date();return String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");}
+function bdClockTick(){
+  const el = document.getElementById('bdClock'), dEl = document.getElementById('bdToday');
+  if(!el) return;
+  const n = new Date();
+  el.textContent = bdHHMM();
+  dEl.textContent = `${n.getFullYear()}. ${n.getMonth()+1}. ${n.getDate()}. (${BD_WD[n.getDay()]})`;
+}
+bdClockTick(); setInterval(bdClockTick, 30000);
 </script>
 </body>
 </html>
