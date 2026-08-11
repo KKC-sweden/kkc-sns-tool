@@ -476,11 +476,11 @@
     --bd-line:#e3e7ee; --bd-muted:#8a93a3;
   }
   .bd-tasksbar{display:flex;gap:8px;background:#fff;border:1px solid var(--bd-line);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(20,32,55,.05);margin-bottom:16px;}
-  .bd-tcol{flex:1;min-width:0;border:1px solid var(--bd-line);border-radius:9px;padding:9px 10px;background:#fbfcfd;display:flex;flex-direction:column;gap:6px}
+  .bd-tcol{flex:1;min-width:0;border:1px solid var(--bd-line);border-radius:9px;padding:9px 8px;background:#fbfcfd;display:flex;flex-direction:column;gap:6px}
   .bd-tcol .bd-thd{font-size:12px;font-weight:800;color:var(--bd-navy2);letter-spacing:-.02em;padding-bottom:5px;border-bottom:1px solid var(--bd-line)}
   .bd-tcol ul{list-style:none;display:flex;flex-direction:column;gap:4px}
-  .bd-tcol li{font-size:10.5px;line-height:1.35;color:#43506a;font-weight:600}
-  .bd-tcol li .bd-o{display:inline-block;font-size:9px;font-weight:800;color:var(--bd-muted);margin-right:4px}
+  .bd-tcol li{font-size:9.5px;line-height:1.32;color:#43506a;font-weight:600;letter-spacing:-.01em}
+  .bd-tcol li .bd-o{display:inline-block;font-size:8.5px;font-weight:800;color:var(--bd-muted);margin-right:3px}
   .bd-tcol.hl{background:var(--bd-next-bg);border-color:var(--bd-next);box-shadow:0 0 0 2px rgba(43,111,176,.12)}
   .bd-tcol.hl .bd-thd{color:var(--bd-next)}
   .bd-tcol.hl.late{background:var(--bd-late-bg);border-color:var(--bd-late);box-shadow:0 0 0 2px rgba(192,57,43,.14)}
@@ -576,8 +576,6 @@
   .bd-memo-item .bd-memo-text{flex:1;white-space:pre-wrap}
   .bd-memo-item .bd-memo-del{flex:0 0 auto;background:none;border:none;color:var(--bd-muted);font-size:15px;cursor:pointer;padding:0 2px;line-height:1}
   .bd-memo-item .bd-memo-del:hover{color:var(--bd-late)}
-  .bd-memo-toggle{font-family:inherit;font-size:11px;font-weight:800;color:var(--bd-muted);background:#f2f4f8;border:1px solid var(--bd-line);border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap}
-  .bd-memo-toggle:hover{background:var(--bd-next-bg);color:var(--bd-next);border-color:var(--bd-next)}
 
   @media(max-width:820px){
     .bd-c-ev{flex:0 0 150px;}
@@ -3423,7 +3421,6 @@ const BD_TASKS={
 };
 const BD_MS=86400000;
 let bdSelKey=null;
-let bdMemoOpenKey=null;
 let bdReserveOpen=false;
 
 function bdToday0(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
@@ -3491,18 +3488,17 @@ function bdRender(){
       gatesHtml += `<div class="bd-gate${g.done?' done':''}${cur?(' cur'+(c.delayed?' late':'')):''}" data-key="${ev.key}" data-gate="${g.k}"><span class="bd-mk"></span><span class="bd-gl">${g.k}</span></div>`;
     });
     const memoLog = ev.memoLog || [];
-    const memoToggleLabel = memoLog.length ? `📝 메모 ${memoLog.length}건` : '+ 메모';
     row.innerHTML = `
       <div class="bd-c-ev" data-open="${ev.key}"><div class="bd-name">${escapeHtml(ev.eventName)}</div><div class="bd-date">${bdFmtDate(ev.eventDate)}</div><div class="bd-d">${bdDdayLabel(c.dday)}</div></div>
       <div class="bd-c-mid" data-open="${ev.key}">
-        <div class="bd-statusrow"><span class="bd-status ${c.curStatus}">${statusTxt}</span><button class="bd-memo-toggle" data-memo-toggle="${ev.key}">${memoToggleLabel}</button></div>
+        <div class="bd-statusrow"><span class="bd-status ${c.curStatus}">${statusTxt}</span></div>
         <div class="bd-statusrow"><div class="bd-bar"><i style="width:${c.progress}%"></i></div><span class="bd-pct">${c.progress}%</span></div>
       </div>
       <div class="bd-c-chk">${gatesHtml}</div>
       <div class="bd-c-del"><button class="bd-del" data-del="${ev.key}" title="삭제">×</button></div>`;
     rows.appendChild(row);
-    if(memoLog.length || ev.key === bdMemoOpenKey){
-      rows.appendChild(bdBuildMemoPanel(ev, ev.key === bdMemoOpenKey));
+    if(memoLog.length || ev.key === bdSelKey){
+      rows.appendChild(bdBuildMemoPanel(ev, ev.key === bdSelKey));
     }
   });
 
@@ -3553,11 +3549,6 @@ function bdBuildMemoPanel(ev, inputOpen){
   return panel;
 }
 
-function bdToggleMemoInput(eventKey){
-  bdMemoOpenKey = (bdMemoOpenKey === eventKey) ? null : eventKey;
-  bdRender();
-}
-
 async function bdSaveEvent(ev){
   const { key, ...rest } = ev;
   try{ await kkcStorage.set(ev.key, JSON.stringify(rest), true); }
@@ -3576,7 +3567,7 @@ async function bdAddMemo(eventKey){
   const id = Date.now() + '-' + Math.random().toString(36).slice(2, 6);
   ev.memoLog = ev.memoLog || [];
   ev.memoLog.push({ id, date: dateStr, text });
-  bdMemoOpenKey = null; // 저장 후 입력창은 다시 닫아둠
+  bdSelKey = null; // 저장 후 선택 해제 (입력창 닫힘, 메모는 계속 보임)
   bdRender();
   await bdSaveEvent(ev);
 }
@@ -3614,8 +3605,6 @@ document.getElementById('bdRows').addEventListener('click', e => {
   if(memoAdd){ bdAddMemo(memoAdd.dataset.memoAdd); return; }
   const memoDel = e.target.closest('[data-memo-del]');
   if(memoDel){ const [ek, mid] = memoDel.dataset.memoDel.split('|'); bdDeleteMemo(ek, mid); return; }
-  const memoToggle = e.target.closest('[data-memo-toggle]');
-  if(memoToggle){ bdToggleMemoInput(memoToggle.dataset.memoToggle); return; }
   const op = e.target.closest('[data-open]');
   if(op){ bdSelKey = (bdSelKey===op.dataset.open) ? null : op.dataset.open; bdRender(); }
 });
