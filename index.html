@@ -479,8 +479,9 @@
   .bd-tcol{flex:1;min-width:0;border:1px solid var(--bd-line);border-radius:9px;padding:9px 10px;background:#fbfcfd;display:flex;flex-direction:column;gap:6px}
   .bd-tcol .bd-thd{font-size:12px;font-weight:800;color:var(--bd-navy2);letter-spacing:-.02em;padding-bottom:5px;border-bottom:1px solid var(--bd-line)}
   .bd-tcol ul{list-style:none;display:flex;flex-direction:column;gap:4px}
-  .bd-tcol li{font-size:10.5px;line-height:1.35;color:#43506a;font-weight:600}
-  .bd-tcol li .bd-o{display:inline-block;font-size:9px;font-weight:800;color:var(--bd-muted);margin-right:4px}
+  .bd-tcol li{display:flex;align-items:baseline;gap:0;font-size:10.5px;line-height:1.35;color:#43506a;font-weight:600}
+  .bd-tcol li .bd-o{flex:0 0 auto;font-size:9px;font-weight:800;color:var(--bd-muted);margin-right:4px;white-space:nowrap}
+  .bd-tcol li .bd-li-text{flex:1;min-width:0}
   .bd-tcol.hl{background:var(--bd-next-bg);border-color:var(--bd-next);box-shadow:0 0 0 2px rgba(43,111,176,.12)}
   .bd-tcol.hl .bd-thd{color:var(--bd-next)}
   .bd-tcol.hl.late{background:var(--bd-late-bg);border-color:var(--bd-late);box-shadow:0 0 0 2px rgba(192,57,43,.14)}
@@ -3518,7 +3519,7 @@ function bdRenderTasksbar(){
   if(!bar) return;
   bar.innerHTML = BD_GATES.map(g => {
     const hl = (g.k===hlGate);
-    const items = (BD_TASKS[g.k]||[]).map(([t,o]) => `<li><span class="bd-o">${escapeHtml(o)}</span>${escapeHtml(t)}</li>`).join('');
+    const items = (BD_TASKS[g.k]||[]).map(([t,o]) => `<li><span class="bd-o">${escapeHtml(o)}</span><span class="bd-li-text">${escapeHtml(t)}</span></li>`).join('');
     return `<div class="bd-tcol${hl?(' hl'+(hlLate?' late':'')):''}"><div class="bd-thd">${g.k}</div><ul>${items}</ul></div>`;
   }).join('');
 }
