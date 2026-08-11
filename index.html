@@ -511,7 +511,7 @@
   .bd-bar > i{display:block;height:100%;background:linear-gradient(90deg,#2f8f5b,#3aa869);border-radius:99px}
   .bd-pct{font-size:12px;font-weight:800;color:var(--bd-muted);font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
 
-  .bd-c-chk{flex:0 0 372px;padding:11px 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  .bd-c-chk{flex:0 0 434px;padding:11px 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
   .bd-gate{flex:1;min-width:52px;border:1.5px solid var(--bd-line);background:#fff;border-radius:8px;padding:8px 3px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer}
   .bd-gate .bd-mk{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--bd-hollow);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800}
   .bd-gate .bd-gl{font-size:10px;font-weight:800;color:var(--bd-navy2);letter-spacing:-.03em;white-space:nowrap}
@@ -540,7 +540,7 @@
   .bd-lg .bd-sw{width:13px;height:13px;border-radius:4px}
   .bd-note{font-size:11px;color:var(--bd-muted);font-weight:600}
 
-  .bd-page{padding:28px 32px 60px;display:flex;flex-direction:column;gap:16px;}
+  .bd-page{position:relative;padding:28px 32px 60px;display:flex;flex-direction:column;gap:16px;}
   .bd-headerbar{background:var(--navy-deep,#152037);border-radius:14px;color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;}
   .bd-wm .bd-kr{font-size:23px;font-weight:800;letter-spacing:-.02em;display:block}
   .bd-wm .bd-en{font-size:10px;letter-spacing:.28em;color:var(--bd-brass);font-weight:600}
@@ -550,9 +550,9 @@
   .bd-clock{text-align:right}
   .bd-clock .bd-time{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}
   .bd-clock .bd-date{font-size:11px;color:#9fb0c8;margin-top:2px}
-  .bd-fullscreen-btn{flex-shrink:0;margin-left:16px;width:36px;height:36px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s ease}
-  .bd-fullscreen-btn:hover{background:rgba(255,255,255,.18)}
-  .bd-fullscreen-btn svg{width:18px;height:18px}
+  .bd-fullscreen-btn{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:5px;border:none;background:transparent;color:var(--bd-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s ease,color .15s ease}
+  .bd-fullscreen-btn:hover{background:var(--bd-line);color:var(--bd-navy2)}
+  .bd-fullscreen-btn svg{width:12px;height:12px}
   .bd-page:fullscreen{background:var(--paper,#f6f8fa);overflow-y:auto;padding:28px 32px 60px;}
   .bd-page:-webkit-full-screen{background:var(--paper,#f6f8fa);overflow-y:auto;padding:28px 32px 60px;}
 
@@ -1170,11 +1170,11 @@
     <div class="bd-wm"><span class="bd-kr">주스웨덴한국문화원</span><span class="bd-en">KOREAN CULTURAL CENTRE · SWEDEN</span></div>
     <div class="bd-htitle"><div class="bd-t">행사 진행 상황판</div><div class="bd-s">행사일 입력 → 자동 D-표시·지연·진행 · 게이트 클릭 = 원장 완료 체크</div></div>
     <div class="bd-clock"><div class="bd-time" id="bdClock">--:--</div><div class="bd-date" id="bdToday">—</div></div>
-    <button class="bd-fullscreen-btn" id="bdFullscreenBtn" title="전체화면으로 보기">
-      <svg id="bdFsIconExpand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-      <svg id="bdFsIconCompress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
-    </button>
   </div>
+  <button class="bd-fullscreen-btn" id="bdFullscreenBtn" title="전체화면으로 보기">
+    <svg id="bdFsIconExpand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+    <svg id="bdFsIconCompress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
+  </button>
 
   <div id="bdTasksbar" class="bd-tasksbar"></div>
 
