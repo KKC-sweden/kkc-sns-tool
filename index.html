@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KKC Sweden · SNS 콘텐츠 제작 도구</title>
 <!-- 시스템 기본 폰트 사용 (Instagram과 동일한 방식) -->
+<!-- 단, 행사 현황판(#tab-board)만 원장님 원본 디자인과 동일하게 Pretendard 사용 -->
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  #tab-board, #tab-board * { font-family:"Pretendard",-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif !important; }
+</style>
 <style>
   :root{
     --paper:#FAFAFA; --paper-raised:#FFFFFF;
@@ -566,9 +571,13 @@
   .bd-memo-input button{font-family:inherit;font-size:13px;font-weight:800;border:none;border-radius:8px;padding:9px 16px;background:var(--bd-navy2);color:#fff;cursor:pointer;white-space:nowrap}
   .bd-memo-input button:hover{background:var(--navy-deep,#152037)}
   .bd-memo-log{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
-  .bd-memo-item{font-size:12.5px;line-height:1.5;color:#43506a;padding:8px 10px;background:#fff;border:1px solid var(--bd-line);border-radius:8px;white-space:pre-wrap}
-  .bd-memo-item .bd-memo-date{font-size:10.5px;font-weight:800;color:var(--bd-muted);margin-right:6px}
-  .bd-memo-empty{font-size:12px;color:var(--bd-muted);font-weight:600}
+  .bd-memo-item{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.5;color:#43506a;padding:8px 10px;background:#fff;border:1px solid var(--bd-line);border-radius:8px}
+  .bd-memo-item .bd-memo-date{flex:0 0 auto;font-size:10.5px;font-weight:800;color:var(--bd-muted)}
+  .bd-memo-item .bd-memo-text{flex:1;white-space:pre-wrap}
+  .bd-memo-item .bd-memo-del{flex:0 0 auto;background:none;border:none;color:var(--bd-muted);font-size:15px;cursor:pointer;padding:0 2px;line-height:1}
+  .bd-memo-item .bd-memo-del:hover{color:var(--bd-late)}
+  .bd-memo-toggle{font-family:inherit;font-size:11px;font-weight:800;color:var(--bd-muted);background:#f2f4f8;border:1px solid var(--bd-line);border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap}
+  .bd-memo-toggle:hover{background:var(--bd-next-bg);color:var(--bd-next);border-color:var(--bd-next)}
 
   @media(max-width:820px){
     .bd-c-ev{flex:0 0 150px;}
@@ -3414,6 +3423,7 @@ const BD_TASKS={
 };
 const BD_MS=86400000;
 let bdSelKey=null;
+let bdMemoOpenKey=null;
 let bdReserveOpen=false;
 
 function bdToday0(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
@@ -3480,17 +3490,19 @@ function bdRender(){
       const cur = (g.k===c.curKey);
       gatesHtml += `<div class="bd-gate${g.done?' done':''}${cur?(' cur'+(c.delayed?' late':'')):''}" data-key="${ev.key}" data-gate="${g.k}"><span class="bd-mk"></span><span class="bd-gl">${g.k}</span></div>`;
     });
+    const memoLog = ev.memoLog || [];
+    const memoToggleLabel = memoLog.length ? `📝 메모 ${memoLog.length}건` : '+ 메모';
     row.innerHTML = `
       <div class="bd-c-ev" data-open="${ev.key}"><div class="bd-name">${escapeHtml(ev.eventName)}</div><div class="bd-date">${bdFmtDate(ev.eventDate)}</div><div class="bd-d">${bdDdayLabel(c.dday)}</div></div>
       <div class="bd-c-mid" data-open="${ev.key}">
-        <div class="bd-statusrow"><span class="bd-status ${c.curStatus}">${statusTxt}</span></div>
+        <div class="bd-statusrow"><span class="bd-status ${c.curStatus}">${statusTxt}</span><button class="bd-memo-toggle" data-memo-toggle="${ev.key}">${memoToggleLabel}</button></div>
         <div class="bd-statusrow"><div class="bd-bar"><i style="width:${c.progress}%"></i></div><span class="bd-pct">${c.progress}%</span></div>
       </div>
       <div class="bd-c-chk">${gatesHtml}</div>
       <div class="bd-c-del"><button class="bd-del" data-del="${ev.key}" title="삭제">×</button></div>`;
     rows.appendChild(row);
-    if(ev.key === bdSelKey){
-      rows.appendChild(bdBuildMemoPanel(ev));
+    if(memoLog.length || ev.key === bdMemoOpenKey){
+      rows.appendChild(bdBuildMemoPanel(ev, ev.key === bdMemoOpenKey));
     }
   });
 
@@ -3521,21 +3533,35 @@ function bdRenderReserve(list){
   box.innerHTML = `<div class="bd-rhd" data-toggle="1">예비 명단 <span class="bd-cnt">${list.length}건</span> · 60일 이후 행사 <span class="bd-caret">▶</span></div><div class="bd-rbody">${body}</div>`;
 }
 
-function bdBuildMemoPanel(ev){
+function bdBuildMemoPanel(ev, inputOpen){
   const panel = document.createElement('div');
   panel.className = 'bd-memo';
   const log = ev.memoLog || [];
   const logHtml = log.length
-    ? log.slice().reverse().map(m => `<div class="bd-memo-item"><span class="bd-memo-date">${escapeHtml(m.date)}</span>${escapeHtml(m.text)}</div>`).join('')
-    : '<div class="bd-memo-empty">등록된 메모가 없습니다.</div>';
+    ? log.slice().reverse().map(m => `<div class="bd-memo-item"><span class="bd-memo-date">${escapeHtml(m.date)}</span><span class="bd-memo-text">${escapeHtml(m.text)}</span><button class="bd-memo-del" data-memo-del="${ev.key}|${m.id}" title="메모 삭제">×</button></div>`).join('')
+    : '';
+  const inputHtml = inputOpen
+    ? `<div class="bd-memo-input">
+        <textarea id="bdMemoInput" placeholder="메모를 입력하세요"></textarea>
+        <button data-memo-add="${ev.key}">추가</button>
+      </div>`
+    : '';
   panel.innerHTML = `
     <div class="bd-memo-head">원장님 메모</div>
-    <div class="bd-memo-input">
-      <textarea id="bdMemoInput" placeholder="메모를 입력하세요"></textarea>
-      <button data-memo-add="${ev.key}">추가</button>
-    </div>
-    <div class="bd-memo-log">${logHtml}</div>`;
+    <div class="bd-memo-log">${logHtml}</div>
+    ${inputHtml}`;
   return panel;
+}
+
+function bdToggleMemoInput(eventKey){
+  bdMemoOpenKey = (bdMemoOpenKey === eventKey) ? null : eventKey;
+  bdRender();
+}
+
+async function bdSaveEvent(ev){
+  const { key, ...rest } = ev;
+  try{ await kkcStorage.set(ev.key, JSON.stringify(rest), true); }
+  catch(err){ console.error('저장 실패:', err); alert('저장에 실패했습니다. 다시 시도해주세요.'); }
 }
 
 async function bdAddMemo(eventKey){
@@ -3547,12 +3573,21 @@ async function bdAddMemo(eventKey){
   if(!ev) return;
   const now = new Date();
   const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const id = Date.now() + '-' + Math.random().toString(36).slice(2, 6);
   ev.memoLog = ev.memoLog || [];
-  ev.memoLog.push({ date: dateStr, text });
+  ev.memoLog.push({ id, date: dateStr, text });
+  bdMemoOpenKey = null; // 저장 후 입력창은 다시 닫아둠
   bdRender();
-  const { key, ...rest } = ev;
-  try{ await kkcStorage.set(eventKey, JSON.stringify(rest), true); }
-  catch(err){ console.error('메모 저장 실패:', err); alert('메모 저장에 실패했습니다. 다시 시도해주세요.'); }
+  await bdSaveEvent(ev);
+}
+
+async function bdDeleteMemo(eventKey, memoId){
+  const ev = registeredEvents.find(e => e.key === eventKey);
+  if(!ev || !ev.memoLog) return;
+  if(!confirm('이 메모를 삭제할까요?')) return;
+  ev.memoLog = ev.memoLog.filter(m => String(m.id) !== String(memoId));
+  bdRender();
+  await bdSaveEvent(ev);
 }
 
 async function bdDeleteEvent(eventKey){
@@ -3577,6 +3612,10 @@ document.getElementById('bdRows').addEventListener('click', e => {
   if(del){ bdDeleteEvent(del.dataset.del); return; }
   const memoAdd = e.target.closest('[data-memo-add]');
   if(memoAdd){ bdAddMemo(memoAdd.dataset.memoAdd); return; }
+  const memoDel = e.target.closest('[data-memo-del]');
+  if(memoDel){ const [ek, mid] = memoDel.dataset.memoDel.split('|'); bdDeleteMemo(ek, mid); return; }
+  const memoToggle = e.target.closest('[data-memo-toggle]');
+  if(memoToggle){ bdToggleMemoInput(memoToggle.dataset.memoToggle); return; }
   const op = e.target.closest('[data-open]');
   if(op){ bdSelKey = (bdSelKey===op.dataset.open) ? null : op.dataset.open; bdRender(); }
 });
