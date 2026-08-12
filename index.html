@@ -1019,6 +1019,11 @@
     </div>
     <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요. 체크리스트를 완료하면 이 작업이 콘텐츠 아카이브에 자동으로 저장됩니다.<br><br>⚠️ 영상 콘텐츠는 구도 확인 및 아카이빙용입니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.<br>⚠️ 영상 파일 자체는 저장되지 않으니, 창을 닫기 전에 꼭 다운로드해두세요.</div>
     <a class="secondary" id="openMbs" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:14px;">Meta Business Suite 바로가기 ↗</a>
+
+    <div class="card" id="publishCard" style="margin-top:20px;background:#fff8e6;border:1px solid #e8c468;">
+      <h3 style="margin-bottom:8px;">🚧 인스타그램 자동 게시 — 준비 중</h3>
+      <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;">이 기능은 아직 테스트 중이라 비활성화되어 있습니다. 준비가 완료되면 <strong>화면에 눈에 띄게 안내</strong>해드릴게요. 지금은 위의 다운로드·복사 버튼으로 Meta Business Suite에서 직접 게시해주세요.</p>
+    </div>
   </div>
 
   <div class="history">
@@ -2896,6 +2901,8 @@ function downloadFbImage(){
 document.getElementById('downloadFeed').addEventListener('click', downloadAllFeed);
 document.getElementById('downloadStory').addEventListener('click', downloadAllStory);
 document.getElementById('downloadFb').addEventListener('click', downloadFbImage);
+
+
 document.getElementById('copyCaption').addEventListener('click', () => {
   const lang = document.getElementById('copyLang').value;
   const caption = getCaptionByLang(lang);
