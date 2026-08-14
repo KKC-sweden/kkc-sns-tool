@@ -221,6 +221,13 @@
   .fb-meta{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink-soft);margin-top:1px;}
   .mockup-more-icon{width:16px;height:16px;color:var(--ink-soft);flex-shrink:0;}
   .mockup-image{width:100%;display:block;background:var(--line-soft);}
+  .canvas-tag-wrap{position:relative;flex:1;min-width:0;}
+  .canvas-tag-wrap.tag-mode{cursor:crosshair;}
+  .tag-overlay{position:absolute;inset:0;pointer-events:none;}
+  .tag-pin{position:absolute;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;border-radius:14px;padding:4px 10px 4px 18px;font-size:11px;font-weight:700;pointer-events:auto;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+  .tag-pin::before{content:'';position:absolute;left:7px;top:50%;transform:translate(-50%,-50%);width:7px;height:7px;background:#fff;border:2px solid #0095f6;border-radius:50%;box-sizing:border-box;}
+  .tag-pin:hover{background:rgba(192,57,43,.9);}
+  .tag-hint{position:absolute;top:8px;left:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;pointer-events:none;text-align:center;}
   .mockup-actions{padding:10px 13px 4px;font-size:16px;color:var(--ink-soft);letter-spacing:8px;}
   .mockup-actions-row{display:flex;align-items:center;justify-content:space-between;padding:10px 13px 0;}
   .mockup-actions-left{display:flex;align-items:center;gap:13px;}
@@ -894,7 +901,10 @@
           </div>
           <div class="carousel-wrap">
             <button class="carousel-nav prev" id="feedPrev">‹</button>
-            <canvas class="mockup-image" id="feedCanvas"></canvas>
+            <div class="canvas-tag-wrap" id="feedCanvasWrap">
+              <canvas class="mockup-image" id="feedCanvas"></canvas>
+              <div class="tag-overlay" id="tagOverlay"></div>
+            </div>
             <button class="carousel-nav next" id="feedNext">›</button>
           </div>
           <div class="carousel-dots" id="feedDots"></div>
@@ -918,6 +928,8 @@
           <div class="slider-label">세로 위치</div>
           <input type="range" id="feedOffsetY" min="0" max="100" value="50">
         </div>
+        <button class="secondary" id="tagModeBtn" style="margin-top:10px;width:100%;">📍 이 사진에 계정 태그하기</button>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:6px;">버튼을 누른 뒤 사진에서 태그하고 싶은 위치를 클릭하세요. 사진마다(카드뉴스면 장마다) 따로 지정돼요. 핀을 클릭하면 삭제돼요.</p>
       </div>
       <div class="edit-col">
         <h3>인스타그램 스토리 (9:16)</h3>
@@ -1033,8 +1045,7 @@
         </select>
       </div>
       <div class="field">
-        <label for="publishTags">사진에 태그할 계정 (선택, 쉼표로 구분 — 예: kculture.sweden, seoul_partner)</label>
-        <input type="text" id="publishTags" placeholder="계정아이디1, 계정아이디2">
+        <p style="font-size:12px;color:var(--ink-soft);margin:0;">계정 태그는 위 STEP 5의 사진 미리보기에서 "📍 계정 태그하기" 버튼으로 직접 위치를 클릭해서 지정해주세요. 여기 미리보기에도 자동으로 반영돼요.</p>
       </div>
       <div class="field">
         <label style="display:flex;align-items:center;gap:8px;font-weight:600;">
@@ -2281,6 +2292,8 @@ document.getElementById('resetImage').addEventListener('click', resetAllImages);
 
 // ============ STEP 4: Cropping (carousel-aware) ============
 let feedMode = 'contain', storyMode = 'contain', fbMode = 'contain';
+// 영상은 실제 인스타그램에서 항상 꽉 채워서 보여지므로, 모드 설정과 상관없이 항상 cover로 그림
+function shouldCover(item, mode){ return item.kind === 'video' || mode === 'cover'; }
 
 function drawCoverCrop(img, canvas, targetW, targetH, zoomPercent, offsetXPercent, offsetYPercent){
   const ctx = canvas.getContext('2d');
@@ -2342,13 +2355,14 @@ function renderCrops(){
   const feedItem = uploadedImages[feedIndex];
   const storyItem = uploadedImages[storyIndex];
 
-  if(feedMode==='cover') drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
+  if(shouldCover(feedItem, feedMode)) drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
   else drawContainWithBlur(feedItem.img, feedCanvas, fd.w, fd.h);
   document.getElementById('feedZoom').value = feedItem.feedZoom;
   document.getElementById('feedOffsetX').value = feedItem.feedOffsetX;
   document.getElementById('feedOffsetY').value = feedItem.feedOffsetY;
+  renderTagOverlay();
 
-  if(storyMode==='cover') drawCoverCrop(storyItem.img, storyCanvas, 1080, 1920, storyItem.storyZoom, storyItem.storyOffsetX, storyItem.storyOffsetY);
+  if(shouldCover(storyItem, storyMode)) drawCoverCrop(storyItem.img, storyCanvas, 1080, 1920, storyItem.storyZoom, storyItem.storyOffsetX, storyItem.storyOffsetY);
   else drawContainWithBlur(storyItem.img, storyCanvas, 1080, 1920);
   document.getElementById('storyZoom').value = storyItem.storyZoom;
   document.getElementById('storyOffsetX').value = storyItem.storyOffsetX;
@@ -2364,7 +2378,7 @@ function renderCrops(){
   // 페이스북: 피드에서 선택한 사진과 동일한 사진 사용
   const fbCanvas = document.getElementById('fbCanvas');
   const fbd = getFbDims();
-  if(fbMode==='cover') drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
+  if(shouldCover(feedItem, fbMode)) drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
   else drawContainWithBlur(feedItem.img, fbCanvas, fbd.w, fbd.h);
   document.getElementById('fbZoom').value = feedItem.fbZoom;
   document.getElementById('fbOffsetX').value = feedItem.fbOffsetX;
@@ -2392,16 +2406,16 @@ function redrawVideoCanvasesOnly(){
   if(feedItem && feedItem.kind === 'video'){
     const fd = getFeedDims();
     const feedCanvas = document.getElementById('feedCanvas');
-    if(feedMode==='cover') drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
+    if(shouldCover(feedItem, feedMode)) drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
     else drawContainWithBlur(feedItem.img, feedCanvas, fd.w, fd.h);
     const fbd = getFbDims();
     const fbCanvas = document.getElementById('fbCanvas');
-    if(fbMode==='cover') drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
+    if(shouldCover(feedItem, fbMode)) drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
     else drawContainWithBlur(feedItem.img, fbCanvas, fbd.w, fbd.h);
   }
   if(storyItem && storyItem.kind === 'video'){
     const storyCanvas = document.getElementById('storyCanvas');
-    if(storyMode==='cover') drawCoverCrop(storyItem.img, storyCanvas, 1080, 1920, storyItem.storyZoom, storyItem.storyOffsetX, storyItem.storyOffsetY);
+    if(shouldCover(storyItem, storyMode)) drawCoverCrop(storyItem.img, storyCanvas, 1080, 1920, storyItem.storyZoom, storyItem.storyOffsetX, storyItem.storyOffsetY);
     else drawContainWithBlur(storyItem.img, storyCanvas, 1080, 1920);
   }
 }
@@ -2437,8 +2451,67 @@ function renderDots(containerId, activeIdx){
 
 document.getElementById('feedPrev').addEventListener('click', () => { if(feedIndex>0){ feedIndex--; renderThumbs(); renderCrops(); } });
 document.getElementById('feedNext').addEventListener('click', () => { if(feedIndex<uploadedImages.length-1){ feedIndex++; renderThumbs(); renderCrops(); } });
+
+// ============ 계정 태그 위치 지정 (실제 인스타그램처럼 사진 위 클릭으로 지정) ============
+let tagModeOn = false;
+
+function renderTagOverlay(){
+  const overlay = document.getElementById('tagOverlay');
+  if(!overlay || !uploadedImages.length) return;
+  overlay.innerHTML = '';
+  const item = uploadedImages[feedIndex];
+  const tags = item.tags || [];
+  tags.forEach((tag, i) => {
+    const pin = document.createElement('div');
+    pin.className = 'tag-pin';
+    pin.style.left = (tag.x * 100) + '%';
+    pin.style.top = (tag.y * 100) + '%';
+    pin.textContent = '@' + tag.username;
+    pin.title = '클릭하면 이 태그가 삭제돼요';
+    pin.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tags.splice(i, 1);
+      renderTagOverlay();
+    });
+    overlay.appendChild(pin);
+  });
+  if(tagModeOn){
+    const hint = document.createElement('div');
+    hint.className = 'tag-hint';
+    hint.textContent = '사진을 클릭해서 태그 위치를 지정하세요';
+    overlay.appendChild(hint);
+  }
+}
+
+document.getElementById('tagModeBtn').addEventListener('click', () => {
+  tagModeOn = !tagModeOn;
+  const wrap = document.getElementById('feedCanvasWrap');
+  const btn = document.getElementById('tagModeBtn');
+  wrap.classList.toggle('tag-mode', tagModeOn);
+  btn.textContent = tagModeOn ? '✅ 태그 위치 지정 중 (다시 누르면 종료)' : '📍 이 사진에 계정 태그하기';
+  renderTagOverlay();
+});
+
+document.getElementById('feedCanvasWrap').addEventListener('click', (e) => {
+  if(!tagModeOn || !uploadedImages.length) return;
+  if(e.target.closest('.tag-pin')) return;
+  const rect = document.getElementById('feedCanvas').getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+  if(x < 0 || x > 1 || y < 0 || y > 1) return;
+
+  const username = prompt('태그할 계정 아이디를 입력하세요 (@ 없이)');
+  if(!username || !username.trim()) return;
+
+  const item = uploadedImages[feedIndex];
+  item.tags = item.tags || [];
+  item.tags.push({ username: username.trim().replace(/^@/, ''), x, y });
+  renderTagOverlay();
+});
+
 document.getElementById('storyPrev').addEventListener('click', () => { if(storyIndex>0){ storyIndex--; renderCrops(); } });
 document.getElementById('storyNext').addEventListener('click', () => { if(storyIndex<uploadedImages.length-1){ storyIndex++; renderCrops(); } });
+
 
 document.getElementById('feedRatio').addEventListener('change', renderCrops);
 document.getElementById('feedZoom').addEventListener('input', (e) => { uploadedImages[feedIndex].feedZoom = e.target.value; renderCrops(); });
@@ -2820,7 +2893,7 @@ async function saveToArchiveAuto(){
     const fd = getFeedDims();
     const tempCanvas = document.createElement('canvas');
     const first = uploadedImages[0];
-    if(feedMode === 'cover') drawCoverCrop(first.img, tempCanvas, fd.w, fd.h, first.feedZoom, first.feedOffsetX, first.feedOffsetY);
+    if(shouldCover(first, feedMode)) drawCoverCrop(first.img, tempCanvas, fd.w, fd.h, first.feedZoom, first.feedOffsetX, first.feedOffsetY);
     else drawContainWithBlur(first.img, tempCanvas, fd.w, fd.h);
 
     const thumbCanvas = document.createElement('canvas');
@@ -2891,7 +2964,7 @@ function downloadAllFeed(){
       downloadDataUrl(item.img.src, `KKC_피드영상${suffix}.${item.ext}`);
       return;
     }
-    if(feedMode==='cover') drawCoverCrop(item.img, tempCanvas, fd.w, fd.h, item.feedZoom, item.feedOffsetX, item.feedOffsetY);
+    if(shouldCover(item, feedMode)) drawCoverCrop(item.img, tempCanvas, fd.w, fd.h, item.feedZoom, item.feedOffsetX, item.feedOffsetY);
     else drawContainWithBlur(item.img, tempCanvas, fd.w, fd.h);
     downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_피드이미지_${ratio}${suffix}.jpg`);
   });
@@ -2905,7 +2978,7 @@ function downloadAllStory(){
       downloadDataUrl(item.img.src, `KKC_스토리영상${suffix}.${item.ext}`);
       return;
     }
-    if(storyMode==='cover') drawCoverCrop(item.img, tempCanvas, 1080, 1920, item.storyZoom, item.storyOffsetX, item.storyOffsetY);
+    if(shouldCover(item, storyMode)) drawCoverCrop(item.img, tempCanvas, 1080, 1920, item.storyZoom, item.storyOffsetX, item.storyOffsetY);
     else drawContainWithBlur(item.img, tempCanvas, 1080, 1920);
     downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_스토리이미지${suffix}.jpg`);
   });
@@ -2920,7 +2993,7 @@ function downloadFbImage(){
     downloadDataUrl(item.img.src, `KKC_페이스북영상.${item.ext}`);
     return;
   }
-  if(fbMode==='cover') drawCoverCrop(item.img, tempCanvas, fbd.w, fbd.h, item.fbZoom, item.fbOffsetX, item.fbOffsetY);
+  if(shouldCover(item, fbMode)) drawCoverCrop(item.img, tempCanvas, fbd.w, fbd.h, item.fbZoom, item.fbOffsetX, item.fbOffsetY);
   else drawContainWithBlur(item.img, tempCanvas, fbd.w, fbd.h);
   downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_페이스북이미지_${ratio}.jpg`);
 }
@@ -2965,7 +3038,6 @@ document.getElementById('publishPreviewBtn').addEventListener('click', async () 
   const hashtags = getCurrentCaptionData().hashtags.join(' ');
   const fullCaption = [caption, hashtags].filter(Boolean).join('\n\n');
 
-  const userTags = parseTagsInput(document.getElementById('publishTags').value);
   const isScheduled = document.getElementById('publishScheduleToggle').checked;
   const scheduledAtRaw = document.getElementById('publishScheduleAt').value;
 
@@ -2981,6 +3053,12 @@ document.getElementById('publishPreviewBtn').addEventListener('click', async () 
     videoSizeNote = `영상 파일: ${sizes.join(', ')}`;
   }
 
+  // 사진별로 지정된 태그를 정리 (카드뉴스면 몇 번째 장인지도 같이 표시)
+  const tagLines = items
+    .map((it, i) => (it.tags && it.tags.length) ? `  ${i+1}번째: ${it.tags.map(t=>'@'+t.username).join(', ')}` : null)
+    .filter(Boolean);
+  const tagSummary = tagLines.length ? `계정 태그:\n${tagLines.join('\n')}` : '계정 태그: 없음';
+
   const lines = [
     `【미리보기 — 실제로 게시되지 않았습니다】`,
     ``,
@@ -2990,7 +3068,7 @@ document.getElementById('publishPreviewBtn').addEventListener('click', async () 
     `캡션 내용:`,
     fullCaption || '(비어있음 — 먼저 캡션을 생성/입력해주세요)',
     ``,
-    `계정 태그: ${userTags.length ? userTags.map(t=>'@'+t).join(', ') : '없음'}`,
+    tagSummary,
     `담당자: ${staffName || '(미입력)'} / ${staffEmail || '(미입력)'}`,
     `행사명: ${eventName || '(미입력)'}`,
     `게시 시점: ${isScheduled ? (scheduledAtRaw ? new Date(scheduledAtRaw).toLocaleString('ko-KR') + ' 예약' : '(예약 날짜 미입력)') : '즉시 게시로 설정됨'}`,
