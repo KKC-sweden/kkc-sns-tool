@@ -182,13 +182,15 @@
   .thumb-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(18,27,46,.8);color:#fff;border:none;font-size:11px;cursor:pointer;line-height:1;}
   .thumb-order{position:absolute;bottom:2px;left:3px;font-size:10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;}
 
-  .carousel-wrap{display:flex;align-items:center;gap:8px;justify-content:center;}
-  .carousel-nav{background:var(--navy);color:#fff;border:none;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;flex-shrink:0;line-height:1;box-shadow:0 4px 10px rgba(8,47,87,.3);transition:transform .15s ease;}
-  .carousel-nav:hover:not(:disabled){transform:scale(1.08);}
-  .carousel-nav:disabled{opacity:.25;cursor:not-allowed;box-shadow:none;}
-  .carousel-dots{display:flex;justify-content:center;gap:5px;margin:10px 0;}
-  .carousel-dots .dot{width:6px;height:6px;border-radius:50%;background:var(--line);}
-  .carousel-dots .dot.active{background:var(--navy);width:16px;border-radius:4px;transition:all .2s ease;}
+  .carousel-wrap{display:flex;justify-content:center;}
+  .carousel-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.85);color:#262626;border:none;width:24px;height:24px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:6;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:background .15s ease;}
+  .carousel-nav svg{width:13px;height:13px;}
+  .carousel-nav:hover{background:#fff;}
+  .carousel-nav.prev{left:8px;}
+  .carousel-nav.next{right:8px;}
+  .carousel-progress{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:4px;z-index:6;pointer-events:none;}
+  .carousel-progress .dot{flex:1;height:2.5px;border-radius:2px;background:rgba(255,255,255,.45);}
+  .carousel-progress .dot.active{background:rgba(255,255,255,.95);}
 
   .edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;margin-top:22px;}
   .platform-group-label{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;color:var(--navy-soft);letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);}
@@ -227,7 +229,7 @@
   .tag-pin{position:absolute;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;border-radius:14px;padding:4px 10px 4px 18px;font-size:11px;font-weight:700;pointer-events:auto;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3);}
   .tag-pin::before{content:'';position:absolute;left:7px;top:50%;transform:translate(-50%,-50%);width:7px;height:7px;background:#fff;border:2px solid #0095f6;border-radius:50%;box-sizing:border-box;}
   .tag-pin:hover{background:rgba(192,57,43,.9);}
-  .tag-hint{position:absolute;top:8px;left:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;pointer-events:none;text-align:center;}
+  .tag-hint{position:absolute;top:20px;left:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;pointer-events:none;text-align:center;}
   .mockup-actions{padding:10px 13px 4px;font-size:16px;color:var(--ink-soft);letter-spacing:8px;}
   .mockup-actions-row{display:flex;align-items:center;justify-content:space-between;padding:10px 13px 0;}
   .mockup-actions-left{display:flex;align-items:center;gap:13px;}
@@ -244,7 +246,7 @@
   .mockup-story-wrap{display:flex;justify-content:center;}
   .mockup-story-frame{width:260px;height:462px;border-radius:26px;overflow:hidden;border:6px solid var(--navy-deep);position:relative;background:var(--line-soft);box-shadow:var(--shadow-md);}
   .mockup-story-image{width:100%;height:100%;object-fit:cover;display:block;}
-  .story-username-overlay{position:absolute;top:12px;left:12px;color:#fff;font-size:11px;font-weight:400;text-shadow:0 1px 4px rgba(0,0,0,.5);}
+  .story-username-overlay{position:absolute;top:20px;left:12px;color:#fff;font-size:11px;font-weight:400;text-shadow:0 1px 4px rgba(0,0,0,.5);}
   .placeholder-empty{display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:12px;height:100%;min-height:160px;font-weight:600;}
 
   .caption-block{background:var(--gray-100);border:1px solid var(--line);border-radius:14px;padding:19px 21px;margin-top:14px;position:relative;padding-left:25px;}
@@ -902,14 +904,18 @@
             <svg class="mockup-more-icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
           </div>
           <div class="carousel-wrap">
-            <button class="carousel-nav prev" id="feedPrev">‹</button>
             <div class="canvas-tag-wrap" id="feedCanvasWrap">
               <canvas class="mockup-image" id="feedCanvas"></canvas>
               <div class="tag-overlay" id="tagOverlay"></div>
+              <div class="carousel-progress" id="feedDots"></div>
+              <button class="carousel-nav prev" id="feedPrev" aria-label="이전 사진">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="carousel-nav next" id="feedNext" aria-label="다음 사진">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
-            <button class="carousel-nav next" id="feedNext">›</button>
           </div>
-          <div class="carousel-dots" id="feedDots"></div>
           <div class="mockup-actions-row">
             <div class="mockup-actions-left">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6c-1.5-1.5-4-1.5-5.5 0L12 7.9l-3.3-3.3c-1.5-1.5-4-1.5-5.5 0-1.5 1.5-1.5 4 0 5.5L12 19l8.8-8.9c1.5-1.5 1.5-4 0-5.5z"/></svg>
@@ -955,12 +961,19 @@
         </div>
         <div class="mockup-story-wrap">
           <div class="carousel-wrap">
-            <button class="carousel-nav prev" id="storyPrev">‹</button>
-            <div class="mockup-story-frame"><canvas class="mockup-story-image" id="storyCanvas"></canvas><div class="story-username-overlay">kculture.sweden</div></div>
-            <button class="carousel-nav next" id="storyNext">›</button>
+            <div class="mockup-story-frame">
+              <canvas class="mockup-story-image" id="storyCanvas"></canvas>
+              <div class="story-username-overlay">kculture.sweden</div>
+              <div class="carousel-progress" id="storyDots"></div>
+              <button class="carousel-nav prev" id="storyPrev" aria-label="이전 사진">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="carousel-nav next" id="storyNext" aria-label="다음 사진">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
           </div>
         </div>
-        <div class="carousel-dots" id="storyDots"></div>
         <div class="crop-controls" id="storyCropControls" style="display:none;">
           <div class="slider-label">확대/축소</div>
           <input type="range" id="storyZoom" min="100" max="300" value="100">
@@ -2394,10 +2407,11 @@ function renderCrops(){
 
   renderDots('feedDots', feedIndex);
   renderDots('storyDots', storyIndex);
-  document.getElementById('feedPrev').disabled = feedIndex === 0;
-  document.getElementById('feedNext').disabled = feedIndex === uploadedImages.length - 1;
-  document.getElementById('storyPrev').disabled = storyIndex === 0;
-  document.getElementById('storyNext').disabled = storyIndex === uploadedImages.length - 1;
+  const multi = uploadedImages.length > 1;
+  document.getElementById('feedPrev').style.display = (multi && feedIndex > 0) ? 'flex' : 'none';
+  document.getElementById('feedNext').style.display = (multi && feedIndex < uploadedImages.length - 1) ? 'flex' : 'none';
+  document.getElementById('storyPrev').style.display = (multi && storyIndex > 0) ? 'flex' : 'none';
+  document.getElementById('storyNext').style.display = (multi && storyIndex < uploadedImages.length - 1) ? 'flex' : 'none';
 
   // 페이스북: 피드에서 선택한 사진과 동일한 사진 사용
   const fbCanvas = document.getElementById('fbCanvas');
@@ -3102,11 +3116,19 @@ async function saveToArchiveAuto(){
     renderStageDoneDots();
 
     // 서버 저장은 별도로 시도 — 여기서 실패해도 위의 화면 표시는 이미 됐으니 그대로 유지됨
+    // 네트워크 문제로 가끔 실패할 수 있어서, 실패하면 잠깐 기다렸다가 한 번 더 시도함
     try{
       await kkcStorage.set(key, JSON.stringify(archiveRecord), true);
       if(typeof loadArchive === 'function') await loadArchive();
     } catch(saveErr){
-      console.error('아카이브 서버 저장 실패 (화면 표시는 정상 반영됨):', saveErr);
+      console.error('아카이브 서버 저장 실패, 재시도합니다:', saveErr);
+      try{
+        await new Promise(r => setTimeout(r, 1500));
+        await kkcStorage.set(key, JSON.stringify(archiveRecord), true);
+        if(typeof loadArchive === 'function') await loadArchive();
+      } catch(retryErr){
+        console.error('아카이브 서버 저장 재시도도 실패 (화면 표시는 유지됨, 새로고침하면 사라질 수 있음):', retryErr);
+      }
     }
   } catch(err){
     console.error('아카이브 자동 저장 실패:', err);
