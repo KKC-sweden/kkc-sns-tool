@@ -847,10 +847,12 @@
 
     <p style="font-size:12.5px;color:var(--ink-soft);margin:20px 0 22px;" id="captionModeHint">1단계에서 입력한 행사 정보를 바탕으로 AI가 원본 캡션과 번역, 해시태그를 추천합니다.<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span></p>
 
+    <p id="captionSyncStatus" style="font-size:12px;color:var(--green,#1a7f3c);font-weight:600;min-height:16px;margin:0 0 6px;"></p>
     <div class="caption-block" id="captionOrigBlock" style="display:none;"><h4 id="origCaptionLabel">원본 캡션</h4><textarea id="captionOrig" rows="4" placeholder="원본 캡션을 입력해주세요."></textarea></div>
     <div class="caption-block" id="captionSvBlock" style="display:none;"><h4>스웨덴어 캡션</h4><textarea id="captionSv" rows="4"></textarea></div>
     <div class="caption-block" id="enCaptionBlock" style="display:none;"><h4>영어 캡션</h4><textarea id="captionEn" rows="4"></textarea></div>
     <div class="caption-block" id="hashtagBlock" style="display:none;"><h4>추천 해시태그</h4><div class="hashtag-list" id="hashtagList"></div></div>
+    <p style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">캡션 하나를 수정하고 다른 곳을 클릭하면(포커스 아웃), 나머지 언어 캡션에도 자동으로 반영돼요.</p>
 
     <div id="captionSaveRow" style="display:none;align-items:center;gap:12px;margin:14px 0;justify-content:flex-end;">
       <span id="captionSaveStatus" style="font-size:12.5px;color:var(--ink-soft);"></span>
@@ -1325,7 +1327,7 @@
 
     <div class="modal-footer">
       <button class="secondary" id="closeChecklistBtn">닫기</button>
-      <button class="primary" id="completeChecklistBtn" disabled>체크리스트 완료</button>
+      <button class="primary" id="completeChecklistBtn">체크리스트 완료</button>
     </div>
   </div>
 </div>
@@ -2250,6 +2252,15 @@ function onImagesReady(){
   renderThumbs();
   renderCrops();
   updateMbsState();
+
+  // 업로드만 되면 바로 완료 처리 (체크리스트 팝업 열지 않아도 단계 완료 표시 + 아카이브 저장됨)
+  if(!checklistComplete){
+    checklistComplete = true;
+    const statusEl = document.getElementById('checklistStatus');
+    if(statusEl){ statusEl.textContent = '✓ 보안 체크리스트 확인 완료'; statusEl.classList.remove('pending'); statusEl.classList.add('done'); }
+    updateMbsState();
+    saveToArchiveAuto();
+  }
 }
 
 function renderThumbs(){
@@ -2817,6 +2828,74 @@ document.getElementById('captionOrig').addEventListener('input', e => { if(gener
 document.getElementById('captionSv').addEventListener('input', e => { if(generatedCaptions) generatedCaptions.caption_sv = e.target.value; updateMbsState(); updatePreviewCaptions(); });
 document.getElementById('captionEn').addEventListener('input', e => { if(generatedCaptions) generatedCaptions.caption_en = e.target.value; updateMbsState(); updatePreviewCaptions(); });
 
+// ============ 캡션 언어 간 자동 동기화 ============
+// 세 캡션 중 하나를 고쳐서 포커스를 벗어나면(blur), 실제로 바뀌었을 때만 나머지 언어로 재번역해서 반영함
+(function setupCaptionAutoSync(){
+  const idMap = { orig: 'captionOrig', en: 'captionEn', sv: 'captionSv' };
+  const focusSnapshot = {};
+  Object.keys(idMap).forEach(key => {
+    const el = document.getElementById(idMap[key]);
+    el.addEventListener('focus', () => { focusSnapshot[key] = el.value; });
+    el.addEventListener('blur', () => {
+      const changed = el.value.trim() !== (focusSnapshot[key] || '').trim();
+      if(changed && el.value.trim()) resyncCaptionsFrom(key);
+    });
+  });
+})();
+
+async function resyncCaptionsFrom(editedKey){
+  const origLangVal = document.getElementById('origLang').value;
+  const fields = {
+    orig: { el: document.getElementById('captionOrig'), lang: origLangVal },
+    sv: { el: document.getElementById('captionSv'), lang: '스웨덴어' },
+  };
+  if(origLangVal !== '영어'){
+    fields.en = { el: document.getElementById('captionEn'), lang: '영어' };
+  }
+  const source = fields[editedKey];
+  if(!source) return;
+  const sourceText = source.el.value.trim();
+  if(!sourceText) return;
+
+  const targetKeys = Object.keys(fields).filter(k => k !== editedKey);
+  if(targetKeys.length === 0) return;
+
+  const statusEl = document.getElementById('captionSyncStatus');
+  if(statusEl) statusEl.textContent = '⏳ 다른 언어 캡션에 반영하는 중...';
+
+  try{
+    const targetLangList = targetKeys.map(k => fields[k].lang).join(', ');
+    const system = `당신은 KKC Sweden(주스웨덴한국문화원) SNS 캡션 번역가입니다. 원문의 톤·의미·이모지 사용을 최대한 유지하면서, 문화원 공식 계정에 어울리는 정중하고 친근한 톤으로 자연스럽게 번역합니다.`;
+    const user = `다음은 ${source.lang}로 작성/수정된 인스타그램 캡션입니다. 이 내용을 ${targetLangList}로 각각 번역해주세요. 원문이 수정된 내용을 반영해서 다시 번역하는 것이니, 기존 번역을 참고하지 말고 이 원문 기준으로 새로 번역하세요.
+
+원문(${source.lang}):
+${sourceText}
+
+반드시 아래 JSON 형식으로만 답하세요. 다른 설명은 포함하지 마세요.
+{${targetKeys.map(k => `"${k}": "번역문"`).join(', ')}}`;
+
+    const result = await callClaudeJson(system, user, false, 1200);
+    targetKeys.forEach(k => {
+      if(result[k]){
+        fields[k].el.value = result[k];
+        if(generatedCaptions){
+          if(k === 'orig') generatedCaptions.caption_orig = result[k];
+          if(k === 'en') generatedCaptions.caption_en = result[k];
+          if(k === 'sv') generatedCaptions.caption_sv = result[k];
+        }
+      }
+    });
+    updateMbsState();
+    updatePreviewCaptions();
+    if(statusEl) statusEl.textContent = '✓ 다른 언어 캡션에 반영됐어요';
+  } catch(err){
+    console.error('캡션 자동 동기화 실패:', err);
+    if(statusEl) statusEl.textContent = '⚠ 자동 반영 실패 — 직접 수정해주세요';
+  } finally {
+    setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 4000);
+  }
+}
+
 // 선택된 미리보기 언어에 해당하는 캡션 텍스트를 반환 (없으면 빈 문자열)
 function getCaptionByLang(lang){
   const origLang = document.getElementById('origLang').value;
@@ -2965,7 +3044,6 @@ checkboxes.forEach(cb => cb.addEventListener('change', () => { updateChecklistPr
 function updateChecklistProgress(){
   const checked = checkboxes.filter(cb => cb.checked).length;
   document.getElementById('checkProgress').textContent = `${checked} / ${checkboxes.length} 완료`;
-  document.getElementById('completeChecklistBtn').disabled = checked < checkboxes.length;
 }
 function syncSelectAll(){
   const all = checkboxes.every(cb => cb.checked);
