@@ -836,9 +836,10 @@
   <!-- STEP 4: Caption -->
   <div class="step-label"><div class="step-num">4</div><div class="step-title">캡션, 해시태그, 번역</div></div>
   <div class="card">
-    <div class="mode-toggle" id="captionModeToggle" style="max-width:360px;">
+    <div class="mode-toggle" id="captionModeToggle" style="max-width:520px;">
       <button class="mode-btn active" data-mode="ai-write">AI가 처음부터 작성</button>
       <button class="mode-btn" data-mode="ai-translate">내가 쓴 캡션 번역만</button>
+      <button class="mode-btn" data-mode="as-is">이대로 등록하기</button>
     </div>
 
     <div class="field" id="origLangField" style="max-width:220px;margin-top:14px;display:none;">
@@ -2714,6 +2715,18 @@ function updateCaptionVisibility(){
   const enBlock = document.getElementById('enCaptionBlock');
   const hashBlock = document.getElementById('hashtagBlock');
   const saveRow = document.getElementById('captionSaveRow');
+
+  if(captionMode === 'as-is'){
+    // 이대로 등록하기: AI 호출 없이 캡션 칸만 바로 보여주고, 언제든 저장 가능
+    document.getElementById('origCaptionLabel').textContent = '캡션';
+    origBlock.style.display = 'block';
+    svBlock.style.display = 'none';
+    enBlock.style.display = 'none';
+    hashBlock.style.display = 'none';
+    saveRow.style.display = 'flex';
+    return;
+  }
+
   saveRow.style.display = resultsRevealed ? 'flex' : 'none';
 
   if(captionMode === 'ai-write'){
@@ -2764,7 +2777,7 @@ document.getElementById('captionModeToggle').addEventListener('click', (e) => {
   resultsRevealed = false;
   // AI가 처음부터 작성 모드에서는 원본 언어를 항상 한국어로 고정 (선택 불필요)
   document.getElementById('origLangField').style.display = captionMode === 'ai-translate' ? 'block' : 'none';
-  if(captionMode === 'ai-write') document.getElementById('origLang').value = '한국어';
+  if(captionMode === 'ai-write' || captionMode === 'as-is') document.getElementById('origLang').value = '한국어';
   updateCaptionVisibility();
 
   const hint = document.getElementById('captionModeHint');
@@ -2772,9 +2785,14 @@ document.getElementById('captionModeToggle').addEventListener('click', (e) => {
   if(captionMode === 'ai-write'){
     hint.innerHTML = '1단계에서 입력한 행사 정보를 바탕으로 AI가 원본 캡션과 번역, 해시태그를 추천합니다.<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span>';
     genBtn.textContent = 'AI 캡션, 해시태그, 번역 생성';
+    genBtn.style.display = '';
+  } else if(captionMode === 'as-is'){
+    hint.textContent = '직접 작성한 캡션을 그대로 등록해요. AI 번역·해시태그 생성 없이, 입력하신 내용만 저장돼요.';
+    genBtn.style.display = 'none';
   } else {
     hint.textContent = '원본 캡션을 입력해주세요. AI는 그 내용을 번역하고 해시태그만 생성합니다. (원본 캡션은 수정하지 않아요)';
     genBtn.textContent = '번역 + 해시태그 생성';
+    genBtn.style.display = '';
   }
 });
 
