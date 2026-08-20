@@ -233,6 +233,8 @@
   .tag-pin::before{content:'';position:absolute;left:7px;top:50%;transform:translate(-50%,-50%);width:7px;height:7px;background:#fff;border:2px solid #0095f6;border-radius:50%;box-sizing:border-box;}
   .tag-pin:hover{background:rgba(192,57,43,.9);}
   .tag-hint{position:absolute;top:20px;left:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;pointer-events:none;text-align:center;}
+  .schedule-badge{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(20,32,55,.85);color:#fff;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;pointer-events:none;z-index:6;box-shadow:0 2px 8px rgba(0,0,0,.3);white-space:nowrap;}
+  .schedule-badge svg{width:13px;height:13px;flex-shrink:0;}
   .mockup-actions{padding:10px 13px 4px;font-size:16px;color:var(--ink-soft);letter-spacing:8px;}
   .mockup-actions-row{display:flex;align-items:center;justify-content:space-between;padding:10px 13px 0;}
   .mockup-actions-left{display:flex;align-items:center;gap:13px;}
@@ -240,6 +242,10 @@
   .mockup-bookmark{width:20px;height:20px;color:var(--ink);}
   .mockup-likes{padding:7px 13px 0;font-size:12px;font-weight:700;color:var(--ink);}
   .mockup-caption{padding:5px 13px 4px;font-size:12px;line-height:1.5;color:var(--ink);word-break:break-word;white-space:pre-wrap;}
+  .pv-info-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+  .pv-info-row{display:flex;gap:10px;font-size:12.5px;line-height:1.5;align-items:baseline;}
+  .pv-info-label{flex:0 0 70px;color:var(--ink-soft);font-weight:700;}
+  .pv-info-tag{display:inline-block;font-size:11.5px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin:2px 4px 2px 0;}
   .mockup-caption strong{margin-right:4px;}
   .mockup-timestamp{padding:2px 13px 14px;font-size:10px;color:var(--ink-soft);letter-spacing:.02em;}
   .fb-reaction-row{display:flex;justify-content:space-between;padding:8px 13px;font-size:11px;color:var(--ink-soft);border-bottom:1px solid var(--line-soft);}
@@ -911,6 +917,7 @@
             <div class="canvas-tag-wrap" id="feedCanvasWrap">
               <canvas class="mockup-image" id="feedCanvas"></canvas>
               <div class="tag-overlay" id="tagOverlay"></div>
+              <div class="schedule-badge" id="scheduleBadge" style="display:none;"></div>
               <button class="carousel-nav prev" id="feedPrev" aria-label="이전 사진">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
@@ -952,6 +959,25 @@
             <button class="secondary" id="videoTagAddBtn" type="button">추가</button>
           </div>
           <div id="videoTagList" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+        <div id="reelsCoverSection" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
+          <label style="font-weight:600;font-size:13px;">릴스 커버(썸네일) 선택</label>
+          <p style="font-size:12px;color:var(--ink-soft);margin:4px 0 10px;">슬라이더로 영상 속 원하는 장면을 찾아 커버로 지정하거나, 별도 이미지를 업로드하세요. 아무것도 안 하시면 영상 첫 장면이 자동으로 커버가 돼요.</p>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <canvas id="reelsCoverPreview" width="90" height="160" style="border-radius:8px;border:1px solid var(--line);background:#000;flex-shrink:0;"></canvas>
+            <div style="flex:1;min-width:0;">
+              <input type="range" id="reelsCoverSlider" min="0" max="1000" value="0" style="width:100%;">
+              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                <button class="secondary" id="reelsCoverUseFrameBtn" type="button">이 장면을 커버로 사용</button>
+                <label class="secondary" style="display:inline-flex;align-items:center;cursor:pointer;padding:8px 14px;border-radius:8px;margin:0;">
+                  직접 업로드
+                  <input type="file" id="reelsCoverUploadInput" accept="image/*" style="display:none;">
+                </label>
+                <button class="secondary" id="reelsCoverResetBtn" type="button" style="display:none;">기본값으로</button>
+              </div>
+              <p id="reelsCoverStatus" style="font-size:12px;color:var(--green,#1a7f3c);margin-top:8px;min-height:16px;"></p>
+            </div>
+          </div>
         </div>
       </div>
       <div class="edit-col">
@@ -2504,12 +2530,104 @@ function updateTagSectionVisibility(){
   const isVideo = item.kind === 'video';
   document.getElementById('imageTagSection').style.display = isVideo ? 'none' : 'block';
   document.getElementById('videoTagSection').style.display = isVideo ? 'block' : 'none';
+  document.getElementById('reelsCoverSection').style.display = isVideo ? 'block' : 'none';
   if(isVideo){
     tagModeOn = false;
     document.getElementById('feedCanvasWrap').classList.remove('tag-mode');
     renderVideoTagList();
+    setupReelsCoverForItem(item);
   }
 }
+
+// ---- 릴스 커버(썸네일) 선택 ----
+function setupReelsCoverForItem(item){
+  const slider = document.getElementById('reelsCoverSlider');
+  const statusEl = document.getElementById('reelsCoverStatus');
+  const resetBtn = document.getElementById('reelsCoverResetBtn');
+  const video = item.img;
+
+  // 슬라이더는 0~1000으로 고정해두고, 실제 영상 길이에 비례해서 시간으로 환산 (영상마다 길이가 달라도 동일하게 동작)
+  slider.value = 0;
+  if(video.duration && !isNaN(video.duration)){
+    seekAndDrawCoverFrame(video, 0);
+  }
+  statusEl.textContent = item.coverBase64 ? '✓ 커버가 지정되어 있어요' : '';
+  resetBtn.style.display = item.coverBase64 ? 'inline-block' : 'none';
+}
+
+function seekAndDrawCoverFrame(video, sliderVal){
+  if(!video.duration || isNaN(video.duration)) return;
+  const targetTime = (sliderVal / 1000) * video.duration;
+  const onSeeked = () => {
+    video.removeEventListener('seeked', onSeeked);
+    const canvas = document.getElementById('reelsCoverPreview');
+    const ctx = canvas.getContext('2d');
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if(!vw || !vh) return;
+    // 9:16 커버 프레임에 맞춰 가운데 crop
+    const targetRatio = canvas.width / canvas.height;
+    const srcRatio = vw / vh;
+    let sx, sy, sw, sh;
+    if(srcRatio > targetRatio){ sh = vh; sw = vh * targetRatio; sx = (vw - sw) / 2; sy = 0; }
+    else { sw = vw; sh = vw / targetRatio; sx = 0; sy = (vh - sh) / 2; }
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  };
+  video.addEventListener('seeked', onSeeked);
+  video.currentTime = targetTime;
+}
+
+document.getElementById('reelsCoverSlider').addEventListener('input', (e) => {
+  if(!uploadedImages.length) return;
+  const item = uploadedImages[feedIndex];
+  if(item.kind !== 'video') return;
+  seekAndDrawCoverFrame(item.img, Number(e.target.value));
+});
+
+document.getElementById('reelsCoverUseFrameBtn').addEventListener('click', () => {
+  if(!uploadedImages.length) return;
+  const item = uploadedImages[feedIndex];
+  if(item.kind !== 'video') return;
+  const canvas = document.getElementById('reelsCoverPreview');
+  item.coverBase64 = canvas.toDataURL('image/jpeg', 0.9);
+  document.getElementById('reelsCoverStatus').textContent = '✓ 이 장면이 커버로 지정됐어요';
+  document.getElementById('reelsCoverResetBtn').style.display = 'inline-block';
+});
+
+document.getElementById('reelsCoverUploadInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file || !uploadedImages.length) return;
+  const item = uploadedImages[feedIndex];
+  if(item.kind !== 'video') return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    item.coverBase64 = ev.target.result;
+    document.getElementById('reelsCoverStatus').textContent = `✓ "${file.name}"을(를) 커버로 지정했어요`;
+    document.getElementById('reelsCoverResetBtn').style.display = 'inline-block';
+    const canvas = document.getElementById('reelsCoverPreview');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      const targetRatio = canvas.width / canvas.height;
+      const srcRatio = img.width / img.height;
+      let sx, sy, sw, sh;
+      if(srcRatio > targetRatio){ sh = img.height; sw = img.height * targetRatio; sx = (img.width - sw) / 2; sy = 0; }
+      else { sw = img.width; sh = img.width / targetRatio; sx = 0; sy = (img.height - sh) / 2; }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+document.getElementById('reelsCoverResetBtn').addEventListener('click', () => {
+  if(!uploadedImages.length) return;
+  const item = uploadedImages[feedIndex];
+  delete item.coverBase64;
+  document.getElementById('reelsCoverStatus').textContent = '';
+  document.getElementById('reelsCoverResetBtn').style.display = 'none';
+  setupReelsCoverForItem(item);
+});
 
 function renderTagOverlay(){
   const overlay = document.getElementById('tagOverlay');
@@ -3229,7 +3347,25 @@ document.getElementById('downloadFb').addEventListener('click', downloadFbImage)
 // ============ 인스타그램 게시 — 미리보기 전용 (실제 게시 API는 절대 호출하지 않음) ============
 document.getElementById('publishScheduleToggle').addEventListener('change', (e) => {
   document.getElementById('publishScheduleField').style.display = e.target.checked ? 'block' : 'none';
+  updateScheduleBadge();
 });
+document.getElementById('publishScheduleAt').addEventListener('input', updateScheduleBadge);
+
+// 예약 날짜/시간을 사진 미리보기 위에 실시간으로 배지처럼 표시 (계정 태그 핀과 같은 위치 감각)
+function updateScheduleBadge(){
+  const badge = document.getElementById('scheduleBadge');
+  const isScheduled = document.getElementById('publishScheduleToggle').checked;
+  const raw = document.getElementById('publishScheduleAt').value;
+
+  if(!isScheduled || !raw){
+    badge.style.display = 'none';
+    return;
+  }
+  const d = new Date(raw);
+  const dateText = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  badge.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>${dateText} 예약`;
+  badge.style.display = 'flex';
+}
 
 function parseTagsInput(raw){
   return (raw || '')
@@ -3274,33 +3410,61 @@ document.getElementById('publishPreviewBtn').addEventListener('click', async () 
   let videoSizeNote = '';
   const videoItems = items.filter(it => it.kind === 'video');
   if(videoItems.length > 0){
-    const sizes = videoItems.map(it => it.file ? `${it.name} (${(it.file.size/(1024*1024)).toFixed(1)}MB)` : `${it.name} (크기 알 수 없음)`);
+    const sizes = videoItems.map(it => {
+      const sizeText = it.file ? `${(it.file.size/(1024*1024)).toFixed(1)}MB` : '크기 알 수 없음';
+      const coverText = it.coverBase64 ? '커버 지정됨' : '커버 자동(첫 장면)';
+      return `${it.name} (${sizeText}, ${coverText})`;
+    });
     videoSizeNote = `영상 파일: ${sizes.join(', ')}`;
   }
 
   // 사진별로 지정된 태그를 정리 (카드뉴스면 몇 번째 장인지도 같이 표시)
   const tagLines = items
-    .map((it, i) => (it.tags && it.tags.length) ? `  ${i+1}번째: ${it.tags.map(t=>'@'+t.username).join(', ')}` : null)
+    .map((it, i) => (it.tags && it.tags.length) ? `${i+1}번째: ${it.tags.map(t=>'@'+t.username).join(', ')}` : null)
     .filter(Boolean);
-  const tagSummary = tagLines.length ? `계정 태그:\n${tagLines.join('\n')}` : '계정 태그: 없음';
+  const tagSummaryHtml = tagLines.length
+    ? tagLines.map(t => `<div class="pv-info-tag">🏷️ ${t}</div>`).join('')
+    : `<div class="pv-info-tag" style="opacity:.55;">계정 태그 없음</div>`;
 
-  const lines = [
-    `【미리보기 — 실제로 게시되지 않았습니다】`,
-    ``,
-    `게시 유형: ${mediaType}${mediaType==='CAROUSEL' ? ` (사진 ${imageCount}장 + 영상 ${videoCount}개, 총 ${items.length}개)` : ''}`,
-    videoSizeNote,
-    `캡션 언어: ${lang}`,
-    `캡션 내용:`,
-    fullCaption || '(비어있음 — 먼저 캡션을 생성/입력해주세요)',
-    ``,
-    tagSummary,
-    `담당자: ${staffName || '(미입력)'} / ${staffEmail || '(미입력)'}`,
-    `행사명: ${eventName || '(미입력)'}`,
-    `게시 시점: ${isScheduled ? (scheduledAtRaw ? new Date(scheduledAtRaw).toLocaleString('ko-KR') + ' 예약' : '(예약 날짜 미입력)') : '즉시 게시로 설정됨'}`,
-  ].filter(Boolean);
+  const scheduleText = isScheduled
+    ? (scheduledAtRaw ? `⏰ ${new Date(scheduledAtRaw).toLocaleString('ko-KR')} 예약` : '⚠️ 예약 날짜 미입력')
+    : '⚡ 즉시 게시로 설정됨';
 
-  resultBox.textContent = lines.join('\n');
+  const mediaTypeLabel = mediaType === 'CAROUSEL'
+    ? `카드뉴스 (사진 ${imageCount}장${videoCount ? ` + 영상 ${videoCount}개` : ''}, 총 ${items.length}개)`
+    : mediaType === 'REELS' ? '릴스(영상)' : '일반 게시물';
+
+  // 현재 편집 화면에 그려져 있는 캔버스를 그대로 스냅샷해서 실제 게시물처럼 미리보기에 사용
+  const snapshotUrl = document.getElementById('feedCanvas').toDataURL('image/jpeg', 0.9);
+
+  resultBox.style.padding = '16px';
+  resultBox.innerHTML = `
+    <p style="font-size:12px;font-weight:800;color:var(--navy2,#152037);margin:0 0 12px;text-align:center;">⚠️ 미리보기입니다 — 실제로 게시되지 않았어요</p>
+    <div class="mockup-feed" style="margin-bottom:16px;">
+      <div class="mockup-header">
+        <div class="mockup-avatar"></div>
+        <div class="mockup-username">kculture.sweden</div>
+      </div>
+      <img src="${snapshotUrl}" style="width:100%;display:block;">
+      <div class="mockup-likes">좋아요 0개</div>
+      <div class="mockup-caption"><strong>kculture.sweden</strong> ${escapeHtmlPreview(fullCaption) || '<span style="opacity:.5;">(캡션 없음 — 먼저 작성/생성해주세요)</span>'}</div>
+    </div>
+    <div class="pv-info-panel">
+      <div class="pv-info-row"><span class="pv-info-label">게시 유형</span><span>${mediaTypeLabel}</span></div>
+      ${videoSizeNote ? `<div class="pv-info-row"><span class="pv-info-label">영상 정보</span><span>${videoSizeNote.replace('영상 파일: ','')}</span></div>` : ''}
+      <div class="pv-info-row"><span class="pv-info-label">담당자</span><span>${staffName || '(미입력)'} ${staffEmail ? `· ${staffEmail}` : ''}</span></div>
+      <div class="pv-info-row"><span class="pv-info-label">행사명</span><span>${eventName || '(미입력)'}</span></div>
+      <div class="pv-info-row"><span class="pv-info-label">게시 시점</span><span>${scheduleText}</span></div>
+      <div class="pv-info-row"><span class="pv-info-label">계정 태그</span><div>${tagSummaryHtml}</div></div>
+    </div>
+  `;
 });
+
+function escapeHtmlPreview(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML.replace(/\n/g, '<br>');
+}
 
 document.getElementById('copyCaption').addEventListener('click', () => {
   const lang = document.getElementById('copyLang').value;
