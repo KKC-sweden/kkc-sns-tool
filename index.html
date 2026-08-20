@@ -270,6 +270,10 @@
   .cs-inbox-item .ci-from{font-size:12px;font-weight:700;color:var(--navy-deep);}
   .cs-inbox-item .ci-text{font-size:13px;color:var(--ink);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cs-inbox-item .ci-time{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+  .ci-platform-head{font-size:13px;font-weight:800;color:var(--navy-deep);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--navy-deep);}
+  .ci-platform-head:first-child{margin-top:0;}
+  .ci-platform-count{font-size:11px;font-weight:700;color:var(--ink-soft);margin-left:4px;}
+  .ci-kind-head{font-size:12px;font-weight:700;color:var(--ink-soft);margin:10px 0 6px 4px;}
   .hashtag{font-size:12px;font-weight:600;background:#fff;color:var(--navy-soft);padding:5px 8px 5px 12px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:5px;}
   .hashtag .tag-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;border-radius:50%;}
   .hashtag .tag-del:hover{color:var(--danger);background:var(--line-soft);}
@@ -1113,9 +1117,7 @@
         <label for="publishScheduleAt">예약 날짜·시간 (스웨덴 현지 시간 기준)</label>
         <input type="datetime-local" id="publishScheduleAt">
       </div>
-      <button class="secondary" id="publishPreviewBtn" style="margin-top:6px;">미리보기 (실제 게시 안 됨)</button>
-      <div id="publishResult" style="margin-top:12px;font-size:13px;white-space:pre-wrap;background:#fff;border:1px solid var(--line);border-radius:8px;padding:0;overflow:hidden;"></div>
-      <p style="margin-top:10px;font-size:12px;color:var(--ink-soft);">사진 1장→일반 게시물 / 여러 장(사진)→카드뉴스 / 영상 1개→릴스 로 자동 판단돼요. 영상+사진을 섞어 올리신 경우 카드뉴스 안에 영상 카드가 같이 들어가요.</p>
+      <p style="margin-top:10px;font-size:12px;color:var(--ink-soft);">사진 1장→일반 게시물 / 여러 장(사진)→카드뉴스 / 영상 1개→릴스 로 자동 판단돼요. 영상+사진을 섞어 올리신 경우 카드뉴스 안에 영상 카드가 같이 들어가요. 실제로 어떻게 보일지는 위 STEP 5 미리보기에서 바로 확인하실 수 있어요.</p>
     </div>
   </div>
 
@@ -1227,7 +1229,7 @@
     </div>
   </div>
 
-  <div class="mbs-note" style="margin-top:8px;">문의 자동 분류 및 담당자 배분 알림은 Power Automate 단계(Module 1과 연계)에서 별도로 구축할 예정입니다. 이 화면은 답변 문구 초안 작성까지 담당합니다.</div>
+  <div class="mbs-note" style="margin-top:8px;">인스타그램 댓글·DM은 자동으로 수집돼서 위 "새로 들어온 문의"에 뜨고, 담당자에게는 이메일로도 요약해서 알림이 가요. 이 화면(STEP 1~2)은 그 문의에 대한 답변 문구를 AI로 초안 작성하는 용도예요.</div>
 
   <!-- STEP 3: Template library -->
   <div class="history">
@@ -3374,98 +3376,6 @@ function parseTagsInput(raw){
     .filter(Boolean);
 }
 
-document.getElementById('publishPreviewBtn').addEventListener('click', async () => {
-  const resultBox = document.getElementById('publishResult');
-  resultBox.style.padding = '14px';
-  resultBox.textContent = '미리보기 준비 중...';
-
-  const items = uploadedImages;
-  if(items.length === 0){
-    resultBox.style.padding = '0';
-    alert('업로드된 사진/영상이 없습니다.');
-    return;
-  }
-
-  const imageCount = items.filter(it => it.kind !== 'video').length;
-  const videoCount = items.filter(it => it.kind === 'video').length;
-
-  let mediaType;
-  if(items.length === 1 && videoCount === 1) mediaType = 'REELS';
-  else if(items.length === 1) mediaType = 'IMAGE';
-  else mediaType = 'CAROUSEL';
-
-  const lang = document.getElementById('publishLang').value;
-  const caption = getCaptionByLang(lang);
-  const hashtags = getCurrentCaptionData().hashtags.join(' ');
-  const fullCaption = [caption, hashtags].filter(Boolean).join('\n\n');
-
-  const isScheduled = document.getElementById('publishScheduleToggle').checked;
-  const scheduledAtRaw = document.getElementById('publishScheduleAt').value;
-
-  const staffName = document.getElementById('ownerName').value.trim();
-  const staffEmail = document.getElementById('ownerEmail').value.trim();
-  const eventName = document.getElementById('eventName').value.trim();
-
-  // 영상이 있으면 용량만 미리 확인 (실제 base64 변환은 무거우니 미리보기에선 크기 표시만)
-  let videoSizeNote = '';
-  const videoItems = items.filter(it => it.kind === 'video');
-  if(videoItems.length > 0){
-    const sizes = videoItems.map(it => {
-      const sizeText = it.file ? `${(it.file.size/(1024*1024)).toFixed(1)}MB` : '크기 알 수 없음';
-      const coverText = it.coverBase64 ? '커버 지정됨' : '커버 자동(첫 장면)';
-      return `${it.name} (${sizeText}, ${coverText})`;
-    });
-    videoSizeNote = `영상 파일: ${sizes.join(', ')}`;
-  }
-
-  // 사진별로 지정된 태그를 정리 (카드뉴스면 몇 번째 장인지도 같이 표시)
-  const tagLines = items
-    .map((it, i) => (it.tags && it.tags.length) ? `${i+1}번째: ${it.tags.map(t=>'@'+t.username).join(', ')}` : null)
-    .filter(Boolean);
-  const tagSummaryHtml = tagLines.length
-    ? tagLines.map(t => `<div class="pv-info-tag">🏷️ ${t}</div>`).join('')
-    : `<div class="pv-info-tag" style="opacity:.55;">계정 태그 없음</div>`;
-
-  const scheduleText = isScheduled
-    ? (scheduledAtRaw ? `⏰ ${new Date(scheduledAtRaw).toLocaleString('ko-KR')} 예약` : '⚠️ 예약 날짜 미입력')
-    : '⚡ 즉시 게시로 설정됨';
-
-  const mediaTypeLabel = mediaType === 'CAROUSEL'
-    ? `카드뉴스 (사진 ${imageCount}장${videoCount ? ` + 영상 ${videoCount}개` : ''}, 총 ${items.length}개)`
-    : mediaType === 'REELS' ? '릴스(영상)' : '일반 게시물';
-
-  // 현재 편집 화면에 그려져 있는 캔버스를 그대로 스냅샷해서 실제 게시물처럼 미리보기에 사용
-  const snapshotUrl = document.getElementById('feedCanvas').toDataURL('image/jpeg', 0.9);
-
-  resultBox.style.padding = '16px';
-  resultBox.innerHTML = `
-    <p style="font-size:12px;font-weight:800;color:var(--navy2,#152037);margin:0 0 12px;text-align:center;">⚠️ 미리보기입니다 — 실제로 게시되지 않았어요</p>
-    <div class="mockup-feed" style="margin-bottom:16px;">
-      <div class="mockup-header">
-        <div class="mockup-avatar"></div>
-        <div class="mockup-username">kculture.sweden</div>
-      </div>
-      <img src="${snapshotUrl}" style="width:100%;display:block;">
-      <div class="mockup-likes">좋아요 0개</div>
-      <div class="mockup-caption"><strong>kculture.sweden</strong> ${escapeHtmlPreview(fullCaption) || '<span style="opacity:.5;">(캡션 없음 — 먼저 작성/생성해주세요)</span>'}</div>
-    </div>
-    <div class="pv-info-panel">
-      <div class="pv-info-row"><span class="pv-info-label">게시 유형</span><span>${mediaTypeLabel}</span></div>
-      ${videoSizeNote ? `<div class="pv-info-row"><span class="pv-info-label">영상 정보</span><span>${videoSizeNote.replace('영상 파일: ','')}</span></div>` : ''}
-      <div class="pv-info-row"><span class="pv-info-label">담당자</span><span>${staffName || '(미입력)'} ${staffEmail ? `· ${staffEmail}` : ''}</span></div>
-      <div class="pv-info-row"><span class="pv-info-label">행사명</span><span>${eventName || '(미입력)'}</span></div>
-      <div class="pv-info-row"><span class="pv-info-label">게시 시점</span><span>${scheduleText}</span></div>
-      <div class="pv-info-row"><span class="pv-info-label">계정 태그</span><div>${tagSummaryHtml}</div></div>
-    </div>
-  `;
-});
-
-function escapeHtmlPreview(str){
-  const d = document.createElement('div');
-  d.textContent = str || '';
-  return d.innerHTML.replace(/\n/g, '<br>');
-}
-
 document.getElementById('copyCaption').addEventListener('click', () => {
   const lang = document.getElementById('copyLang').value;
   const caption = getCaptionByLang(lang);
@@ -3579,6 +3489,14 @@ loadHistory();
 
 // ============ CS 인박스 (웹훅으로 들어온 인스타 댓글·DM) ============
 let csInboxItems = [];
+// 채널 문자열("Instagram 댓글" 등)에서 플랫폼과 종류를 추출 (Worker의 분류 로직과 동일한 기준)
+function parseChannelForGroup(channel){
+  const c = channel || '';
+  const platform = c.includes('Facebook') ? 'Facebook' : 'Instagram';
+  const kind = c.includes('DM') ? 'DM' : '댓글';
+  return { platform, kind };
+}
+
 async function loadCsInbox(){
   const emptyEl = document.getElementById('csInboxEmpty');
   const listEl = document.getElementById('csInboxList');
@@ -3610,10 +3528,17 @@ async function loadCsInbox(){
     return;
   }
   emptyEl.style.display = 'none';
-  listEl.innerHTML = csInboxItems.map(item => {
+
+  // 플랫폼 → 종류(댓글/DM) 순서로 그룹핑
+  const groups = { Instagram: { '댓글': [], 'DM': [] }, Facebook: { '댓글': [], 'DM': [] } };
+  csInboxItems.forEach(item => {
+    const { platform, kind } = parseChannelForGroup(item.channel);
+    groups[platform][kind].push(item);
+  });
+
+  const renderItem = (item) => {
     const timeAgo = new Date(item.receivedAt).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
     return `<div class="cs-inbox-item">
-      <span class="ci-ch">${escapeHtml(item.channel || '문의')}</span>
       <div class="ci-body">
         <div class="ci-from">${escapeHtml(item.fromUsername || '알 수 없음')}</div>
         <div class="ci-text">${escapeHtml(item.text || '')}</div>
@@ -3621,7 +3546,22 @@ async function loadCsInbox(){
       <span class="ci-time">${timeAgo}</span>
       <button class="secondary" data-load-inbox="${item.key}" style="white-space:nowrap;">이걸로 답변 작성</button>
     </div>`;
-  }).join('');
+  };
+
+  let html = '';
+  for(const platform of ['Instagram', 'Facebook']){
+    const kinds = groups[platform];
+    const total = kinds['댓글'].length + kinds['DM'].length;
+    if(total === 0) continue;
+    html += `<div class="ci-platform-head">${platform} <span class="ci-platform-count">${total}건</span></div>`;
+    for(const kind of ['댓글', 'DM']){
+      const items = kinds[kind];
+      if(items.length === 0) continue;
+      html += `<div class="ci-kind-head">${kind === '댓글' ? '💬 댓글' : '✉️ DM'} (${items.length})</div>`;
+      html += items.map(renderItem).join('');
+    }
+  }
+  listEl.innerHTML = html;
 }
 
 async function useCsInboxItem(key){
