@@ -1161,9 +1161,13 @@
   <!-- 웹훅으로 들어온 새 문의 (인스타 댓글/DM) -->
   <div class="step-label"><div class="step-num">📥</div><div class="step-title">새로 들어온 문의 <span class="step-hint" id="csInboxCount"></span></div></div>
   <div class="card" id="csInboxCard">
-    <div class="mode-toggle" id="csPlatformToggle" style="max-width:300px;margin-bottom:14px;">
+    <div class="mode-toggle" id="csPlatformToggle" style="max-width:300px;margin-bottom:10px;">
       <button class="mode-btn active" data-platform="Instagram">Instagram <span class="ci-toggle-count" id="csCountIg"></span></button>
       <button class="mode-btn" data-platform="Facebook">Facebook <span class="ci-toggle-count" id="csCountFb"></span></button>
+    </div>
+    <div class="mode-toggle" id="csKindToggle" style="max-width:260px;margin-bottom:14px;">
+      <button class="mode-btn active" data-kind="댓글">💬 댓글 <span class="ci-toggle-count" id="csCountComment"></span></button>
+      <button class="mode-btn" data-kind="DM">✉️ DM <span class="ci-toggle-count" id="csCountDm"></span></button>
     </div>
     <div id="csInboxEmpty" style="color:var(--ink-soft);font-size:13px;">불러오는 중...</div>
     <div id="csInboxList" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -1234,11 +1238,11 @@
       <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
         <button class="secondary" id="csCopyAll">전체 복사</button>
         <button class="secondary" id="csSaveTemplate">자주 쓰는 답변으로 저장</button>
+        <button class="primary" id="csMarkDoneBtn" style="display:none;">✓ 답변 완료 (목록에서 지우기)</button>
       </div>
     </div>
   </div>
 
-  <div class="mbs-note" style="margin-top:8px;">인스타그램 댓글·DM은 자동으로 수집돼서 위 "새로 들어온 문의"에 뜨고, 담당자에게는 이메일로도 요약해서 알림이 가요. 이 화면(STEP 1~2)은 그 문의에 대한 답변 문구를 AI로 초안 작성하는 용도예요.</div>
 
   <!-- STEP 3: Template library -->
   <div class="history">
@@ -3508,6 +3512,7 @@ function parseChannelForGroup(channel){
 
 let csInboxGroups = { Instagram: { '댓글': [], 'DM': [] }, Facebook: { '댓글': [], 'DM': [] } };
 let csInboxPlatform = 'Instagram';
+let csInboxKind = '댓글';
 
 async function loadCsInbox(){
   const emptyEl = document.getElementById('csInboxEmpty');
@@ -3548,6 +3553,8 @@ async function loadCsInbox(){
     emptyEl.style.display = 'block';
     emptyEl.textContent = '아직 들어온 댓글·DM이 없습니다. (Meta 웹훅·폴링 연동 후 자동으로 여기에 표시돼요)';
     listEl.innerHTML = '';
+    document.getElementById('csCountComment').textContent = '';
+    document.getElementById('csCountDm').textContent = '';
     return;
   }
   emptyEl.style.display = 'none';
@@ -3572,15 +3579,13 @@ function renderCsInboxList(){
   };
 
   const kinds = csInboxGroups[csInboxPlatform];
-  let html = '';
-  for(const kind of ['댓글', 'DM']){
-    const items = kinds[kind];
-    html += `<div class="ci-kind-head">${kind === '댓글' ? '💬 댓글' : '✉️ DM'} (${items.length})</div>`;
-    html += items.length
-      ? items.map(renderItem).join('')
-      : `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${kind}이 아직 없어요.</div>`;
-  }
-  listEl.innerHTML = html;
+  document.getElementById('csCountComment').textContent = kinds['댓글'].length ? `(${kinds['댓글'].length})` : '';
+  document.getElementById('csCountDm').textContent = kinds['DM'].length ? `(${kinds['DM'].length})` : '';
+
+  const items = kinds[csInboxKind];
+  listEl.innerHTML = items.length
+    ? items.map(renderItem).join('')
+    : `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${csInboxKind}이 아직 없어요.</div>`;
 }
 
 document.getElementById('csPlatformToggle').addEventListener('click', (e) => {
@@ -3592,23 +3597,51 @@ document.getElementById('csPlatformToggle').addEventListener('click', (e) => {
   renderCsInboxList();
 });
 
-let csHandledInSession = new Set(); // 이번 화면 방문 동안 "답변 작성" 누른 항목 — 목록에서 안 지우고 표시만 바꿈
+document.getElementById('csKindToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.mode-btn');
+  if(!btn) return;
+  document.querySelectorAll('#csKindToggle .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  csInboxKind = btn.dataset.kind;
+  renderCsInboxList();
+});
+
+let csHandledInSession = new Set(); // 완료 처리까지 끝난 항목 — 목록에서 안 지우고 표시만 바꿈
+let currentCsInboxKey = null; // 지금 STEP1~2에 불러와 작업 중인 인박스 항목 (없으면 null)
+
 async function useCsInboxItem(key){
   const item = csInboxItems.find(i => i.key === key);
   if(!item) return;
   document.getElementById('csChannel').value = '인스타그램 DM, 댓글';
   document.getElementById('csInquiry').value = item.text || '';
   document.getElementById('csStep1Label').scrollIntoView({behavior:'smooth', block:'start'});
-  csHandledInSession.add(key);
-  renderCsInboxList();
-  // 처리됨으로 표시 (다음에 새로고침해도 다시 "새 문의"로 안 뜨도록 서버에는 기록해둠)
-  try{
-    await kkcStorage.set(key, JSON.stringify({ ...item, key: undefined, handled: true }), true);
-  } catch(e){ console.error('인박스 처리 표시 실패:', e); }
+  currentCsInboxKey = key;
+  document.getElementById('csMarkDoneBtn').style.display = 'inline-flex';
+  // 아직 "완료 처리"는 안 함 — 실제로 답변까지 다 쓰고 나서 완료 버튼을 눌러야 목록에서 정리됨
 }
 document.getElementById('csInboxList').addEventListener('click', e => {
   const btn = e.target.closest('[data-load-inbox]');
   if(btn) useCsInboxItem(btn.dataset.loadInbox);
+});
+document.getElementById('csMarkDoneBtn').addEventListener('click', async () => {
+  if(!currentCsInboxKey) return;
+  const item = csInboxItems.find(i => i.key === currentCsInboxKey);
+  const btn = document.getElementById('csMarkDoneBtn');
+  btn.disabled = true;
+  try{
+    if(item){
+      await kkcStorage.set(currentCsInboxKey, JSON.stringify({ ...item, key: undefined, handled: true }), true);
+    }
+    csHandledInSession.add(currentCsInboxKey);
+    renderCsInboxList();
+    btn.style.display = 'none';
+    currentCsInboxKey = null;
+  } catch(e){
+    console.error('완료 처리 실패:', e);
+    alert('완료 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
+  } finally {
+    btn.disabled = false;
+  }
 });
 loadCsInbox();
 setInterval(loadCsInbox, 60000); // 1분마다 새 문의 자동 갱신
@@ -3625,6 +3658,8 @@ function resetCsForm(){
   document.getElementById('csResults').style.display = 'none';
   document.getElementById('csEmpty').style.display = 'block';
   document.getElementById('csError').style.display = 'none';
+  document.getElementById('csMarkDoneBtn').style.display = 'none';
+  currentCsInboxKey = null;
 }
 
 
