@@ -274,6 +274,9 @@
   .ci-platform-head:first-child{margin-top:0;}
   .ci-platform-count{font-size:11px;font-weight:700;color:var(--ink-soft);margin-left:4px;}
   .ci-kind-head{font-size:12px;font-weight:700;color:var(--ink-soft);margin:10px 0 6px 4px;}
+  .ci-kind-head:first-child{margin-top:0;}
+  .ci-kind-empty{font-size:12.5px;color:var(--ink-soft);padding:10px 14px;background:var(--paper);border:1px dashed var(--line);border-radius:10px;margin-bottom:4px;}
+  .ci-toggle-count{font-size:11px;opacity:.8;}
   .hashtag{font-size:12px;font-weight:600;background:#fff;color:var(--navy-soft);padding:5px 8px 5px 12px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:5px;}
   .hashtag .tag-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;border-radius:50%;}
   .hashtag .tag-del:hover{color:var(--danger);background:var(--line-soft);}
@@ -1156,6 +1159,10 @@
   <!-- 웹훅으로 들어온 새 문의 (인스타 댓글/DM) -->
   <div class="step-label"><div class="step-num">📥</div><div class="step-title">새로 들어온 문의 <span class="step-hint" id="csInboxCount"></span></div></div>
   <div class="card" id="csInboxCard">
+    <div class="mode-toggle" id="csPlatformToggle" style="max-width:300px;margin-bottom:14px;">
+      <button class="mode-btn active" data-platform="Instagram">Instagram <span class="ci-toggle-count" id="csCountIg"></span></button>
+      <button class="mode-btn" data-platform="Facebook">Facebook <span class="ci-toggle-count" id="csCountFb"></span></button>
+    </div>
     <div id="csInboxEmpty" style="color:var(--ink-soft);font-size:13px;">불러오는 중...</div>
     <div id="csInboxList" style="display:flex;flex-direction:column;gap:8px;"></div>
   </div>
@@ -3497,10 +3504,12 @@ function parseChannelForGroup(channel){
   return { platform, kind };
 }
 
+let csInboxGroups = { Instagram: { '댓글': [], 'DM': [] }, Facebook: { '댓글': [], 'DM': [] } };
+let csInboxPlatform = 'Instagram';
+
 async function loadCsInbox(){
   const emptyEl = document.getElementById('csInboxEmpty');
   const listEl = document.getElementById('csInboxList');
-  const countEl = document.getElementById('csInboxCount');
   try{
     const listResult = await kkcStorage.list('kkc:inbox:', true);
     csInboxItems = [];
@@ -3520,22 +3529,31 @@ async function loadCsInbox(){
     console.error('CS 인박스 로드 실패:', err);
     csInboxItems = [];
   }
-  countEl.textContent = csInboxItems.length ? `(${csInboxItems.length}건)` : '';
+
+  // 플랫폼 → 종류(댓글/DM) 순서로 그룹핑
+  csInboxGroups = { Instagram: { '댓글': [], 'DM': [] }, Facebook: { '댓글': [], 'DM': [] } };
+  csInboxItems.forEach(item => {
+    const { platform, kind } = parseChannelForGroup(item.channel);
+    csInboxGroups[platform][kind].push(item);
+  });
+
+  const igTotal = csInboxGroups.Instagram['댓글'].length + csInboxGroups.Instagram['DM'].length;
+  const fbTotal = csInboxGroups.Facebook['댓글'].length + csInboxGroups.Facebook['DM'].length;
+  document.getElementById('csCountIg').textContent = igTotal ? `(${igTotal})` : '';
+  document.getElementById('csCountFb').textContent = fbTotal ? `(${fbTotal})` : '';
+
   if(!csInboxItems.length){
     emptyEl.style.display = 'block';
-    emptyEl.textContent = '아직 들어온 댓글·DM이 없습니다. (Meta 웹훅 연동 후 자동으로 여기에 표시돼요)';
+    emptyEl.textContent = '아직 들어온 댓글·DM이 없습니다. (Meta 웹훅·폴링 연동 후 자동으로 여기에 표시돼요)';
     listEl.innerHTML = '';
     return;
   }
   emptyEl.style.display = 'none';
+  renderCsInboxList();
+}
 
-  // 플랫폼 → 종류(댓글/DM) 순서로 그룹핑
-  const groups = { Instagram: { '댓글': [], 'DM': [] }, Facebook: { '댓글': [], 'DM': [] } };
-  csInboxItems.forEach(item => {
-    const { platform, kind } = parseChannelForGroup(item.channel);
-    groups[platform][kind].push(item);
-  });
-
+function renderCsInboxList(){
+  const listEl = document.getElementById('csInboxList');
   const renderItem = (item) => {
     const timeAgo = new Date(item.receivedAt).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
     return `<div class="cs-inbox-item">
@@ -3548,21 +3566,26 @@ async function loadCsInbox(){
     </div>`;
   };
 
+  const kinds = csInboxGroups[csInboxPlatform];
   let html = '';
-  for(const platform of ['Instagram', 'Facebook']){
-    const kinds = groups[platform];
-    const total = kinds['댓글'].length + kinds['DM'].length;
-    if(total === 0) continue;
-    html += `<div class="ci-platform-head">${platform} <span class="ci-platform-count">${total}건</span></div>`;
-    for(const kind of ['댓글', 'DM']){
-      const items = kinds[kind];
-      if(items.length === 0) continue;
-      html += `<div class="ci-kind-head">${kind === '댓글' ? '💬 댓글' : '✉️ DM'} (${items.length})</div>`;
-      html += items.map(renderItem).join('');
-    }
+  for(const kind of ['댓글', 'DM']){
+    const items = kinds[kind];
+    html += `<div class="ci-kind-head">${kind === '댓글' ? '💬 댓글' : '✉️ DM'} (${items.length})</div>`;
+    html += items.length
+      ? items.map(renderItem).join('')
+      : `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${kind}이 아직 없어요.</div>`;
   }
   listEl.innerHTML = html;
 }
+
+document.getElementById('csPlatformToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.mode-btn');
+  if(!btn) return;
+  document.querySelectorAll('#csPlatformToggle .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  csInboxPlatform = btn.dataset.platform;
+  renderCsInboxList();
+});
 
 async function useCsInboxItem(key){
   const item = csInboxItems.find(i => i.key === key);
