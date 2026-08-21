@@ -3588,7 +3588,10 @@ document.getElementById('csMarkDoneBtn').addEventListener('click', async () => {
   }
 });
 loadCsInbox();
-setInterval(loadCsInbox, 60000); // 1분마다 새 문의 자동 갱신
+setInterval(() => {
+  if(document.hidden) return; // 탭이 백그라운드에 가려져 있으면 건너뜀 (KV 사용량 절약)
+  loadCsInbox();
+}, 600000); // 10분마다 새 문의 자동 갱신
 
 // ============ Tab switching ============
 function resetCsForm(){
