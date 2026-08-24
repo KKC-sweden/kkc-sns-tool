@@ -282,6 +282,8 @@
   .ci-page-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   .cs-inbox-item.ci-handled{opacity:.5;}
   .ci-handled-badge{font-size:11.5px;font-weight:700;color:var(--green,#1a7f3c);white-space:nowrap;}
+  .ci-dismiss-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-size:13px;cursor:pointer;flex-shrink:0;line-height:1;}
+  .ci-dismiss-btn:hover{background:#fdecec;color:#c0392b;border-color:#f0b8b8;}
   .hashtag{font-size:12px;font-weight:600;background:#fff;color:var(--navy-soft);padding:5px 8px 5px 12px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:5px;}
   .hashtag .tag-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;border-radius:50%;}
   .hashtag .tag-del:hover{color:var(--danger);background:var(--line-soft);}
@@ -3534,7 +3536,8 @@ function renderCsInboxList(){
       <span class="ci-time">${timeAgo}</span>
       ${isHandled
         ? `<span class="ci-handled-badge">✓ 작성 중</span>`
-        : `<button class="secondary" data-load-inbox="${item.key}" style="white-space:nowrap;">답변 작성</button>`}
+        : `<button class="secondary" data-load-inbox="${item.key}" style="white-space:nowrap;">답변 작성</button>
+           <button class="ci-dismiss-btn" data-dismiss-inbox="${item.key}" title="답변 필요 없음 — 목록에서 삭제">✕</button>`}
     </div>`;
   };
 
@@ -3607,9 +3610,33 @@ async function useCsInboxItem(key){
   document.getElementById('csMarkDoneBtn').style.display = 'inline-flex';
   // 아직 "완료 처리"는 안 함 — 실제로 답변까지 다 쓰고 나서 완료 버튼을 눌러야 목록에서 정리됨
 }
-document.getElementById('csInboxList').addEventListener('click', e => {
-  const btn = e.target.closest('[data-load-inbox]');
-  if(btn) useCsInboxItem(btn.dataset.loadInbox);
+document.getElementById('csInboxList').addEventListener('click', async e => {
+  const loadBtn = e.target.closest('[data-load-inbox]');
+  if(loadBtn){ useCsInboxItem(loadBtn.dataset.loadInbox); return; }
+
+  const dismissBtn = e.target.closest('[data-dismiss-inbox]');
+  if(dismissBtn){
+    const key = dismissBtn.dataset.dismissInbox;
+    if(!confirm('이 문의를 목록에서 삭제할까요? (답변 필요 없는 경우)')) return;
+    dismissBtn.disabled = true;
+    try{
+      const item = csInboxItems.find(i => i.key === key);
+      if(item){
+        await kkcStorage.set(key, JSON.stringify({ ...item, key: undefined, handled: true }), true);
+      }
+      // 화면에서도 즉시 제거 (댓글/DM 그룹, 전체 목록 둘 다에서)
+      csInboxItems = csInboxItems.filter(i => i.key !== key);
+      Object.values(csInboxGroups).forEach(kinds => {
+        kinds['댓글'] = kinds['댓글'].filter(i => i.key !== key);
+        kinds['DM'] = kinds['DM'].filter(i => i.key !== key);
+      });
+      renderCsInboxList();
+    } catch(err){
+      console.error('문의 삭제 실패:', err);
+      alert('삭제 중 문제가 발생했습니다. 다시 시도해주세요.');
+      dismissBtn.disabled = false;
+    }
+  }
 });
 document.getElementById('csMarkDoneBtn').addEventListener('click', async () => {
   if(!currentCsInboxKey) return;
