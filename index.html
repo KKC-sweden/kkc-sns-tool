@@ -789,12 +789,11 @@
   <div class="step-label"><div class="step-num">2</div><div class="step-title">콘텐츠 단계 선택</div></div>
   <div class="timeline" id="timeline">
     <div class="stage" data-stage="6주전"><span class="d">6주전</span><span class="label">정보입력</span></div>
-    <div class="stage" data-stage="5주전"><span class="d">5주전</span><span class="label">티저생성</span></div>
     <div class="stage" data-stage="4주전"><span class="d">4주전</span><span class="label">1차업로드</span></div>
     <div class="stage" data-stage="2주전"><span class="d">2주전</span><span class="label">2차발송</span></div>
     <div class="stage active" data-stage="D-10"><span class="d">D-10</span><span class="label">리마인더</span></div>
     <div class="stage" data-stage="D-3"><span class="d">D-3</span><span class="label">현장콘텐츠</span></div>
-    <div class="stage" data-stage="D+5"><span class="d">D+5</span><span class="label">클로징</span></div>
+    <div class="stage" data-stage="D+3"><span class="d">D+3</span><span class="label">클로징</span></div>
   </div>
 
   <!-- AI Suggestion (D-10 only) -->
@@ -2170,7 +2169,7 @@ document.getElementById('openSuggestBtn').addEventListener('click', async () => 
   const useWebSearch = document.getElementById('webSearchToggle').checked;
 
   // 이미 이전 단계에서 발행한(또는 작성해둔) 콘텐츠가 있으면 반복되지 않도록 함께 전달
-  const priorStageNotes = ['6주전', '5주전', '4주전', '2주전'].map(stage => {
+  const priorStageNotes = ['6주전', '4주전', '2주전'].map(stage => {
     const snap = stageStore[stage];
     const text = snap && (snap.captionOrig || snap.stageDesc);
     return text ? `- ${stage}: ${text}` : null;
@@ -4073,21 +4072,19 @@ loadArchive();
 // ============================================================
 const BD_GATES=[
   {k:"6주전", off:-42},
-  {k:"5주전", off:-35},
   {k:"4주전", off:-28},
   {k:"2주전", off:-14},
   {k:"D-10",  off:-10},
   {k:"D-3",   off:-3},
-  {k:"D+5",   off:5},
+  {k:"D+3",   off:3},
 ];
 const BD_TASKS={
-  "6주전":[["사업계획 확정 · 행사정보 입력","사업담당"],["포스터 발주 조율(희망시) · 현지언론 리스트업·1차 컨택","홍보담당"],["행사정보 입력 후 자동화 생성 확인","홍보자동화"],["사업계획 검토·승인","원장"]],
-  "5주전":[["2차 홍보콘텐츠 기획","사업담당"],["포스터 시안 검수","홍보담당"],["인스타 티저 생성 확인","홍보자동화"],["콘텐츠 방향 점검","원장"]],
-  "4주전":[["티켓 세팅·오픈준비","사업담당"],["완성 포스터 확보·검수 · 원내외 게시","홍보담당"],["인스타1차 예약업로드 · 인스타2차 생성 확인","홍보자동화"],["인스타1차·포스터 최종컷 승인 · 티켓 오픈 go","원장"]],
-  "2주전":[["보도자료 최종감수 · 업무분장 회의 · 더코어 착석","사업담당"],["국내 보도자료 작성·배포 · 현지언론 팔로업 · 더코어 소집","홍보담당"],["인스타2차 예약발송 · 홈페이지 갱신","홍보자동화"],["보도자료 최종승인 · 업무분장 주재","원장"]],
-  "D-10":[["현장 운영계획 점검","사업담당"],["더코어 배치 초안","홍보담당"],["리마인더 예약 · 홈페이지 갱신","홍보자동화"],["운영계획 확인","원장"]],
-  "D-3":[["현장 준비완료 보고","사업담당"],["더코어 현장 배치표 확정","홍보담당"],["리마인더(인스타3차) 예약발송 · 현장 콘텐츠 준비","홍보자동화"],["최종 go/no-go · 더코어 2차 주재","원장"]],
-  "D+5":[["행사 결과 정리 · 후속 조치","사업담당"],["행사 사진 정리 · 베스트컷 선별","홍보담당"],["클로징 콘텐츠(베스트컷) 업로드 · 감사 인사","홍보자동화"],["행사 결과 보고","원장"]],
+  "6주전":[["사업 계획 확정 · 사업계획서 작성","사업담당"],["포스터 발주 · 현지 언론 컨택","홍보담당"],["사업 컨펌","원장"]],
+  "4주전":[["티켓 오픈","사업담당"],["외주 포스터 확보 및 검수","홍보담당"],["1차 인스타그램 티저 포스터 업로드","홍보자동화"]],
+  "2주전":[["업무분장 회의를 진행","사업담당"],["원내외 실물 포스터 게시 · 보도자료 작성 완료 · 더코어 업무 분장 진행","홍보담당"],["1차 행사 안내 콘텐츠 제작 및 업로드","홍보자동화"]],
+  "D-10":[["카드뉴스, 릴스 등 2차 홍보 콘텐츠 기획 및 업로드","홍보자동화"]],
+  "D-3":[["행사 실황 콘텐츠 제작 준비","사업담당"],["더코어 현장 배치표 확정","홍보담당"],["인스타그램 스토리를 통해 행사 리마인드","홍보자동화"]],
+  "D+3":[["행사 결과 정리 및 후속 조치 진행 · 원장님께 결과 보고","사업담당"],["행사 사진 정리 및 베스트 컷 업로드","홍보자동화"]],
 };
 const BD_MS=86400000;
 let bdSelKey=null;
