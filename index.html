@@ -642,7 +642,7 @@
       </button>
       <button class="nav-item" data-tab="tab-cs">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        CS 답변 초안
+        CS 답변 작성
       </button>
       <button class="nav-item" data-tab="tab-archive">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -1148,8 +1148,8 @@
     <div class="eyebrow">KKC Sweden CS</div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
       <div>
-        <h1>CS 답변 초안 생성</h1>
-        <p class="sub" style="max-width:760px;">고객 문의 내용을 입력하면 학습된 CS 매뉴얼을 반영해 한국어, 영어, 스웨덴어 답변 초안을 생성합니다.</p>
+        <h1>CS 답변 작성</h1>
+        <p class="sub" style="max-width:760px;">문의 내용을 입력하면 메뉴얼을 반영해 한국어, 영어, 스웨덴어 답변 초안을 작성하고 전송합니다.</p>
       </div>
       <button class="secondary" id="openCsManualBtn" style="white-space:nowrap;">⚙ CS 매뉴얼 설정</button>
     </div>
@@ -1196,12 +1196,12 @@
       </div>
     </div>
     <div class="field">
-      <label for="csInquiry">문의 내용 (원문 그대로 붙여넣어도 됩니다)</label>
+      <label for="csInquiry">문의 내용</label>
       <textarea id="csInquiry" rows="4" placeholder="Finns det biljetter kvar?"></textarea>
     </div>
     <div class="field">
       <label for="csMustInclude">답변 내용에 포함되어야 할 정보 (선택)</label>
-      <textarea id="csMustInclude" rows="2" placeholder="예: 티켓 현장 판매, 6시 시작"></textarea>
+      <textarea id="csMustInclude" rows="2" placeholder="티켓 현장 판매, 6시 시작"></textarea>
     </div>
     <div class="field">
       <label>생성할 언어</label>
@@ -1211,7 +1211,9 @@
         <div class="chip selected" data-lang="sv">스웨덴어</div>
       </div>
     </div>
-    <button class="primary" id="csGenerateBtn">답변 초안 생성</button>
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="primary" id="csGenerateBtn">답변 생성</button>
+    </div>
     <div class="loading" id="csLoading"><div class="spinner"></div>답변 초안을 생성하는 중입니다…</div>
     <div class="error" id="csError"></div>
   </div>
@@ -1221,6 +1223,7 @@
   <div class="card">
     <div id="csEmpty" class="placeholder-empty">문의 내용을 입력하고 초안을 생성해주세요</div>
     <div id="csResults" style="display:none;">
+      <p id="csReplySyncStatus" style="font-size:12px;color:var(--green,#1a7f3c);font-weight:600;min-height:16px;margin:0 0 6px;"></p>
       <div class="caption-block" id="csReplyKoBlock">
         <h4>한국어 답변</h4>
         <textarea id="csReplyKo" rows="4"></textarea>
@@ -1238,6 +1241,12 @@
         <button class="secondary" id="csSaveTemplate">자주 쓰는 답변으로 저장</button>
         <button class="primary" id="csMarkDoneBtn" style="display:none;">✓ 답변 완료 (목록에서 지우기)</button>
       </div>
+      <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--line);">
+        <label for="csSendLang" style="font-size:13px;font-weight:600;color:var(--ink-soft);margin:0;">보낼 언어</label>
+        <select id="csSendLang" style="width:auto;padding:8px 10px;"></select>
+        <button class="primary" id="csSendBtn">🚧 보내기 (준비 중)</button>
+      </div>
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">실제 댓글·DM 자동 전송 기능은 아직 테스트 중이라 비활성화돼 있어요. 지금은 위 "전체 복사"로 복사해서 직접 답장해주세요.</p>
     </div>
   </div>
 
@@ -3622,6 +3631,11 @@ document.getElementById('csMarkDoneBtn').addEventListener('click', async () => {
     btn.disabled = false;
   }
 });
+
+document.getElementById('csSendBtn').addEventListener('click', () => {
+  alert('실제 댓글·DM 자동 전송 기능은 아직 준비 중이에요. 충분히 테스트되면 눈에 띄게 알려드리고 활성화할게요.\n\n지금은 "전체 복사"로 복사해서 인스타그램/페이스북에 직접 붙여넣어 답장해주세요.');
+});
+
 loadCsInbox();
 setInterval(() => {
   if(document.hidden) return; // 탭이 백그라운드에 가려져 있으면 건너뜀 (KV 사용량 절약)
@@ -3707,6 +3721,10 @@ function updateCsResultVisibility(langs){
   document.getElementById('csReplyKoBlock').style.display = langs.includes('ko') ? 'block' : 'none';
   document.getElementById('csReplyEnBlock').style.display = langs.includes('en') ? 'block' : 'none';
   document.getElementById('csReplySvBlock').style.display = langs.includes('sv') ? 'block' : 'none';
+
+  const langLabels = { ko: '한국어', en: '영어', sv: '스웨덴어' };
+  const sendLangSelect = document.getElementById('csSendLang');
+  sendLangSelect.innerHTML = langs.map(l => `<option value="${l}">${langLabels[l]}</option>`).join('');
 }
 
 document.getElementById('csGenerateBtn').addEventListener('click', async () => {
@@ -3754,6 +3772,59 @@ document.getElementById('csGenerateBtn').addEventListener('click', async () => {
     loading.style.display = 'none';
   }
 });
+
+// ============ CS 답변 언어 간 자동 동기화 ============
+(function setupCsReplyAutoSync(){
+  const idMap = { ko: 'csReplyKo', en: 'csReplyEn', sv: 'csReplySv' };
+  const focusSnapshot = {};
+  Object.keys(idMap).forEach(key => {
+    const el = document.getElementById(idMap[key]);
+    el.addEventListener('focus', () => { focusSnapshot[key] = el.value; });
+    el.addEventListener('blur', () => {
+      const changed = el.value.trim() !== (focusSnapshot[key] || '').trim();
+      if(changed && el.value.trim()) resyncCsReplyFrom(key);
+    });
+  });
+})();
+
+async function resyncCsReplyFrom(editedKey){
+  const idMap = { ko: 'csReplyKo', en: 'csReplyEn', sv: 'csReplySv' };
+  const langNames = { ko: '한국어', en: '영어', sv: '스웨덴어' };
+  const blockIdMap = { ko: 'csReplyKoBlock', en: 'csReplyEnBlock', sv: 'csReplySvBlock' };
+
+  // 지금 화면에 실제로 보이는(생성 시 선택된) 언어만 동기화 대상으로 함
+  const visibleKeys = Object.keys(idMap).filter(k => document.getElementById(blockIdMap[k]).style.display !== 'none');
+  const sourceText = document.getElementById(idMap[editedKey]).value.trim();
+  if(!sourceText) return;
+  const targetKeys = visibleKeys.filter(k => k !== editedKey);
+  if(targetKeys.length === 0) return;
+
+  const statusEl = document.getElementById('csReplySyncStatus');
+  if(statusEl) statusEl.textContent = '⏳ 다른 언어 답변에 반영하는 중...';
+
+  try{
+    const targetLangList = targetKeys.map(k => langNames[k]).join(', ');
+    const system = `당신은 KKC Sweden(주스웨덴한국문화원)의 CS 답변 번역가입니다. 원문의 톤과 의미를 유지하면서, 공식 문화원 계정에 어울리는 정중한 톤으로 자연스럽게 번역합니다.`;
+    const user = `다음은 ${langNames[editedKey]}로 방금 수정된 CS 답변입니다. 이 내용을 ${targetLangList}로 각각 번역해주세요. 기존 번역은 참고하지 말고 이 수정된 원문 기준으로 새로 번역하세요.
+
+원문(${langNames[editedKey]}):
+${sourceText}
+
+반드시 아래 JSON 형식으로만 답하세요. 다른 설명은 포함하지 마세요.
+{${targetKeys.map(k => `"${k}": "번역문"`).join(', ')}}`;
+
+    const result = await callClaudeJson(system, user, false, 1200);
+    targetKeys.forEach(k => {
+      if(result[k]) document.getElementById(idMap[k]).value = result[k];
+    });
+    if(statusEl) statusEl.textContent = '✓ 다른 언어 답변에 반영됐어요';
+  } catch(err){
+    console.error('CS 답변 자동 동기화 실패:', err);
+    if(statusEl) statusEl.textContent = '⚠ 자동 반영 실패 — 직접 수정해주세요';
+  } finally {
+    setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 4000);
+  }
+}
 
 document.getElementById('csCopyAll').addEventListener('click', () => {
   const parts = [];
