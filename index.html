@@ -3617,7 +3617,7 @@ document.getElementById('csInboxList').addEventListener('click', async e => {
   const dismissBtn = e.target.closest('[data-dismiss-inbox]');
   if(dismissBtn){
     const key = dismissBtn.dataset.dismissInbox;
-    if(!confirm('이 문의를 목록에서 삭제할까요? (답변 필요 없는 경우)')) return;
+    if(!confirm('이 문의를 목록에서 삭제할까요?')) return;
     dismissBtn.disabled = true;
     try{
       const item = csInboxItems.find(i => i.key === key);
