@@ -511,8 +511,9 @@
   .bd-tcol{flex:1;min-width:0;border:1px solid var(--bd-line);border-radius:9px;padding:9px 10px;background:#fbfcfd;display:flex;flex-direction:column;gap:6px}
   .bd-tcol .bd-thd{font-size:12px;font-weight:800;color:var(--bd-navy2);letter-spacing:-.02em;padding-bottom:5px;border-bottom:1px solid var(--bd-line)}
   .bd-tcol ul{list-style:none;display:flex;flex-direction:column;gap:4px}
-  .bd-tcol li{font-size:10.5px;line-height:1.35;color:#43506a;font-weight:600;word-break:keep-all;overflow-wrap:break-word;}
-  .bd-tcol li .bd-o{display:inline-block;font-size:9px;font-weight:800;color:var(--bd-muted);margin-right:4px}
+  .bd-tcol li{font-size:10.5px;line-height:1.35;color:#43506a;font-weight:600;word-break:keep-all;overflow-wrap:break-word;display:flex;align-items:flex-start;}
+  .bd-tcol li .bd-o{flex:0 0 56px;display:inline-block;font-size:9px;font-weight:800;color:var(--bd-muted);}
+  .bd-tcol li .bd-tx{flex:1;min-width:0;}
   .bd-tcol.hl{background:var(--bd-next-bg);border-color:var(--bd-next);box-shadow:0 0 0 2px rgba(43,111,176,.12)}
   .bd-tcol.hl .bd-thd{color:var(--bd-next)}
   .bd-tcol.hl.late{background:var(--bd-late-bg);border-color:var(--bd-late);box-shadow:0 0 0 2px rgba(192,57,43,.14)}
@@ -577,7 +578,7 @@
   .bd-wm .bd-kr{font-size:23px;font-weight:800;letter-spacing:-.02em;display:block}
   .bd-wm .bd-en{font-size:10px;letter-spacing:.28em;color:var(--bd-brass);font-weight:600}
   .bd-htitle{text-align:center;flex:1}
-  .bd-htitle .bd-t{font-size:17px;font-weight:700}
+  .bd-htitle .bd-t{font-size:23px;font-weight:700}
   .bd-htitle .bd-s{font-size:11px;color:#9fb0c8;margin-top:3px}
   .bd-clock{text-align:right}
   .bd-clock .bd-time{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -4185,7 +4186,7 @@ function bdRenderTasksbar(){
     const items = (BD_TASKS[g.k]||[]).map(([t,o]) => {
       const showRole = o !== lastRole;
       lastRole = o;
-      return `<li>${showRole ? `<span class="bd-o">${escapeHtml(o)}</span>` : ''}${escapeHtml(t)}</li>`;
+      return `<li><span class="bd-o">${showRole ? escapeHtml(o) : ''}</span><span class="bd-tx">${escapeHtml(t)}</span></li>`;
     }).join('');
     return `<div class="bd-tcol${hl?(' hl'+(hlLate?' late':'')):''}"><div class="bd-thd">${g.k}</div><ul>${items}</ul></div>`;
   }).join('');
