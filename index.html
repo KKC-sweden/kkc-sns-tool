@@ -787,6 +787,8 @@
     <div id="suggestionResults"></div>
   </div>
 
+  <!-- STEP 3~6: 콘텐츠 제작 단계 (6주전에는 숨김 — 아직 SNS 콘텐츠 업로드가 필요 없는 단계라서) -->
+  <div id="contentStepsWrap">
   <!-- STEP 3: Upload -->
   <div class="step-label"><div class="step-num">3</div><div class="step-title">사진 및 영상 업로드 <span class="step-hint">여러 개 업로드 가능</span></div></div>
   <div class="card">
@@ -1063,6 +1065,7 @@
         <input type="datetime-local" id="publishScheduleAt">
       </div>
     </div>
+  </div>
   </div>
 
   <div class="history">
@@ -2014,10 +2017,12 @@ document.getElementById('timeline').addEventListener('click', (e) => {
   stage.classList.add('active');
   selectedStage = stage.dataset.stage;
   document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
+  document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
   restoreStageState(stageStore[selectedStage]);
   renderStageDoneDots();
 });
 document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
+document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
 
 // ============ AI Suggestion (Module 4-A logic) ============
 const SUGGEST_SYSTEM_PROMPT_BASE = `당신은 주스웨덴한국문화원(KKC Sweden) SNS 콘텐츠 전략 어시스턴트입니다. 지금은 행사 D-4 시점(리마인더/2차 콘텐츠) 방향을 제안하는 상황입니다.
