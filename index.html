@@ -1294,8 +1294,8 @@
   <div class="bd-page" id="bdPage">
 
   <div class="bd-headerbar">
-    <div class="bd-wm"><span class="bd-kr">주스웨덴한국문화원</span><span class="bd-en">KOREAN CULTURAL CENTRE · SWEDEN</span></div>
-    <div class="bd-htitle"><div class="bd-t">행사 진행 상황판</div><div class="bd-s">행사일 입력 → 자동 D-표시·지연·진행 · 게이트 클릭 = 원장 완료 체크</div></div>
+    <div class="bd-wm"><span class="bd-kr">주스웨덴한국문화원</span><span class="bd-en">KOREANSKT KULTURCENTER</span></div>
+    <div class="bd-htitle"><div class="bd-t">행사 현황판</div></div>
     <div class="bd-clock"><div class="bd-time" id="bdClock">--:--</div><div class="bd-date" id="bdToday">—</div></div>
   </div>
   <button class="bd-fullscreen-btn" id="bdFullscreenBtn" title="전체화면으로 보기">
@@ -4181,7 +4181,12 @@ function bdRenderTasksbar(){
   if(!bar) return;
   bar.innerHTML = BD_GATES.map(g => {
     const hl = (g.k===hlGate);
-    const items = (BD_TASKS[g.k]||[]).map(([t,o]) => `<li><span class="bd-o">${escapeHtml(o)}</span>${escapeHtml(t)}</li>`).join('');
+    let lastRole = null;
+    const items = (BD_TASKS[g.k]||[]).map(([t,o]) => {
+      const showRole = o !== lastRole;
+      lastRole = o;
+      return `<li>${showRole ? `<span class="bd-o">${escapeHtml(o)}</span>` : ''}${escapeHtml(t)}</li>`;
+    }).join('');
     return `<div class="bd-tcol${hl?(' hl'+(hlLate?' late':'')):''}"><div class="bd-thd">${g.k}</div><ul>${items}</ul></div>`;
   }).join('');
 }
