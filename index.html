@@ -687,11 +687,22 @@
 
   <header>
     <div class="eyebrow">KKC Sweden Contents</div>
-    <h1>SNS 콘텐츠 업로드 하기</h1>
+    <h1 id="workflowTitle">SNS 콘텐츠 업로드 하기</h1>
     <p class="sub">행사 등록부터 콘텐츠 기획, 캡션 생성, 업로드까지 한 번에 진행하세요</p>
   </header>
 
-  <!-- STEP 1: Event info -->
+  <!-- 콘텐츠 단계 타임라인 (라벨 없이 상단에 항상 표시, 행사일 기준 자동으로 해당 단계가 열림) -->
+  <div class="timeline" id="timeline" style="margin-top:4px;">
+    <div class="stage active" data-stage="6주전"><span class="d">6주전</span><span class="label">정보입력</span></div>
+    <div class="stage" data-stage="4주전"><span class="d">4주전</span><span class="label">1차업로드</span></div>
+    <div class="stage" data-stage="2주전"><span class="d">2주전</span><span class="label">2차발송</span></div>
+    <div class="stage" data-stage="D-10"><span class="d">D-10</span><span class="label">리마인더</span></div>
+    <div class="stage" data-stage="D-3"><span class="d">D-3</span><span class="label">현장콘텐츠</span></div>
+    <div class="stage" data-stage="D+3"><span class="d">D+3</span><span class="label">클로징</span></div>
+  </div>
+
+  <!-- 행사 정보 입력 — 6주전 단계에서만 표시 -->
+  <div id="eventInfoWrap">
   <div class="step-label"><div class="step-num">1</div><div class="step-title">행사 정보</div></div>
   <div class="card">
     <div class="field">
@@ -746,16 +757,6 @@
       </div>
     </div>
   </div>
-
-  <!-- STEP 2: Timeline -->
-  <div class="step-label"><div class="step-num">2</div><div class="step-title">콘텐츠 단계 선택</div></div>
-  <div class="timeline" id="timeline">
-    <div class="stage" data-stage="6주전"><span class="d">6주전</span><span class="label">정보입력</span></div>
-    <div class="stage" data-stage="4주전"><span class="d">4주전</span><span class="label">1차업로드</span></div>
-    <div class="stage" data-stage="2주전"><span class="d">2주전</span><span class="label">2차발송</span></div>
-    <div class="stage active" data-stage="D-10"><span class="d">D-10</span><span class="label">리마인더</span></div>
-    <div class="stage" data-stage="D-3"><span class="d">D-3</span><span class="label">현장콘텐츠</span></div>
-    <div class="stage" data-stage="D+3"><span class="d">D+3</span><span class="label">클로징</span></div>
   </div>
 
   <!-- AI Suggestion (D-10 only) -->
@@ -790,7 +791,7 @@
   <!-- STEP 3~6: 콘텐츠 제작 단계 (6주전에는 숨김 — 아직 SNS 콘텐츠 업로드가 필요 없는 단계라서) -->
   <div id="contentStepsWrap">
   <!-- STEP 3: Upload -->
-  <div class="step-label"><div class="step-num">3</div><div class="step-title">사진 및 영상 업로드 <span class="step-hint">여러 개 업로드 가능</span></div></div>
+  <div class="step-label"><div class="step-num">2</div><div class="step-title">사진 및 영상 업로드 <span class="step-hint">여러 개 업로드 가능</span></div></div>
   <div class="card">
     <div class="dropzone" id="dropzone" style="padding:56px 20px;">
       <div style="font-size:40px;">🖼️</div>
@@ -810,7 +811,7 @@
   </div>
 
   <!-- STEP 4: Caption -->
-  <div class="step-label"><div class="step-num">4</div><div class="step-title">캡션, 해시태그, 번역</div></div>
+  <div class="step-label"><div class="step-num">3</div><div class="step-title">캡션, 해시태그, 번역</div></div>
   <div class="card">
     <div class="mode-toggle" id="captionModeToggle" style="max-width:520px;">
       <button class="mode-btn active" data-mode="ai-write">AI가 처음부터 작성</button>
@@ -847,7 +848,7 @@
   </div>
 
   <!-- STEP 5: Edit & preview -->
-  <div class="step-label"><div class="step-num">5</div><div class="step-title">플랫폼별 편집 &amp; 미리보기</div></div>
+  <div class="step-label"><div class="step-num">4</div><div class="step-title">플랫폼별 편집 &amp; 미리보기</div></div>
   <div class="card">
     <div id="editEmpty" class="placeholder-empty">이미지를 먼저 업로드해주세요</div>
     <div id="editGrid" style="display:none;">
@@ -1035,7 +1036,7 @@
   </div>
 
   <!-- STEP 6: MBS handoff -->
-  <div class="step-label"><div class="step-num">6</div><div class="step-title">업로드</div></div>
+  <div class="step-label"><div class="step-num">5</div><div class="step-title">업로드</div></div>
   <div class="card">
     <p class="disabled-note" id="mbsDisabledNote">1~5단계를 먼저 완료해주세요.</p>
     <div id="publishCard" style="display:none;">
@@ -1348,7 +1349,7 @@ const kkcStorage = {
 };
 
 // ============ Shared state ============
-let selectedStage = 'D-10';
+let selectedStage = '6주전';
 let selectedSuggestion = null;
 let generatedCaptions = null;
 let checklistComplete = false;
@@ -1382,6 +1383,12 @@ function getStageDesc(){
 }
 
 // ============ 대시보드 ↔ 작업 화면 전환 ============
+function updateWorkflowTitle(){
+  const name = document.getElementById('eventName').value.trim();
+  document.getElementById('workflowTitle').textContent = name || 'SNS 콘텐츠 업로드 하기';
+}
+document.getElementById('eventName').addEventListener('input', updateWorkflowTitle);
+
 function resetWorkflowForm(){
   ['eventName','eventTime','eventVenue','ownerName','ownerEmail'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('eventDate').value = '';
@@ -1391,6 +1398,7 @@ function resetWorkflowForm(){
   document.getElementById('category').selectedIndex = 0;
   currentEditingEventKey = null;
   document.getElementById('saveEventStatus').textContent = '';
+  updateWorkflowTitle();
 }
 
 // 당일 행사 체크 시 종료일 입력을 비활성화하고 값을 비움
@@ -1405,9 +1413,11 @@ document.getElementById('singleDayEventToggle').addEventListener('change', updat
 // 새 행사를 열거나 다른 행사를 이어서 열 때마다 단계별 저장소를 초기화
 function resetStageSystem(eventName){
   stageStore = {};
-  selectedStage = 'D-10';
-  document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === 'D-10'));
-  document.getElementById('suggestSection').classList.remove('hidden');
+  selectedStage = '6주전';
+  document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === '6주전'));
+  document.getElementById('suggestSection').classList.add('hidden');
+  document.getElementById('contentStepsWrap').style.display = 'none';
+  document.getElementById('eventInfoWrap').style.display = 'block';
   computeCompletedStages(eventName || '');
   restoreStageState(undefined);
 }
@@ -1790,10 +1800,13 @@ function renderEventList(){
       document.getElementById('ownerEmail').value = ev.ownerEmail || '';
       currentEditingEventKey = ev.key;
       document.getElementById('saveEventStatus').textContent = '';
+      updateWorkflowTitle();
 
-      selectedStage = 'D-10';
-      document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === 'D-10'));
-      document.getElementById('suggestSection').classList.remove('hidden');
+      selectedStage = computeCurrentStageKey(ev.eventDate);
+      document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === selectedStage));
+      document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
+      document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
+      document.getElementById('eventInfoWrap').style.display = selectedStage === '6주전' ? 'block' : 'none';
       computeCompletedStages(ev.eventName || '');
 
       if(ev.stageData){
@@ -2018,11 +2031,13 @@ document.getElementById('timeline').addEventListener('click', (e) => {
   selectedStage = stage.dataset.stage;
   document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
   document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
+  document.getElementById('eventInfoWrap').style.display = selectedStage === '6주전' ? 'block' : 'none';
   restoreStageState(stageStore[selectedStage]);
   renderStageDoneDots();
 });
 document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
 document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
+document.getElementById('eventInfoWrap').style.display = selectedStage === '6주전' ? 'block' : 'none';
 
 // ============ AI Suggestion (Module 4-A logic) ============
 const SUGGEST_SYSTEM_PROMPT_BASE = `당신은 주스웨덴한국문화원(KKC Sweden) SNS 콘텐츠 전략 어시스턴트입니다. 지금은 행사 D-4 시점(리마인더/2차 콘텐츠) 방향을 제안하는 상황입니다.
@@ -3927,6 +3942,20 @@ function bdCompute(ev){
   else if(cur){ curKey=cur.k; curStatus="next"; const near=bdDiffDays(t,cur.date); if(near<=7) curStatus="soon"; }
   else { curKey=dday>=0?"D-day":"종료"; curStatus=dday>=0?"soon":"done"; }
   return {dday,gates,progress,delayed,curKey,curStatus};
+}
+
+// 콘텐츠 홈 타임라인에서, 행사일을 기준으로 "오늘"이 어느 단계에 해당하는지 계산
+// (D-day·종료처럼 타임라인에 없는 값은 가장 가까운 실제 탭으로 매핑)
+function computeCurrentStageKey(eventDateStr){
+  if(!eventDateStr) return '6주전';
+  const t = bdToday0();
+  const d = bdParseD(eventDateStr);
+  let result = '6주전'; // 아직 첫 게이트(6주전)에도 도달 안 했으면 기본값
+  BD_GATES.forEach(g => {
+    const gateDate = bdAddDays(d, g.off);
+    if(t >= gateDate) result = g.k; // 순서대로 훑으면서, 이미 지난 게이트 중 가장 나중 것을 선택
+  });
+  return result;
 }
 
 async function bdToggleGate(eventKey, gateKey){
