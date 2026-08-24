@@ -277,6 +277,9 @@
   .ci-kind-head:first-child{margin-top:0;}
   .ci-kind-empty{font-size:12.5px;color:var(--ink-soft);padding:10px 14px;background:var(--paper);border:1px dashed var(--line);border-radius:10px;margin-bottom:4px;}
   .ci-toggle-count{font-size:11px;opacity:.8;}
+  .ci-page-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:12px;font-weight:700;cursor:pointer;}
+  .ci-page-btn:hover{background:var(--paper);}
+  .ci-page-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   .cs-inbox-item.ci-handled{opacity:.5;}
   .ci-handled-badge{font-size:11.5px;font-weight:700;color:var(--green,#1a7f3c);white-space:nowrap;}
   .hashtag{font-size:12px;font-weight:600;background:#fff;color:var(--navy-soft);padding:5px 8px 5px 12px;border-radius:999px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:5px;}
@@ -1165,6 +1168,7 @@
     </div>
     <div id="csInboxEmpty" style="color:var(--ink-soft);font-size:13px;">불러오는 중...</div>
     <div id="csInboxList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div id="csInboxPager" style="display:flex;gap:6px;justify-content:center;margin-top:12px;"></div>
   </div>
 
   <!-- STEP 1: Inquiry -->
@@ -3505,6 +3509,9 @@ async function loadCsInbox(){
   renderCsInboxList();
 }
 
+const CS_INBOX_PAGE_SIZE = 5;
+let csInboxPage = 1;
+
 function renderCsInboxList(){
   const listEl = document.getElementById('csInboxList');
   const renderItem = (item) => {
@@ -3527,10 +3534,36 @@ function renderCsInboxList(){
   document.getElementById('csCountDm').textContent = kinds['DM'].length ? `(${kinds['DM'].length})` : '';
 
   const items = kinds[csInboxKind];
-  listEl.innerHTML = items.length
-    ? items.map(renderItem).join('')
-    : `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${csInboxKind}이 아직 없어요.</div>`;
+  if(!items.length){
+    listEl.innerHTML = `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${csInboxKind}이 아직 없어요.</div>`;
+    document.getElementById('csInboxPager').innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(items.length / CS_INBOX_PAGE_SIZE));
+  if(csInboxPage > totalPages) csInboxPage = totalPages;
+  const start = (csInboxPage - 1) * CS_INBOX_PAGE_SIZE;
+  const pageItems = items.slice(start, start + CS_INBOX_PAGE_SIZE);
+  listEl.innerHTML = pageItems.map(renderItem).join('');
+
+  const pagerEl = document.getElementById('csInboxPager');
+  if(totalPages <= 1){
+    pagerEl.innerHTML = '';
+  } else {
+    let pagerHtml = '';
+    for(let p = 1; p <= totalPages; p++){
+      pagerHtml += `<button class="ci-page-btn${p === csInboxPage ? ' active' : ''}" data-page="${p}">${p}</button>`;
+    }
+    pagerEl.innerHTML = pagerHtml;
+  }
 }
+
+document.getElementById('csInboxPager').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-page]');
+  if(!btn) return;
+  csInboxPage = Number(btn.dataset.page);
+  renderCsInboxList();
+});
 
 document.getElementById('csPlatformToggle').addEventListener('click', (e) => {
   const btn = e.target.closest('.mode-btn');
@@ -3538,6 +3571,7 @@ document.getElementById('csPlatformToggle').addEventListener('click', (e) => {
   document.querySelectorAll('#csPlatformToggle .mode-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   csInboxPlatform = btn.dataset.platform;
+  csInboxPage = 1;
   renderCsInboxList();
 });
 
@@ -3547,6 +3581,7 @@ document.getElementById('csKindToggle').addEventListener('click', (e) => {
   document.querySelectorAll('#csKindToggle .mode-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   csInboxKind = btn.dataset.kind;
+  csInboxPage = 1;
   renderCsInboxList();
 });
 
