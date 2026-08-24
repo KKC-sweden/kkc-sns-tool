@@ -823,8 +823,8 @@
         <option value="영어">영어(English)</option>
       </select>
     </div>
-    <p style="font-size:12.5px;color:var(--ink-soft);margin:20px 0 12px;" id="captionModeHint">1단계에서 입력한 행사 정보를 바탕으로 AI가 원본 캡션과 번역, 해시태그를 추천합니다.<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span></p>
     <div id="genBtnAnchorTop"></div>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:20px 0 12px;" id="captionModeHint">1단계에서 입력한 행사 정보를 바탕으로 AI가 원본 캡션과 번역, 해시태그를 추천합니다.<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span></p>
 
     <p id="captionSyncStatus" style="font-size:12px;color:var(--green,#1a7f3c);font-weight:600;min-height:16px;margin:0 0 6px;"></p>
     <div class="caption-block" id="captionOrigBlock" style="display:none;"><h4 id="origCaptionLabel">원본 캡션</h4><textarea id="captionOrig" rows="4" placeholder="원본 캡션을 입력해주세요."></textarea></div>
@@ -1033,27 +1033,17 @@
   </div>
 
   <!-- STEP 6: MBS handoff -->
-  <div class="step-label"><div class="step-num">6</div><div class="step-title">Meta Business Suite로 전달</div></div>
+  <div class="step-label"><div class="step-num">6</div><div class="step-title">업로드</div></div>
   <div class="card">
     <p class="disabled-note" id="mbsDisabledNote">1~5단계를 먼저 완료해주세요.</p>
-    <div class="mbs-grid" id="mbsGrid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));">
-      <button class="secondary" id="downloadFeed">인스타그램 피드 이미지 다운로드</button>
-      <button class="secondary" id="downloadStory">인스타그램 스토리 이미지 다운로드</button>
-      <button class="secondary" id="downloadFb">페이스북 이미지 다운로드</button>
-      <div style="display:flex;gap:6px;align-items:stretch;">
-        <select id="copyLang" style="flex:0 0 auto;border:1px solid var(--line);border-radius:10px;padding:0 8px;font-size:12.5px;color:var(--ink);background:#fff;">
-          <option value="한국어">한국어</option>
-          <option value="영어">영어</option>
-          <option value="스웨덴어">스웨덴어</option>
-        </select>
-        <button class="secondary" id="copyCaption" style="flex:1;">캡션+해시태그 복사</button>
+    <div id="publishCard" style="display:none;">
+      <div class="field">
+        <label>업로드할 곳</label>
+        <div class="mode-toggle" id="publishPlatformToggle" style="max-width:260px;">
+          <button class="mode-btn active" data-platform="instagram">인스타그램</button>
+          <button class="mode-btn" data-platform="facebook">페이스북</button>
+        </div>
       </div>
-    </div>
-    <div class="mbs-note">다운로드한 이미지와 복사한 텍스트를 Meta Business Suite에 붙여넣고, 예약 날짜를 설정한 뒤 발행해주세요.<br><br>⚠️ 영상 콘텐츠는 구도 확인 및 아카이빙용입니다. 실제 자르기가 필요하면 업로드 전 영상 편집 툴에서 미리 잘라주세요.<br>⚠️ 영상 파일 자체는 저장되지 않으니, 창을 닫기 전에 꼭 다운로드해두세요.</div>
-    <a class="secondary" id="openMbs" href="https://business.facebook.com/latest/composer" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:14px;">Meta Business Suite 바로가기 ↗</a>
-
-    <div class="card" id="publishCard" style="margin-top:20px;background:#fff8e6;border:1px solid #e8c468;">
-      <h3 style="margin-bottom:14px;">업로드 하기</h3>
       <div class="field">
         <label for="publishLang">게시할 캡션 언어</label>
         <select id="publishLang">
@@ -2859,7 +2849,7 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
 
   if(captionMode === 'ai-write'){
     if(!info.eventName || !getStageDesc()){
-      errorBox.textContent = '3단계에서 행사명(1단계)과 이 단계 콘텐츠 설명을 먼저 입력해주세요.';
+      errorBox.textContent = '행사명과 콘텐츠 설명을 먼저 입력해주세요.';
       errorBox.style.display = 'block';
       return;
     }
@@ -3177,16 +3167,11 @@ async function saveToArchiveAuto(){
   }
 }
 
-// ============ MBS handoff ============
+// ============ 업로드 섹션 표시 ============
 function updateMbsState(){
   const imagesReady = uploadedImages.length > 0 && checklistComplete;
-  const hasCaption = document.getElementById('captionOrig').value.trim() || document.getElementById('captionSv').value.trim();
-  const fullyReady = imagesReady && hasCaption;
-  document.getElementById('mbsGrid').style.display = imagesReady ? 'grid' : 'none';
+  document.getElementById('publishCard').style.display = imagesReady ? 'block' : 'none';
   document.getElementById('mbsDisabledNote').style.display = imagesReady ? 'none' : 'block';
-  const copyBtn = document.getElementById('copyCaption');
-  copyBtn.disabled = !fullyReady;
-  copyBtn.title = fullyReady ? '' : '캡션을 입력하거나 AI로 생성한 뒤 사용 가능합니다';
 }
 function downloadDataUrl(dataUrl, filename){
   const link = document.createElement('a');
@@ -3197,57 +3182,14 @@ function downloadDataUrl(dataUrl, filename){
   link.click();
   document.body.removeChild(link);
 }
-function downloadAllFeed(){
-  if(!uploadedImages.length){ alert('업로드된 콘텐츠가 없습니다.'); return; }
-  const fd = getFeedDims();
-  const ratio = document.getElementById('feedRatio').value.replace(':','_');
-  const tempCanvas = document.createElement('canvas');
-  // 대기시간 없이 동일한 클릭 이벤트 안에서 전부 처리 (지연을 두면 브라우저가 다운로드를 막을 수 있음)
-  uploadedImages.forEach((item, i) => {
-    const suffix = uploadedImages.length > 1 ? `_${i+1}` : '';
-    if(item.kind === 'video'){
-      // 영상은 크롭 캡처가 아니라 원본 파일 그대로 다운로드 (실제 업로드는 MBS에서 진행)
-      downloadDataUrl(item.img.src, `KKC_피드영상${suffix}.${item.ext}`);
-      return;
-    }
-    if(shouldCover(item, feedMode)) drawCoverCrop(item.img, tempCanvas, fd.w, fd.h, item.feedZoom, item.feedOffsetX, item.feedOffsetY);
-    else drawContainWithBlur(item.img, tempCanvas, fd.w, fd.h);
-    downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_피드이미지_${ratio}${suffix}.jpg`);
-  });
-}
-function downloadAllStory(){
-  if(!uploadedImages.length){ alert('업로드된 콘텐츠가 없습니다.'); return; }
-  const tempCanvas = document.createElement('canvas');
-  uploadedImages.forEach((item, i) => {
-    const suffix = uploadedImages.length > 1 ? `_${i+1}` : '';
-    if(item.kind === 'video'){
-      downloadDataUrl(item.img.src, `KKC_스토리영상${suffix}.${item.ext}`);
-      return;
-    }
-    if(shouldCover(item, storyMode)) drawCoverCrop(item.img, tempCanvas, 1080, 1920, item.storyZoom, item.storyOffsetX, item.storyOffsetY);
-    else drawContainWithBlur(item.img, tempCanvas, 1080, 1920);
-    downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_스토리이미지${suffix}.jpg`);
-  });
-}
-function downloadFbImage(){
-  if(!uploadedImages.length){ alert('업로드된 콘텐츠가 없습니다.'); return; }
-  const fbd = getFbDims();
-  const ratio = document.getElementById('fbRatio').value.replace(':','_');
-  const tempCanvas = document.createElement('canvas');
-  const item = uploadedImages[feedIndex];
-  if(item.kind === 'video'){
-    downloadDataUrl(item.img.src, `KKC_페이스북영상.${item.ext}`);
-    return;
-  }
-  if(shouldCover(item, fbMode)) drawCoverCrop(item.img, tempCanvas, fbd.w, fbd.h, item.fbZoom, item.fbOffsetX, item.fbOffsetY);
-  else drawContainWithBlur(item.img, tempCanvas, fbd.w, fbd.h);
-  downloadDataUrl(tempCanvas.toDataURL('image/jpeg', 0.92), `KKC_페이스북이미지_${ratio}.jpg`);
-}
-document.getElementById('downloadFeed').addEventListener('click', downloadAllFeed);
-document.getElementById('downloadStory').addEventListener('click', downloadAllStory);
-document.getElementById('downloadFb').addEventListener('click', downloadFbImage);
+// ============ 인스타그램/페이스북 업로드 설정 ============
+document.getElementById('publishPlatformToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.mode-btn');
+  if(!btn) return;
+  document.querySelectorAll('#publishPlatformToggle .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+});
 
-// ============ 인스타그램 게시 — 미리보기 전용 (실제 게시 API는 절대 호출하지 않음) ============
 document.getElementById('publishScheduleToggle').addEventListener('change', (e) => {
   document.getElementById('publishScheduleField').style.display = e.target.checked ? 'block' : 'none';
   updateScheduleBadge();
@@ -3276,22 +3218,6 @@ function parseTagsInput(raw){
     .map(s => s.trim().replace(/^@/, ''))
     .filter(Boolean);
 }
-
-document.getElementById('copyCaption').addEventListener('click', () => {
-  const lang = document.getElementById('copyLang').value;
-  const caption = getCaptionByLang(lang);
-  const hashtags = getCurrentCaptionData().hashtags.join(' ');
-  if(!caption){
-    alert(`${lang}로 생성된 캡션이 없습니다. 다른 언어를 선택하거나, 원본 캡션 언어 설정을 확인해주세요.`);
-    return;
-  }
-  const text = [caption, hashtags].filter(Boolean).join('\n\n');
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copyCaption');
-    const original = btn.textContent; btn.textContent = '복사됨 ✓';
-    setTimeout(()=>btn.textContent=original, 1500);
-  }).catch(() => alert('복사에 실패했습니다. 텍스트를 직접 선택해서 복사해주세요.'));
-});
 
 // ============ History (persistent storage) ============
 async function saveSuggestionHistory(eventName, category, suggestions){
