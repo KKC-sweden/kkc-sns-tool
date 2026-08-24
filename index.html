@@ -1317,8 +1317,8 @@
 
   <div class="bd-board">
     <div class="bd-ghead">
-      <div class="bd-c-ev"><span class="bd-lb">사업 / 행사일 / D-</span></div>
-      <div class="bd-c-mid"><span class="bd-lb">현재 상황 · 진행률</span></div>
+      <div class="bd-c-ev"><span class="bd-lb">사업 / 행사일 / 디데이</span></div>
+      <div class="bd-c-mid"><span class="bd-lb">현재 상황 및 진행률</span></div>
       <div class="bd-c-chk"><span class="bd-lb">게이트 완료 (원장 체크)</span></div>
       <div class="bd-c-del"></div>
     </div>
@@ -1334,7 +1334,7 @@
       <div class="bd-lg"><span class="bd-sw" style="background:var(--bd-next-bg);border:1px solid var(--bd-next)"></span>다음 게이트</div>
       <div class="bd-lg"><span class="bd-sw" style="background:#fff;border:1px solid var(--bd-hollow)"></span>대기</div>
     </div>
-    <div class="bd-note">콘텐츠 홈에 등록된 행사와 실시간 연동됩니다 (여기서 추가·삭제하면 콘텐츠 홈에도 반영돼요)</div>
+    <div class="bd-note">콘텐츠 홈에 등록된 행사와 실시간 연동됩니다</div>
   </div>
 
   </div>
@@ -4145,7 +4145,7 @@ function bdRender(){
   if(!rows) return; // 탭이 아직 렌더링 안 된 초기 상태 방어
   rows.innerHTML='';
   if(!main.length){
-    rows.innerHTML = '<div style="padding:22px;text-align:center;color:var(--bd-muted);font-weight:600;font-size:13px">60일 이내 등록된 행사가 없습니다 · 콘텐츠 홈에서 행사를 등록해보세요</div>';
+    rows.innerHTML = '<div style="padding:22px;text-align:center;color:var(--bd-muted);font-weight:600;font-size:13px">60일 이내 등록된 행사가 없습니다. 콘텐츠 홈에서 행사를 등록해보세요.</div>';
   }
   main.forEach(([ev,c]) => {
     const row = document.createElement('div');
