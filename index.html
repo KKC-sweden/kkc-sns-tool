@@ -1857,7 +1857,21 @@ function renderEventList(){
   grid.querySelectorAll('.hist-del').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      try{ await kkcStorage.delete(btn.dataset.key, true); await loadEvents(); } catch(err){}
+      const delKey = btn.dataset.key;
+      const target = registeredEvents.find(e2 => e2.key === delKey);
+      if(!confirm(`"${target ? target.eventName : '이 행사'}" 행사를 삭제할까요? 행사 관리 홈에서도 함께 삭제됩니다`)) return;
+      try{
+        await kkcStorage.delete(delKey, true);
+        // 삭제 직후 목록을 서버에서 즉시 다시 불러오면(list) Cloudflare KV 반영 지연 때문에
+        // 방금 지운 항목이 잠깐 남아있다가 get()에서 "찾을 수 없음" 에러로 잡혀
+        // "행사를 불러오지 못했습니다" 배너가 잘못 뜨는 경우가 있음.
+        // 서버에서 다시 불러오는 대신, 로컬 목록에서 바로 제거해서 화면을 갱신함.
+        registeredEvents = registeredEvents.filter(e2 => e2.key !== delKey);
+        renderEventList();
+      } catch(err){
+        console.error('행사 삭제 실패:', err);
+        alert('삭제에 실패했습니다. 다시 시도해주세요');
+      }
     });
   });
 }
@@ -4130,7 +4144,11 @@ async function bdDeleteEvent(eventKey){
   try{
     await kkcStorage.delete(eventKey, true);
     if(bdSelKey===eventKey) bdSelKey=null;
-    await loadEvents(); // registeredEvents 갱신 + 콘텐츠 홈 목록도 함께 최신화
+    // 삭제 직후 서버에서 목록을 즉시 다시 불러오면(list) Cloudflare KV 반영 지연으로
+    // 방금 지운 항목이 잠깐 남아있다가 get()에서 에러로 잡혀 오류 배너가 잘못 뜰 수 있음.
+    // 서버에서 다시 불러오는 대신, 로컬 목록에서 바로 제거해서 화면을 갱신함.
+    registeredEvents = registeredEvents.filter(e2 => e2.key !== eventKey);
+    renderEventList();
     bdRender();
   } catch(err){
     console.error('행사 삭제 실패:', err);
