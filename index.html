@@ -686,7 +686,7 @@
       <button class="filter-chip" data-filter="지난 행사">지난 행사</button>
     </div>
     <div class="gallery-grid" id="eventListGrid" style="grid-template-columns:1fr;"></div>
-    <div id="eventListEmpty" class="placeholder-empty" style="display:none;margin-top:10px;">아직 등록된 행사가 없습니다. "+ 새 행사 등록"으로 시작해보세요.</div>
+    <div id="eventListEmpty" class="placeholder-empty" style="display:none;margin-top:10px;">아직 등록된 행사가 없습니다. "+ 새 행사 등록"으로 시작해보세요</div>
   </div>
 
   <!-- ===== 행사 작업 뷰 ===== -->
@@ -778,7 +778,7 @@
     <div class="suggest-banner" id="suggestBanner">
       <div class="suggest-banner-text">
         <h3>콘텐츠 아이디어가 필요하신가요?</h3>
-        <p>주요 한국문화원 SNS 벤치마킹 데이터와 KKC Sweden 자체 데이터를 참고해 이번 행사에 맞는 콘텐츠 방향을 제안해드려요</p>
+        <p>주요 한국문화원 SNS 데이터와 KKC Sweden 자체 데이터를 참고해 이번 행사에 맞는 콘텐츠 방향을 제안해드려요</p>
       </div>
       <button id="openSuggestBtn">AI 제안 받기</button>
     </div>
@@ -839,11 +839,11 @@
         <option value="영어">영어(English)</option>
       </select>
     </div>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:20px 0 12px;" id="captionModeHint">위에서 입력한 정보를 바탕으로 AI가 캡션, 번역, 해시태그를 추천합니다<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span></p>
     <div id="genBtnAnchorTop"></div>
-    <p style="font-size:12.5px;color:var(--ink-soft);margin:20px 0 12px;" id="captionModeHint">위에서 입력한 정보를 바탕으로 AI가 캡션, 번역, 해시태그를 추천합니다.<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span></p>
 
     <p id="captionSyncStatus" style="font-size:12px;color:var(--green,#1a7f3c);font-weight:600;min-height:16px;margin:0 0 6px;"></p>
-    <div class="caption-block" id="captionOrigBlock" style="display:none;"><h4 id="origCaptionLabel">원본 캡션</h4><textarea id="captionOrig" rows="4" placeholder="원본 캡션을 입력해주세요."></textarea></div>
+    <div class="caption-block" id="captionOrigBlock" style="display:none;"><h4 id="origCaptionLabel">원본 캡션</h4><textarea id="captionOrig" rows="4" placeholder="원본 캡션을 입력해주세요"></textarea></div>
     <div class="caption-block" id="captionSvBlock" style="display:none;"><h4>스웨덴어 캡션</h4><textarea id="captionSv" rows="4"></textarea></div>
     <div class="caption-block" id="enCaptionBlock" style="display:none;"><h4>영어 캡션</h4><textarea id="captionEn" rows="4"></textarea></div>
     <div class="caption-block" id="hashtagBlock" style="display:none;"><h4>추천 해시태그</h4><div class="hashtag-list" id="hashtagList"></div></div>
@@ -932,11 +932,11 @@
         </div>
         <div id="imageTagSection">
           <button class="secondary" id="tagModeBtn" style="margin-top:10px;width:100%;">📍 이 사진에 계정 태그하기</button>
-          <p style="font-size:12px;color:var(--ink-soft);margin-top:6px;">버튼을 누른 뒤 사진에서 태그하고 싶은 위치를 클릭하세요. 핀을 드래그하면 위치를 옮길 수 있고, 그냥 클릭하면 삭제돼요. 사진마다(카드뉴스면 장마다) 따로 지정돼요.</p>
+          <p style="font-size:12px;color:var(--ink-soft);margin-top:6px;">버튼을 누른 뒤 사진에서 태그하고 싶은 위치를 클릭하세요. 핀을 드래그하면 위치를 옮길 수 있고, 그냥 클릭하면 삭제돼요. 사진마다(카드뉴스면 장마다) 따로 지정돼요</p>
         </div>
         <div id="videoTagSection" style="display:none;margin-top:10px;">
           <label style="font-weight:600;font-size:13px;">이 영상에 태그할 계정</label>
-          <p style="font-size:12px;color:var(--ink-soft);margin:4px 0 8px;">영상은 위치 지정 없이 계정만 태그돼요 (인스타그램 릴스 태그 방식).</p>
+          <p style="font-size:12px;color:var(--ink-soft);margin:4px 0 8px;">영상은 위치 지정 없이 계정만 태그돼요 (인스타그램 릴스 태그 방식)</p>
           <div style="display:flex;gap:6px;">
             <input type="text" id="videoTagInput" placeholder="계정아이디 (@ 없이)" style="flex:1;padding:8px 10px;font-size:13px;border:1px solid var(--line);border-radius:8px;">
             <button class="secondary" id="videoTagAddBtn" type="button">추가</button>
@@ -945,7 +945,7 @@
         </div>
         <div id="reelsCoverSection" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
           <label style="font-weight:600;font-size:13px;">릴스 커버(썸네일) 선택</label>
-          <p style="font-size:12px;color:var(--ink-soft);margin:4px 0 10px;">슬라이더로 영상 속 원하는 장면을 찾아 커버로 지정하거나, 별도 이미지를 업로드하세요. 아무것도 안 하시면 영상 첫 장면이 자동으로 커버가 돼요.</p>
+          <p style="font-size:12px;color:var(--ink-soft);margin:4px 0 10px;">슬라이더로 영상 속 원하는 장면을 찾아 커버로 지정하거나, 별도 이미지를 업로드하세요. 아무것도 안 하시면 영상 첫 장면이 자동으로 커버가 돼요</p>
           <div style="display:flex;gap:12px;align-items:flex-start;">
             <canvas id="reelsCoverPreview" width="90" height="160" style="border-radius:8px;border:1px solid var(--line);background:#000;flex-shrink:0;"></canvas>
             <div style="flex:1;min-width:0;">
@@ -1051,7 +1051,7 @@
   <!-- STEP 6: MBS handoff -->
   <div class="step-label"><div class="step-num">5</div><div class="step-title">업로드</div></div>
   <div class="card">
-    <p class="disabled-note" id="mbsDisabledNote">1~5단계를 먼저 완료해주세요.</p>
+    <p class="disabled-note" id="mbsDisabledNote">1~5단계를 먼저 완료해주세요</p>
     <div id="publishCard" style="display:none;">
       <div class="field">
         <label>업로드할 곳</label>
@@ -1205,7 +1205,7 @@
         <select id="csSendLang" style="width:auto;padding:8px 10px;"></select>
         <button class="primary" id="csSendBtn">🚧 보내기 (준비 중)</button>
       </div>
-      <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">실제 댓글·DM 자동 전송 기능은 아직 테스트 중이라 비활성화돼 있어요. 지금은 위 "전체 복사"로 복사해서 직접 답장해주세요.</p>
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">실제 댓글·DM 자동 전송 기능은 아직 테스트 중이라 비활성화돼 있어요. 지금은 위 "전체 복사"로 복사해서 직접 답장해주세요</p>
     </div>
   </div>
 
@@ -1226,7 +1226,7 @@
   <header>
     <div class="eyebrow">KKC Sweden Archive</div>
     <h1>콘텐츠 아카이브</h1>
-    <p class="sub" style="max-width:700px;">지금까지 업로드한 콘텐츠를 모아보세요.<br>행사를 등록하면 자동으로 저장됩니다.</p>
+    <p class="sub" style="max-width:700px;">지금까지 업로드한 콘텐츠를 모아보세요.<br>행사를 등록하면 자동으로 저장됩니다</p>
   </header>
 
   <div class="step-label"><div class="step-num">★</div><div class="step-title">등록된 콘텐츠</div><div class="step-hint" id="archFilterHint">전체 보기</div></div>
@@ -1242,7 +1242,7 @@
     <button class="filter-chip" data-filter="기타">기타</button>
   </div>
   <div class="gallery-grid" id="archiveGrid"></div>
-  <div id="archEmpty" class="placeholder-empty" style="display:none;margin-top:20px;">아직 아카이브된 콘텐츠가 없습니다. SNS 콘텐츠 제작 탭에서 작업을 완료하고 저장해보세요.</div>
+  <div id="archEmpty" class="placeholder-empty" style="display:none;margin-top:20px;">아직 아카이브된 콘텐츠가 없습니다. SNS 콘텐츠 제작 탭에서 작업을 완료하고 저장해보세요</div>
 
   </div>
   </div>
@@ -1304,7 +1304,7 @@
 <div class="modal-overlay" id="csManualModal">
   <div class="modal">
     <h2>CS 매뉴얼 설정</h2>
-    <p class="modal-sub">자주 나오는 문의에 대한 공식 답변 지침, 정책, 참고 정보를 붙여넣어두면 AI가 답변 초안 생성 시 반영합니다.</p>
+    <p class="modal-sub">자주 나오는 문의에 대한 공식 답변 지침, 정책, 참고 정보를 붙여넣어두면 AI가 답변 초안 생성 시 반영합니다</p>
     <div class="field">
       <label for="csManualText">CS 매뉴얼 내용</label>
       <textarea id="csManualText" rows="12" placeholder="예: 티켓은 현장 판매만 하며 온라인 예매는 지원하지 않습니다. 운영시간은 화~토 10:00-18:00, 월/일 휴관입니다. ..."></textarea>
@@ -1486,15 +1486,15 @@ async function saveCurrentEvent(statusEl, closeAfter){
   statusEl.style.color = 'var(--danger)';
 
   if(!info.eventName){
-    statusEl.textContent = '행사명을 입력해주세요.';
+    statusEl.textContent = '행사명을 입력해주세요';
     return false;
   }
   if(!info.eventDate){
-    statusEl.textContent = '행사 날짜를 입력해주세요 (캘린더 표시에 필요해요).';
+    statusEl.textContent = '행사 날짜를 입력해주세요 (캘린더 표시에 필요해요)';
     return false;
   }
   if(info.eventEndDate && info.eventEndDate < info.eventDate){
-    statusEl.textContent = '종료일은 시작일보다 빠를 수 없습니다.';
+    statusEl.textContent = '종료일은 시작일보다 빠를 수 없습니다';
     return false;
   }
 
@@ -1593,7 +1593,7 @@ async function loadEvents(){
   if(loadErrorBanner){
     if(failedEvents.length){
       loadErrorBanner.style.display = 'block';
-      loadErrorBanner.textContent = `⚠️ 행사 ${failedEvents.length}건을 불러오지 못했습니다 (저장된 사진 용량이 너무 크거나 네트워크 문제일 수 있어요). 새로고침해서 다시 시도해보시고, 계속되면 알려주세요.`;
+      loadErrorBanner.textContent = `⚠️ 행사 ${failedEvents.length}건을 불러오지 못했습니다 (저장된 사진 용량이 너무 크거나 네트워크 문제일 수 있어요). 새로고침해서 다시 시도해보시고, 계속되면 알려주세요`;
     } else {
       loadErrorBanner.style.display = 'none';
     }
@@ -1777,7 +1777,7 @@ function renderEventList(){
   if(!registeredEvents.length){
     grid.innerHTML = '';
     empty.style.display = 'block';
-    empty.textContent = '아직 등록된 행사가 없습니다. "+ 새 행사 등록"으로 시작해보세요.';
+    empty.textContent = '아직 등록된 행사가 없습니다. "+ 새 행사 등록"으로 시작해보세요';
     return;
   }
   let filtered;
@@ -1792,7 +1792,7 @@ function renderEventList(){
   if(!filtered.length){
     grid.innerHTML = '';
     empty.style.display = 'block';
-    empty.textContent = eventFilterCategory === '지난 행사' ? '아직 클로징까지 완료된 지난 행사가 없습니다.' : '이 카테고리로 등록된 행사가 없습니다.';
+    empty.textContent = eventFilterCategory === '지난 행사' ? '아직 클로징까지 완료된 지난 행사가 없습니다' : '이 카테고리로 등록된 행사가 없습니다';
     return;
   }
   empty.style.display = 'none';
@@ -2112,7 +2112,7 @@ document.getElementById('openSuggestBtn').addEventListener('click', async () => 
 
   errorBox.style.display = 'none';
   if(!info.eventName){
-    errorBox.textContent = '1단계에서 행사명을 먼저 입력해주세요.';
+    errorBox.textContent = '1단계에서 행사명을 먼저 입력해주세요';
     errorBox.style.display = 'block';
     return;
   }
@@ -2204,7 +2204,7 @@ fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFi
 
 function handleFiles(fileList){
   const files = Array.from(fileList).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
-  if(!files.length){ alert('이미지 또는 영상 파일만 업로드할 수 있습니다.'); return; }
+  if(!files.length){ alert('이미지 또는 영상 파일만 업로드할 수 있습니다'); return; }
   let loadedCount = 0;
   const checkDone = () => { loadedCount++; if(loadedCount === files.length) onImagesReady(); };
   files.forEach(file => {
@@ -2221,7 +2221,7 @@ function handleFiles(fileList){
       const timeoutId = setTimeout(() => {
         if(settled) return;
         settled = true;
-        alert(`"${file.name}" 영상을 불러오지 못했습니다 (시간 초과). 파일 형식을 확인해주세요 (MP4 권장).`);
+        alert(`"${file.name}" 영상을 불러오지 못했습니다 (시간 초과). 파일 형식을 확인해주세요 (MP4 권장)`);
         checkDone();
       }, 20000);
       video.addEventListener('loadeddata', () => {
@@ -2235,7 +2235,7 @@ function handleFiles(fileList){
         if(settled) return;
         settled = true;
         clearTimeout(timeoutId);
-        alert(`"${file.name}" 영상을 재생할 수 없습니다. 다른 형식(MP4)으로 시도해주세요.`);
+        alert(`"${file.name}" 영상을 재생할 수 없습니다. 다른 형식(MP4)으로 시도해주세요`);
         checkDone();
       }, { once:true });
       video.src = blobUrl;
@@ -2248,13 +2248,13 @@ function handleFiles(fileList){
           checkDone();
         };
         img.onerror = () => {
-          alert(`"${file.name}" 이미지를 불러오지 못했습니다.`);
+          alert(`"${file.name}" 이미지를 불러오지 못했습니다`);
           checkDone();
         };
         img.src = e.target.result;
       };
       reader.onerror = () => {
-        alert(`"${file.name}" 파일을 읽지 못했습니다.`);
+        alert(`"${file.name}" 파일을 읽지 못했습니다`);
         checkDone();
       };
       reader.readAsDataURL(file);
@@ -2883,7 +2883,7 @@ document.getElementById('captionModeToggle').addEventListener('click', (e) => {
   const hint = document.getElementById('captionModeHint');
   const genBtn = document.getElementById('generateBtn');
   if(captionMode === 'ai-write'){
-    hint.innerHTML = '위에서 입력한 정보를 바탕으로 AI가 캡션, 번역, 해시태그를 추천합니다.<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span>';
+    hint.innerHTML = '위에서 입력한 정보를 바탕으로 AI가 캡션, 번역, 해시태그를 추천합니다<span id="usingSuggestionNote" style="display:none;color:var(--green);font-weight:600;"> · 선택하신 콘텐츠 방향이 반영됩니다</span>';
     genBtn.textContent = 'AI 캡션, 해시태그, 번역 생성';
     genBtn.style.display = '';
   } else if(captionMode === 'as-is'){
@@ -2908,13 +2908,13 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
 
   if(captionMode === 'ai-write'){
     if(!info.eventName || !getStageDesc()){
-      errorBox.textContent = '행사명과 콘텐츠 설명을 먼저 입력해주세요.';
+      errorBox.textContent = '행사명과 콘텐츠 설명을 먼저 입력해주세요';
       errorBox.style.display = 'block';
       return;
     }
   } else {
     if(!captionOrigEl.value.trim()){
-      errorBox.textContent = '원본 캡션 칸에 먼저 내용을 입력해주세요.';
+      errorBox.textContent = '원본 캡션 칸에 먼저 내용을 입력해주세요';
       errorBox.style.display = 'block';
       return;
     }
@@ -3153,7 +3153,7 @@ function repairJsonNewlines(text){
 function extractJson(data){
   // 웹검색 사용 시 여러 개의 text 블록이 섞여 들어올 수 있어, 마지막 text 블록을 최종 응답으로 사용
   const textBlocks = data.content.filter(b => b.type === 'text');
-  if(!textBlocks.length) throw new Error('응답에서 텍스트를 찾을 수 없습니다.');
+  if(!textBlocks.length) throw new Error('응답에서 텍스트를 찾을 수 없습니다');
   const textBlock = textBlocks[textBlocks.length - 1];
   let cleaned = textBlock.text.trim().replace(/^```json\s*/i,'').replace(/```$/,'').trim();
   try{
@@ -3290,7 +3290,7 @@ async function loadHistory(){
   try{
     const listResult = await kkcStorage.list('kkc:suggestion:', false);
     if(!listResult || !listResult.keys || listResult.keys.length === 0){
-      historyList.innerHTML = '<div class="empty-hist">아직 저장된 제안이 없습니다.</div>';
+      historyList.innerHTML = '<div class="empty-hist">아직 저장된 제안이 없습니다</div>';
       return;
     }
     const items = [];
@@ -3318,7 +3318,7 @@ async function loadHistory(){
       });
     });
   } catch(err){
-    historyList.innerHTML = '<div class="empty-hist">기록을 불러오지 못했습니다.</div>';
+    historyList.innerHTML = '<div class="empty-hist">기록을 불러오지 못했습니다</div>';
   }
 }
 loadHistory();
@@ -3411,7 +3411,7 @@ function renderCsInboxList(){
 
   const items = kinds[csInboxKind];
   if(!items.length){
-    listEl.innerHTML = `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${csInboxKind}이 아직 없어요.</div>`;
+    listEl.innerHTML = `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${csInboxKind}이 아직 없어요</div>`;
     document.getElementById('csInboxPager').innerHTML = '';
     return;
   }
@@ -3497,7 +3497,7 @@ document.getElementById('csInboxList').addEventListener('click', async e => {
       renderCsInboxList();
     } catch(err){
       console.error('문의 삭제 실패:', err);
-      alert('삭제 중 문제가 발생했습니다. 다시 시도해주세요.');
+      alert('삭제 중 문제가 발생했습니다. 다시 시도해주세요');
       dismissBtn.disabled = false;
     }
   }
@@ -3517,14 +3517,14 @@ document.getElementById('csMarkDoneBtn').addEventListener('click', async () => {
     currentCsInboxKey = null;
   } catch(e){
     console.error('완료 처리 실패:', e);
-    alert('완료 처리 중 문제가 발생했습니다. 다시 시도해주세요.');
+    alert('완료 처리 중 문제가 발생했습니다. 다시 시도해주세요');
   } finally {
     btn.disabled = false;
   }
 });
 
 document.getElementById('csSendBtn').addEventListener('click', () => {
-  alert('실제 댓글·DM 자동 전송 기능은 아직 준비 중이에요. 충분히 테스트되면 눈에 띄게 알려드리고 활성화할게요.\n\n지금은 "전체 복사"로 복사해서 인스타그램/페이스북에 직접 붙여넣어 답장해주세요.');
+  alert('실제 댓글·DM 자동 전송 기능은 아직 준비 중이에요. 충분히 테스트되면 눈에 띄게 알려드리고 활성화할게요.\n\n지금은 "전체 복사"로 복사해서 인스타그램/페이스북에 직접 붙여넣어 답장해주세요');
 });
 
 loadCsInbox();
@@ -3631,12 +3631,12 @@ document.getElementById('csGenerateBtn').addEventListener('click', async () => {
 
   errorBox.style.display = 'none';
   if(!csInquiry){
-    errorBox.textContent = '문의 내용을 입력해주세요.';
+    errorBox.textContent = '문의 내용을 입력해주세요';
     errorBox.style.display = 'block';
     return;
   }
   if(!csSelectedLangs.length){
-    errorBox.textContent = '생성할 언어를 최소 1개 선택해주세요.';
+    errorBox.textContent = '생성할 언어를 최소 1개 선택해주세요';
     errorBox.style.display = 'block';
     return;
   }
@@ -3727,7 +3727,7 @@ document.getElementById('csCopyAll').addEventListener('click', () => {
     const btn = document.getElementById('csCopyAll');
     const original = btn.textContent; btn.textContent = '복사됨 ✓';
     setTimeout(() => btn.textContent = original, 1500);
-  }).catch(() => alert('복사에 실패했습니다. 텍스트를 직접 선택해서 복사해주세요.'));
+  }).catch(() => alert('복사에 실패했습니다. 텍스트를 직접 선택해서 복사해주세요'));
 });
 
 document.getElementById('csSaveTemplate').addEventListener('click', async () => {
@@ -3736,7 +3736,7 @@ document.getElementById('csSaveTemplate').addEventListener('click', async () => 
   const reply_ko = document.getElementById('csReplyKo').value;
   const reply_en = document.getElementById('csReplyEn').value;
   const reply_sv = document.getElementById('csReplySv').value;
-  if(!reply_ko && !reply_en && !reply_sv){ alert('저장할 답변 초안이 없습니다.'); return; }
+  if(!reply_ko && !reply_en && !reply_sv){ alert('저장할 답변 초안이 없습니다'); return; }
   try{
     const key = 'kkc:cstemplate:' + Date.now();
     await kkcStorage.set(key, JSON.stringify({
@@ -3756,7 +3756,7 @@ async function loadCsTemplates(){
   try{
     const listResult = await kkcStorage.list('kkc:cstemplate:', true);
     if(!listResult || !listResult.keys || listResult.keys.length === 0){
-      list.innerHTML = '<div class="empty-hist">아직 저장된 답변 템플릿이 없습니다.</div>';
+      list.innerHTML = '<div class="empty-hist">아직 저장된 답변 템플릿이 없습니다</div>';
       return;
     }
     const items = [];
@@ -3801,7 +3801,7 @@ async function loadCsTemplates(){
       });
     });
   } catch(err){
-    list.innerHTML = '<div class="empty-hist">템플릿을 불러오지 못했습니다.</div>';
+    list.innerHTML = '<div class="empty-hist">템플릿을 불러오지 못했습니다</div>';
   }
 }
 loadCsTemplates();
@@ -3823,7 +3823,7 @@ document.getElementById('saveCsManualBtn').addEventListener('click', async () =>
     await kkcStorage.set('kkc:csmanual', JSON.stringify({ content: text, updatedAt: new Date().toISOString() }), true);
     csManualContent = text;
     statusEl.style.color = 'var(--green)';
-    statusEl.textContent = '✓ 저장되었습니다. 다음 답변 생성부터 반영됩니다.';
+    statusEl.textContent = '✓ 저장되었습니다. 다음 답변 생성부터 반영됩니다';
   } catch(err){
     statusEl.style.color = 'var(--danger)';
     statusEl.textContent = '저장 실패: ' + err.message;
@@ -3865,7 +3865,7 @@ async function loadArchive(){
   } catch(err){
     document.getElementById('archiveGrid').innerHTML = '';
     document.getElementById('archEmpty').style.display = 'block';
-    document.getElementById('archEmpty').textContent = '아카이브를 불러오지 못했습니다.';
+    document.getElementById('archEmpty').textContent = '아카이브를 불러오지 못했습니다';
   }
 }
 
@@ -3877,7 +3877,7 @@ function renderArchive(){
   if(!filtered.length){
     grid.innerHTML = '';
     empty.style.display = 'block';
-    empty.textContent = archiveItems.length ? '이 카테고리로 저장된 콘텐츠가 없습니다.' : '아직 아카이브된 콘텐츠가 없습니다. SNS 콘텐츠 제작 탭에서 작업을 완료하고 저장해보세요.';
+    empty.textContent = archiveItems.length ? '이 카테고리로 저장된 콘텐츠가 없습니다' : '아직 아카이브된 콘텐츠가 없습니다. SNS 콘텐츠 제작 탭에서 작업을 완료하고 저장해보세요';
     return;
   }
   empty.style.display = 'none';
@@ -3993,7 +3993,7 @@ async function bdToggleGate(eventKey, gateKey){
   bdRender();
   const { key, ...rest } = ev;
   try{ await kkcStorage.set(eventKey, JSON.stringify(rest), true); }
-  catch(err){ console.error('게이트 저장 실패:', err); alert('게이트 저장에 실패했습니다. 다시 시도해주세요.'); }
+  catch(err){ console.error('게이트 저장 실패:', err); alert('게이트 저장에 실패했습니다. 다시 시도해주세요'); }
 }
 
 function bdRender(){
@@ -4010,7 +4010,7 @@ function bdRender(){
   if(!rows) return; // 탭이 아직 렌더링 안 된 초기 상태 방어
   rows.innerHTML='';
   if(!main.length){
-    rows.innerHTML = '<div style="padding:22px;text-align:center;color:var(--bd-muted);font-weight:600;font-size:13px">60일 이내 등록된 행사가 없습니다. 행사 관리 홈에서 행사를 등록해보세요.</div>';
+    rows.innerHTML = '<div style="padding:22px;text-align:center;color:var(--bd-muted);font-weight:600;font-size:13px">60일 이내 등록된 행사가 없습니다. 행사 관리 홈에서 행사를 등록해보세요</div>';
   }
   main.forEach(([ev,c]) => {
     const row = document.createElement('div');
@@ -4094,7 +4094,7 @@ function bdBuildMemoPanel(ev, inputOpen){
 async function bdSaveEvent(ev){
   const { key, ...rest } = ev;
   try{ await kkcStorage.set(ev.key, JSON.stringify(rest), true); }
-  catch(err){ console.error('저장 실패:', err); alert('저장에 실패했습니다. 다시 시도해주세요.'); }
+  catch(err){ console.error('저장 실패:', err); alert('저장에 실패했습니다. 다시 시도해주세요'); }
 }
 
 async function bdAddMemo(eventKey){
@@ -4126,7 +4126,7 @@ async function bdDeleteMemo(eventKey, memoId){
 async function bdDeleteEvent(eventKey){
   const ev = registeredEvents.find(e => e.key === eventKey);
   if(!ev) return;
-  if(!confirm(`"${ev.eventName}" 행사를 삭제할까요? 행사 관리 홈에서도 함께 삭제됩니다.`)) return;
+  if(!confirm(`"${ev.eventName}" 행사를 삭제할까요? 행사 관리 홈에서도 함께 삭제됩니다`)) return;
   try{
     await kkcStorage.delete(eventKey, true);
     if(bdSelKey===eventKey) bdSelKey=null;
@@ -4134,7 +4134,7 @@ async function bdDeleteEvent(eventKey){
     bdRender();
   } catch(err){
     console.error('행사 삭제 실패:', err);
-    alert('삭제에 실패했습니다. 다시 시도해주세요.');
+    alert('삭제에 실패했습니다. 다시 시도해주세요');
   }
 }
 
@@ -4165,7 +4165,7 @@ document.getElementById('bdAddBtn').addEventListener('click', async () => {
   const dateEl = document.getElementById('bdDate');
   const name = nameEl.value.trim();
   const date = dateEl.value;
-  if(!name || !date){ alert('사업명과 행사일을 모두 입력하세요.'); return; }
+  if(!name || !date){ alert('사업명과 행사일을 모두 입력하세요'); return; }
   const key = 'kkc:event:' + Date.now();
   try{
     await kkcStorage.set(key, JSON.stringify({
@@ -4178,7 +4178,7 @@ document.getElementById('bdAddBtn').addEventListener('click', async () => {
     bdRender();
   } catch(err){
     console.error('사업 추가 실패:', err);
-    alert('추가에 실패했습니다. 다시 시도해주세요.');
+    alert('추가에 실패했습니다. 다시 시도해주세요');
   }
 });
 document.getElementById('bdName').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('bdAddBtn').click(); });
@@ -4204,7 +4204,7 @@ if(bdFsBtn){
     if(!document.fullscreenElement){
       document.getElementById('bdPage').requestFullscreen().catch(err => {
         console.error('전체화면 진입 실패:', err);
-        alert('이 브라우저에서는 전체화면 기능을 사용할 수 없습니다.');
+        alert('이 브라우저에서는 전체화면 기능을 사용할 수 없습니다');
       });
     } else {
       document.exitFullscreen();
