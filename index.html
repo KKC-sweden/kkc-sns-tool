@@ -1108,7 +1108,7 @@
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
       <div>
         <h1>CS 데스크</h1>
-        <p class="sub" style="max-width:760px;">모든 문의를 이 곳에서 한국어, 영어, 스웨덴어로 빠르게 답변할 수 있어요</p>
+        <p class="sub" style="max-width:760px;">모든 문의를 이 곳에서 한국어, 영어, 스웨덴어로 답변할 수 있어요</p>
       </div>
       <button class="secondary" id="openCsManualBtn" style="white-space:nowrap;">⚙ CS 매뉴얼 설정</button>
     </div>
@@ -1450,8 +1450,7 @@ function renderWorkflowTasks(){
     lastRole = o; isFirst = false;
     return `<li class="${newRoleGap ? 'bd-newrole' : ''}"><span class="bd-o">${showRole ? escapeHtml(o) : ''}</span><span class="bd-tx">${escapeHtml(t)}</span></li>`;
   }).join('');
-  const label = (typeof bdDisplayLabel === 'function') ? bdDisplayLabel(selectedStage) : selectedStage;
-  box.innerHTML = `<div class="wf-tasks-head">${label} 단계 할 일</div><ul class="wf-tasks-list">${items}</ul>`;
+  box.innerHTML = `<ul class="wf-tasks-list">${items}</ul>`;
 }
 
 function openWorkflow(){
@@ -1511,6 +1510,7 @@ async function saveCurrentEvent(statusEl, closeAfter){
       stageData, updatedAt: new Date().toISOString()
     }), true);
     currentEditingEventKey = key;
+    computeCompletedStages(info.eventName);
     statusEl.style.color = 'var(--green)';
     statusEl.textContent = '✓ 저장되었습니다. (업로드한 사진, 캡션도 함께 저장돼요)';
     if(closeAfter){
@@ -2038,6 +2038,8 @@ function computeCompletedStages(eventName){
   completedStages = new Set(
     contentUploads.filter(item => item.eventName === eventName).map(item => item.stage)
   );
+  // 6주전 단계는 콘텐츠 업로드가 아니라 행사 정보 입력이 전부라서, 행사 정보가 저장되어 있으면(행사명이 있으면) 완료로 간주
+  if(eventName) completedStages.add('6주전');
   renderStageDoneDots();
 }
 function renderStageDoneDots(){
@@ -3763,22 +3765,8 @@ async function loadCsTemplates(){
     }
     items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // 카테고리(문의 유형)별로 그룹핑
-    const groups = {};
-    items.forEach(item => {
-      const cat = item.csType || '기타';
-      (groups[cat] ||= []).push(item);
-    });
-
     list.innerHTML = '';
-    Object.keys(groups).forEach(cat => {
-      const groupTitle = document.createElement('div');
-      groupTitle.className = 'check-group-title';
-      groupTitle.style.marginTop = '18px';
-      groupTitle.textContent = cat;
-      list.appendChild(groupTitle);
-
-      groups[cat].forEach(item => {
+    items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'hist-item';
         const date = new Date(item.createdAt);
@@ -3805,7 +3793,6 @@ async function loadCsTemplates(){
         });
         list.appendChild(div);
       });
-    });
 
     list.querySelectorAll('.hist-del').forEach(btn => {
       btn.addEventListener('click', async (e) => {
