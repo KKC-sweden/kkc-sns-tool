@@ -278,6 +278,10 @@
   .cs-inbox-item .ci-ch{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:#E7F0FA;color:var(--navy);white-space:nowrap;}
   .cs-inbox-item .ci-body{flex:1;min-width:0;}
   .cs-inbox-item .ci-from{font-size:12px;font-weight:700;color:var(--navy-deep);}
+  .ci-event-tag{display:inline-block;font-size:10.5px;font-weight:700;color:var(--navy);background:#eef3fb;border-radius:6px;padding:2px 7px;margin-right:6px;vertical-align:middle;}
+  .ci-assign-row{display:flex;gap:6px;align-items:center;margin-top:8px;}
+  .ci-assign-row select{font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:#fff;max-width:200px;}
+  .ci-assign-row button{font-size:12px;padding:5px 10px;}
   .cs-inbox-item .ci-text{font-size:13px;color:var(--ink);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cs-inbox-item .ci-time{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
   .ci-platform-head{font-size:13px;font-weight:800;color:var(--navy-deep);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--navy-deep);}
@@ -1124,6 +1128,10 @@
     <div class="mode-toggle" id="csKindToggle" style="max-width:260px;margin-bottom:14px;">
       <button class="mode-btn active" data-kind="댓글">💬 댓글 <span class="ci-toggle-count" id="csCountComment"></span></button>
       <button class="mode-btn" data-kind="DM">✉️ DM <span class="ci-toggle-count" id="csCountDm"></span></button>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label for="csEventFilter" style="font-size:12px;color:var(--ink-soft);font-weight:600;margin-right:6px;">행사별로 보기</label>
+      <select id="csEventFilter" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;"></select>
     </div>
     <div id="csInboxEmpty" style="color:var(--ink-soft);font-size:13px;">불러오는 중...</div>
     <div id="csInboxList" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -3350,6 +3358,27 @@ function parseChannelForGroup(channel){
 let csInboxGroups = { Instagram: { '댓글': [], 'DM': [] }, Facebook: { '댓글': [], 'DM': [] } };
 let csInboxPlatform = 'Instagram';
 let csInboxKind = '댓글';
+let csInboxEventFilter = '전체';
+
+// 현재 문의 목록에 등장하는 행사명만 모아서 드롭다운을 채움 (행사가 없는 문의는 "담당 행사 미지정"으로 묶음)
+function populateCsEventFilter(){
+  const sel = document.getElementById('csEventFilter');
+  const names = [...new Set(csInboxItems.map(i => i.eventName || '담당 행사 미지정'))].sort();
+  const prevValue = csInboxEventFilter;
+  sel.innerHTML = `<option value="전체">전체 보기</option>` + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+  // 이전에 선택돼 있던 값이 여전히 목록에 있으면 유지, 없으면 전체로 되돌림
+  if(names.includes(prevValue)){
+    sel.value = prevValue;
+  } else {
+    sel.value = '전체';
+    csInboxEventFilter = '전체';
+  }
+}
+document.getElementById('csEventFilter').addEventListener('change', (e) => {
+  csInboxEventFilter = e.target.value;
+  csInboxPage = 1;
+  renderCsInboxList();
+});
 
 async function loadCsInbox(){
   const emptyEl = document.getElementById('csInboxEmpty');
@@ -3373,6 +3402,8 @@ async function loadCsInbox(){
     console.error('CS 인박스 로드 실패:', err);
     csInboxItems = [];
   }
+
+  populateCsEventFilter();
 
   // 플랫폼 → 종류(댓글/DM) 순서로 그룹핑
   csInboxGroups = { Instagram: { '댓글': [], 'DM': [] }, Facebook: { '댓글': [], 'DM': [] } };
@@ -3406,10 +3437,23 @@ function renderCsInboxList(){
   const renderItem = (item) => {
     const timeAgo = new Date(item.receivedAt).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
     const isHandled = csHandledInSession.has(item.key);
+    const eventTag = item.eventName ? `<span class="ci-event-tag">${escapeHtml(item.eventName)}${item.assignedStaff ? ` · ${escapeHtml(item.assignedStaff)}` : ''}</span>` : '';
+    // 댓글인데(mediaId가 있는데) 아직 행사가 자동 매칭 안 된 경우, 직접 행사를 지정할 수 있게 함
+    // (한 번 지정하면 같은 게시물에서 오는 다음 댓글부터는 자동으로 그 행사 담당자에게 연결됨)
+    const assignRow = (!item.eventName && item.mediaId && registeredEvents.length)
+      ? `<div class="ci-assign-row">
+          <select class="ci-assign-select" data-assign-select="${item.key}">
+            <option value="">행사 지정...</option>
+            ${registeredEvents.map(ev => `<option value="${escapeHtml(ev.key)}">${escapeHtml(ev.eventName)}</option>`).join('')}
+          </select>
+          <button class="secondary ci-assign-btn" data-assign-btn="${item.key}">지정</button>
+        </div>`
+      : '';
     return `<div class="cs-inbox-item${isHandled ? ' ci-handled' : ''}">
       <div class="ci-body">
-        <div class="ci-from">${escapeHtml(item.fromUsername || '알 수 없음')}</div>
+        <div class="ci-from">${eventTag}${escapeHtml(item.fromUsername || '알 수 없음')}</div>
         <div class="ci-text">${escapeHtml(item.text || '')}</div>
+        ${assignRow}
       </div>
       <span class="ci-time">${timeAgo}</span>
       ${isHandled
@@ -3423,9 +3467,13 @@ function renderCsInboxList(){
   document.getElementById('csCountComment').textContent = kinds['댓글'].length ? `(${kinds['댓글'].length})` : '';
   document.getElementById('csCountDm').textContent = kinds['DM'].length ? `(${kinds['DM'].length})` : '';
 
-  const items = kinds[csInboxKind];
+  let items = kinds[csInboxKind];
+  if(csInboxEventFilter !== '전체'){
+    items = items.filter(item => (item.eventName || '담당 행사 미지정') === csInboxEventFilter);
+  }
   if(!items.length){
-    listEl.innerHTML = `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${csInboxKind}이 아직 없어요</div>`;
+    const filterNote = csInboxEventFilter !== '전체' ? ` ("${csInboxEventFilter}" 필터 적용 중)` : '';
+    listEl.innerHTML = `<div class="ci-kind-empty">${csInboxPlatform}에서 들어온 ${csInboxKind}이 아직 없어요${filterNote}</div>`;
     document.getElementById('csInboxPager').innerHTML = '';
     return;
   }
@@ -3491,6 +3539,39 @@ async function useCsInboxItem(key){
 document.getElementById('csInboxList').addEventListener('click', async e => {
   const loadBtn = e.target.closest('[data-load-inbox]');
   if(loadBtn){ useCsInboxItem(loadBtn.dataset.loadInbox); return; }
+
+  const assignBtn = e.target.closest('[data-assign-btn]');
+  if(assignBtn){
+    const key = assignBtn.dataset.assignBtn;
+    const select = document.querySelector(`[data-assign-select="${CSS.escape(key)}"]`);
+    const evKey = select ? select.value : '';
+    if(!evKey){ alert('지정할 행사를 먼저 선택해주세요'); return; }
+    const ev = registeredEvents.find(e2 => e2.key === evKey);
+    if(!ev) return;
+    const item = csInboxItems.find(i => i.key === key);
+    if(!item) return;
+    assignBtn.disabled = true;
+    try{
+      // 앞으로 같은 게시물(mediaId)에서 오는 댓글은 자동으로 이 행사 담당자에게 연결되도록 저장
+      await kkcStorage.set('kkc:media_staff:' + item.mediaId, JSON.stringify({
+        eventName: ev.eventName, staffName: ev.ownerName || '', staffEmail: ev.ownerEmail || ''
+      }), true);
+      // 지금 이 문의 항목에도 바로 반영 (다음 일일 요약 메일부터 담당자에게 감)
+      const updated = { ...item, eventName: ev.eventName, assignedStaff: ev.ownerName || null, notifyEmail: ev.ownerEmail || null };
+      await kkcStorage.set(key, JSON.stringify({ ...updated, key: undefined }), true);
+      const idx = csInboxItems.findIndex(i => i.key === key);
+      if(idx > -1) csInboxItems[idx] = updated;
+      const { platform, kind } = parseChannelForGroup(item.channel);
+      csInboxGroups[platform][kind] = csInboxGroups[platform][kind].map(i => i.key === key ? updated : i);
+      populateCsEventFilter();
+      renderCsInboxList();
+    } catch(err){
+      console.error('행사 지정 실패:', err);
+      alert('행사 지정에 실패했습니다. 다시 시도해주세요');
+      assignBtn.disabled = false;
+    }
+    return;
+  }
 
   const dismissBtn = e.target.closest('[data-dismiss-inbox]');
   if(dismissBtn){
