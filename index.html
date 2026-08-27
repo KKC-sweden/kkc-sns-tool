@@ -7,6 +7,8 @@
 <!-- 시스템 기본 폰트 사용 (Instagram과 동일한 방식) -->
 <!-- 단, 행사 현황판(#tab-board)만 원장님 원본 디자인과 동일하게 Pretendard 사용 -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<!-- .docx 파일에서 텍스트를 추출하기 위한 라이브러리 (보도자료 스타일 학습 자료 업로드용) -->
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <style>
   #tab-board, #tab-board * { font-family:"Pretendard",-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif !important; }
 </style>
@@ -828,6 +830,11 @@
 
   <!-- STEP 3~6: 콘텐츠 제작 단계 (6주전에는 숨김 — 아직 SNS 콘텐츠 업로드가 필요 없는 단계라서) -->
   <div id="contentStepsWrap">
+    <div class="mode-toggle" id="stage2ModeToggle" style="max-width:320px;margin:0 auto 16px;display:none;">
+      <button class="mode-btn active" data-stage2mode="content">콘텐츠 업로드</button>
+      <button class="mode-btn" data-stage2mode="press">보도자료 작성</button>
+    </div>
+    <div id="stage2ContentInner">
   <!-- STEP 3: Upload -->
   <div class="step-label"><div class="step-num">2</div><div class="step-title">사진 및 영상 업로드 <span class="step-hint">여러 개 업로드 가능</span></div></div>
   <div class="card">
@@ -1125,6 +1132,53 @@
       <button class="primary" id="confirmPublishBtn" style="width:100%;">게시하기</button>
     </div>
   </div>
+    </div>
+
+    <!-- 보도자료 작성 (2주전 탭 전용) -->
+    <div id="pressReleaseSection" style="display:none;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <div>
+            <h2 style="margin:0;">보도자료 초안 작성</h2>
+            <p class="sub" style="margin-top:4px;">행사 정보와 아래 입력한 자료를 바탕으로 보도자료 초안을 작성해드려요</p>
+          </div>
+          <button type="button" class="secondary" id="openPressStyleBtn">보도자료 레퍼런스</button>
+        </div>
+
+        <div class="field">
+          <label for="pressUploadFiles">이번 보도자료에 참고할 자료 (선택)</label>
+          <p style="font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;">.txt 또는 .docx 파일을 올리면 내용을 학습합니다. hwpx와 PDF는 자동으로 못 읽으니, 필요하면 내용을 복사해서 아래 작성 방향 칸에 붙여넣기 해주세요</p>
+          <input type="file" id="pressUploadFiles" accept=".txt,.docx" multiple>
+          <div id="pressUploadList" style="margin-top:8px;"></div>
+        </div>
+
+        <div class="field">
+          <label for="pressDirection">작성 방향 (선택)</label>
+          <textarea id="pressDirection" rows="4" placeholder="행사의 문화 교류 의미를 강조해주세요"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="pressStyleWeight">어떤 스타일로 작성할까요?</label>
+          <select id="pressStyleWeight"></select>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;">
+          <button class="primary" id="generatePressBtn">보도자료 초안 생성</button>
+        </div>
+        <div class="loading" id="pressLoading"><div class="spinner"></div>작성하는 중입니다…</div>
+        <div class="error-box" id="pressErrorBox" style="display:none;"></div>
+
+        <div class="field" id="pressDraftField" style="margin-top:20px;display:none;">
+          <label for="pressDraft">보도자료 초안 (수정 가능)</label>
+          <textarea id="pressDraft" rows="20" style="font-family:inherit;line-height:1.7;"></textarea>
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;">
+            <span id="pressSaveStatus" style="font-size:12.5px;color:var(--ink-soft);align-self:center;"></span>
+            <button class="secondary" id="copyPressBtn">전체 복사</button>
+            <button class="primary" id="savePressBtn">보도자료 저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="history" id="suggestHistorySection">
@@ -1372,6 +1426,22 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="pressStyleModal">
+  <div class="modal" style="max-width:640px;">
+    <h2>보도자료 레퍼런스</h2>
+    <p class="modal-sub">과거에 작성한 보도자료를 등록하면 문체와 형식을 참고해 초안을 작성할 수 있어요</p>
+    <div class="field">
+      <label for="pressStyleFiles">파일로 추가 (.txt, .docx)</label>
+      <input type="file" id="pressStyleFiles" accept=".txt,.docx" multiple>
+    </div>
+    <div id="pressStyleList" style="margin-top:10px;"></div>
+    <div class="modal-footer">
+      <button class="secondary" id="closePressStyleBtn">닫기</button>
+    </div>
+    <span id="pressStyleStatus" style="display:block;margin-top:10px;font-size:12.5px;font-weight:600;"></span>
+  </div>
+</div>
+
 <script>
 // Cloudflare Worker 중계 서버 주소 (API 키를 안전하게 보관하고 요청을 대신 전달해줌)
 const RELAY_SERVER_URL = "https://kkc-api-relay.bada-c87.workers.dev/";
@@ -1517,12 +1587,15 @@ document.getElementById('singleDayEventToggle').addEventListener('change', updat
 function resetStageSystem(eventName){
   stageStore = {};
   selectedStage = '6주전';
+  stage2Mode = 'content';
+  document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === 'content'));
   document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === '6주전'));
   document.getElementById('suggestSection').classList.add('hidden');
   document.getElementById('contentStepsWrap').style.display = 'none';
   document.getElementById('eventInfoWrap').style.display = 'block';
   document.getElementById('suggestHistorySection').style.display = 'none';
   renderWorkflowTasks();
+  updateStage2Mode();
   computeCompletedStages(eventName || '');
   restoreStageState(undefined);
 }
@@ -1932,6 +2005,9 @@ function renderEventList(){
       document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
       document.getElementById('eventInfoWrap').style.display = selectedStage === '6주전' ? 'block' : 'none';
       document.getElementById('suggestHistorySection').style.display = selectedStage === 'D-10' ? 'block' : 'none';
+      stage2Mode = 'content';
+      document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === 'content'));
+      updateStage2Mode();
       renderWorkflowTasks();
       computeCompletedStages(ev.eventName || '');
 
@@ -1941,7 +2017,7 @@ function renderEventList(){
       } else {
         stageStore = {};
       }
-      restoreStageState(stageStore['D-10']);
+      restoreStageState(stageStore[selectedStage]);
       renderStageDoneDots();
       openWorkflow();
     });
@@ -1992,6 +2068,11 @@ function snapshotStageState(){
     captionEn: document.getElementById('captionEn').value,
     hashtagListHTML: document.getElementById('hashtagList').innerHTML,
     checklistComplete,
+    stage2Mode,
+    pressDirection: document.getElementById('pressDirection').value,
+    pressDraft: document.getElementById('pressDraft').value,
+    pressDraftVisible: document.getElementById('pressDraftField').style.display !== 'none',
+    pressUploads: currentPressUploads,
   };
 }
 
@@ -2023,6 +2104,14 @@ function restoreStageState(snap){
     document.getElementById('editGrid').style.display = 'none';
     document.getElementById('thumbStrip').style.display = 'none';
     document.getElementById('fileInput').value = '';
+    stage2Mode = 'content';
+    document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === 'content'));
+    document.getElementById('pressDirection').value = '';
+    document.getElementById('pressDraft').value = '';
+    document.getElementById('pressDraftField').style.display = 'none';
+    document.getElementById('pressErrorBox').style.display = 'none';
+    currentPressUploads = [];
+    renderPressUploadList();
   } else {
     uploadedImages = snap.uploadedImages; feedIndex = snap.feedIndex; storyIndex = snap.storyIndex;
     feedMode = snap.feedMode; storyMode = snap.storyMode; fbMode = snap.fbMode;
@@ -2042,6 +2131,14 @@ function restoreStageState(snap){
     document.getElementById('captionEn').value = snap.captionEn;
     document.getElementById('hashtagList').innerHTML = snap.hashtagListHTML;
     checklistComplete = snap.checklistComplete;
+    stage2Mode = snap.stage2Mode || 'content';
+    document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === stage2Mode));
+    document.getElementById('pressDirection').value = snap.pressDirection || '';
+    document.getElementById('pressDraft').value = snap.pressDraft || '';
+    document.getElementById('pressDraftField').style.display = snap.pressDraftVisible ? 'block' : 'none';
+    document.getElementById('pressErrorBox').style.display = 'none';
+    currentPressUploads = snap.pressUploads || [];
+    renderPressUploadList();
 
     if(uploadedImages.length){
       document.getElementById('uploadedInfo').style.display = 'flex';
@@ -2075,6 +2172,7 @@ function restoreStageState(snap){
   document.getElementById('generateBtn').textContent = captionMode==='ai-write' ? 'AI 캡션, 해시태그, 번역 생성' : '번역 + 해시태그 생성';
   updateCaptionVisibility();
   updateMbsState();
+  updateStage2Mode();
 }
 
 // stageStore를 JSON 저장 가능한 형태로 변환 (Image 객체 → dataURL 문자열)
@@ -4166,6 +4264,292 @@ document.getElementById('saveCsManualBtn').addEventListener('click', async () =>
     if(res && res.value) csManualContent = JSON.parse(res.value).content || '';
   } catch(e){ /* 저장된 매뉴얼 없음 */ }
 })();
+
+// ============ 보도자료 초안 작성 (2주전 탭 전용) ============
+
+// 파일에서 텍스트 추출 — .txt는 그대로 읽고, .docx는 mammoth.js로 본문 텍스트만 뽑아냄
+async function extractTextFromFile(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.txt')){
+    return await file.text();
+  }
+  if(name.endsWith('.docx')){
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value || '';
+  }
+  throw new Error('지원하지 않는 파일 형식이에요 (.txt 또는 .docx만 가능해요)');
+}
+
+// --- 2주전 탭: "콘텐츠 업로드" / "보도자료 작성" 모드 전환 ---
+let stage2Mode = 'content';
+
+function updateStage2Mode(){
+  const toggle = document.getElementById('stage2ModeToggle');
+  const contentInner = document.getElementById('stage2ContentInner');
+  const pressSection = document.getElementById('pressReleaseSection');
+  if(selectedStage !== '2주전'){
+    toggle.style.display = 'none';
+    contentInner.style.display = 'block';
+    pressSection.style.display = 'none';
+    return;
+  }
+  toggle.style.display = 'flex';
+  contentInner.style.display = stage2Mode === 'content' ? 'block' : 'none';
+  pressSection.style.display = stage2Mode === 'press' ? 'block' : 'none';
+}
+document.getElementById('stage2ModeToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.mode-btn');
+  if(!btn) return;
+  document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  stage2Mode = btn.dataset.stage2mode;
+  updateStage2Mode();
+});
+
+// --- 이번 보도자료에 참고할 자료 (행사/발행 건마다 다름, stageStore에 같이 저장됨) ---
+let currentPressUploads = []; // [{filename, content}]
+
+function renderPressUploadList(){
+  const el = document.getElementById('pressUploadList');
+  if(!currentPressUploads.length){ el.innerHTML = ''; return; }
+  el.innerHTML = currentPressUploads.map((u, idx) => `
+    <div class="post-link-item">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ${escapeHtml(u.filename)}</span>
+      <button type="button" data-remove-pressupload="${idx}" title="삭제">✕</button>
+    </div>
+  `).join('');
+}
+document.getElementById('pressUploadFiles').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  for(const file of files){
+    try{
+      const text = await extractTextFromFile(file);
+      currentPressUploads.push({ filename: file.name, content: text });
+    } catch(err){
+      alert(`${file.name}: ${err.message}`);
+    }
+  }
+  renderPressUploadList();
+  e.target.value = '';
+});
+document.getElementById('pressUploadList').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-remove-pressupload]');
+  if(!btn) return;
+  currentPressUploads.splice(Number(btn.dataset.removePressupload), 1);
+  renderPressUploadList();
+});
+
+// --- 스타일 학습 자료 (전체 행사 공용 라이브러리 — CS 매뉴얼과 같은 방식으로 KV에 영구 저장) ---
+let pressStyleLibrary = [];
+
+async function loadPressStyleLibrary(){
+  try{
+    const res = await kkcStorage.get('kkc:pressref_library', true);
+    pressStyleLibrary = res && res.value ? JSON.parse(res.value) : [];
+  } catch(e){ pressStyleLibrary = []; }
+}
+async function savePressStyleLibrary(){
+  await kkcStorage.set('kkc:pressref_library', JSON.stringify(pressStyleLibrary), true);
+}
+function renderPressStyleList(){
+  const listEl = document.getElementById('pressStyleList');
+  const defaultHtml = DEFAULT_PRESS_STYLE_SAMPLES.map(item => `
+    <div class="post-link-item">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.label)}</span>
+    </div>
+  `).join('');
+  const userHtml = pressStyleLibrary.length
+    ? pressStyleLibrary.map((item, idx) => `
+        <div class="post-link-item">
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.label)}</span>
+          <button type="button" data-remove-style="${idx}" title="삭제">✕</button>
+        </div>
+      `).join('')
+    : '<p style="font-size:12.5px;color:var(--ink-soft);margin:8px 0;">직접 추가한 자료는 아직 없어요</p>';
+  listEl.innerHTML = defaultHtml + userHtml;
+  populatePressStyleWeightSelect();
+}
+// 생성 직전 "어떤 스타일로 작성할까요?" 선택지를 항상 최신 자료 목록으로 채워둠
+function populatePressStyleWeightSelect(){
+  const sel = document.getElementById('pressStyleWeight');
+  if(!sel) return;
+  const all = [...DEFAULT_PRESS_STYLE_SAMPLES, ...pressStyleLibrary];
+  const prevValue = sel.value;
+  sel.innerHTML = `<option value="">전체 골고루 참고</option>` + all.map((s, i) => `<option value="${i}">${escapeHtml(s.label)}</option>`).join('');
+  if([...sel.options].some(o => o.value === prevValue)) sel.value = prevValue;
+}
+document.getElementById('openPressStyleBtn').addEventListener('click', async () => {
+  document.getElementById('pressStyleModal').classList.add('open');
+  document.getElementById('pressStyleStatus').textContent = '';
+  await loadPressStyleLibrary();
+  renderPressStyleList();
+});
+document.getElementById('closePressStyleBtn').addEventListener('click', () => {
+  document.getElementById('pressStyleModal').classList.remove('open');
+});
+document.getElementById('pressStyleFiles').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  const statusEl = document.getElementById('pressStyleStatus');
+  statusEl.textContent = '';
+  for(const file of files){
+    try{
+      const text = await extractTextFromFile(file);
+      pressStyleLibrary.push({ label: file.name, content: text, addedAt: new Date().toISOString() });
+    } catch(err){
+      statusEl.style.color = 'var(--danger)';
+      statusEl.textContent = `${file.name}: ${err.message}`;
+    }
+  }
+  await savePressStyleLibrary();
+  renderPressStyleList();
+  e.target.value = '';
+  if(!statusEl.textContent){ statusEl.style.color = 'var(--green)'; statusEl.textContent = '✓ 추가되었습니다'; }
+});
+document.getElementById('pressStyleList').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-remove-style]');
+  if(!btn) return;
+  pressStyleLibrary.splice(Number(btn.dataset.removeStyle), 1);
+  await savePressStyleLibrary();
+  renderPressStyleList();
+});
+// 페이지 로드 시 스타일 학습 자료 미리 불러오기 (생성 버튼 눌렀을 때 다시 조회하지 않도록)
+loadPressStyleLibrary().then(populatePressStyleWeightSelect);
+
+// 배경 참고자료(기본값) — 문체/톤 학습용이 아니라 "사실 확인용" 자료. 사용자가 보내준 문화원 자체
+// 2026년 업무계획 및 문체부 2026년 업무계획을 핵심만 요약해 항상 포함되도록 고정해둠.
+// 나중에 문체·톤 학습용 샘플이 오면 이건 그대로 두고 pressStyleLibrary 쪽에 별도로 추가할 예정.
+const DEFAULT_PRESS_BACKGROUND = `[주스웨덴한국문화원 개요]
+개원일: 2023.5.8 / 주소: Kungsholmsgatan 23, Stockholm / 인력: 원장 및 행정직원 8명, 세종학당 교원 1명 / 시설: 연면적 1,660㎡, 9층 중 7층 사용(임차)
+
+[2026년 문화원 비전 및 전략]
+비전: "Connecting Cultures, Creating Value"
+목표: 하이컬처 이미지 구축 / 현지 수요 맞춤형 공급 / 플랫폼 기능 강화
+전략1(시즌제·4대 킬러 콘텐츠): [봄→근원] 이규한 작가 전시, [여름→역동] K-pop 노르딕 페스티벌, [가을→서사] 스톡홀름 한국영화제, [겨울→순환] K-Alumni Night
+전략2(수요맞춤형 공급): 스톡홀름 문화의 밤, 예테보리 축제, 스톡홀름 공예주간, 문화원 북카페 조성
+전략3(플랫폼화): 한국문화축제, 번역 아카데미, 예테보리 도서전
+주재국 환경 진단: 한강 작가의 노벨문학상 수상 이후 스웨덴 내 K-컬처가 대중적 인기를 넘어 '하이컬처'로 도약할 모멘텀이 형성됨. 스웨덴은 여름철(6~9월) 축제형 콘텐츠 소비가 뚜렷하고 Fika 문화를 고려한 체류형 공간 조성이 필요함. NATO 가입 이후 자국 우선주의 정서 확대 등으로 시장 진입장벽이 존재함.
+
+[2026년 주요 사업 (총 18건, 총사업비 4,667,560 SEK)]
+- 축제: 2026 스톡홀름 문화의 밤(4.18, 문화원), 케이팝 노르딕 페스티벌(6.6, Oscarsteatern, 4회차, 노르딕 5개국 통합행사), 예테보리 문화축제(8.27-30, 26년 만에 첫 파트너 참가), 2026 한국문화축제(8.22, 왕의 정원 Kungsträdgården, 10주년)
+- 공연: (개원3주년) 가야금의 무감각화(5.7, 콘서트후셋 그루네발트홀), (국경일) 악단광칠(9.30, 막심극장, 유럽 4개도시 순회)
+- 전시: 한국 동시대 미술 기획전(3.18-6.18, 문화원), 2026 스톡홀름 공예주간(9.30-11.25, 문화원)
+- 영화: 제1회 스톡홀름 한국영화제(9.16-20, Bio Skandia, 아시아영화제 한국영화주간에서 독립해 신설)
+- 강좌: 세종학당 한국어강좌(연중), 문화강좌(연중, 한식·한국학·국악·K-Pop댄스·민화·서예)
+- 체험: 프리미엄 한식 레시피 개발·배포 및 연계 체험(4.22)
+- 기타: 소리로 읽는 한국문학(팟캐스트, 분기별), 코리안 컬처 클럽(멤버십 커뮤니티), 문화원 새단장 오프닝 및 K-서포터즈 발대식(3월), 북카페 오프닝(5월), 세종학당 한국어 말하기 대회(5.29), 2026 예테보리 도서전(9.24-27)
+
+[2025년 주요 성과 요약 (보도자료 작성 시 '전년 대비' 맥락으로 활용 가능)]
+- 스톡홀름 문화의 밤: 약 1,400명 참여, 16개 프로그램 진행
+- 제3회 케이팝 노르딕 페스티벌: 약 1천여명 관람, 유럽 최초 케이팝 학술심포지엄 공동 개최(웁살라대·룬드대)
+- 광복80주년 한국문화축제: 방문객 약 45,000명(역대 최대), 부스 28개, 공연단 약 100명, 현지 국영방송 등 보도
+- 국립현대무용단 <정글> 유럽순회공연: 관람객 약 900명
+- 2025 공예전 OUR HOME: 약 500명 관람
+- 한국영화 상영회(K-Film&K-Fika): 참가자 전년 대비 약 367% 증가(125명→584명)
+- 노벨박물관 한국어 음성안내 설치(한강 작가 환영 메시지 포함)
+- 예테보리 북페어: 북유럽 최대 규모 도서전에서 한국문학 부스 최초 운영
+
+[문체부 2026년 정책 방향 — 국가 차원의 K-컬처 육성 맥락, 필요시 보도자료에 연계 가능]
+비전: "케이-컬처, 온 국민이 누리고 세계를 품게 한다"
+4대 중점과제: ① K-컬처를 미래 핵심 성장산업으로 집중 육성 ② 문화강국의 탄탄한 토대 구축 ③ K-관광 3천만 명 조기 달성 ④ 신뢰받는 스포츠와 건강한 국민
+K-컬처 산업 목표: 기존 '300조원' 목표를 영화·게임·웹툰·대중음악뿐 아니라 K-푸드·뷰티·패션·관광까지 포함하도록 재정의해 더 크게 확장 중
+재외문화원 관련: '코리아센터'로 재외 유관기관(콘텐츠진흥원, 관광공사, aT센터 등) 해외지사를 한 곳으로 집적화 추진 — 2026년 스웨덴 포함 5개국이 신규 집적화 대상
+세종학당: 폭발적인 수요에 대응해 확대하고, AI 활용 '아이(i)-세종학당'을 시범 운영
+K팝: 대중문화교류위원회 중심으로 세계 7대 도시 공연장 확보, 신남방·중남미 등 신시장 진출, 초대형 행사 '페노미논(FANOMENON)' 추진`;
+
+// 문체·톤 학습용 기본 샘플 — 사용자가 실제로 KKC Sweden 명의로 작성한 과거 보도자료 4건.
+// pressStyleLibrary(사용자가 화면에서 추가하는 자료)와 항상 합쳐져서 프롬프트에 포함됨.
+const DEFAULT_PRESS_STYLE_SAMPLES = [
+  {
+    "label": "인물, 전문가 소개 중심 체험행사 스타일",
+    "content": "주스웨덴한국문화원, 사찰음식을 주제로 한식 문화 행사 개최\n- \"수행자의 식탁 : 한국 사찰음식의 철학과 실천\" -\n(The Monk's Table: Philosophy of Temple Cuisine)\n- 법송 스님, 오경순 셰프 참여… 한식의 현지 적용 가능성 모색\n\n주스웨덴한국문화원(원장 유지만)은 오는 11월 25일부터 27일까지 스웨덴 스톡홀름에서 한국의 전통 사찰음식을 주제로 한 특별 식문화 행사 \"The Monk's Table: Philosophy of Temple Cuisine(수행자의 식탁: 한국 사찰음식의 철학과 실천)\"을 개최한다.\n\n이번 행사는 한국의 대표적 채식주의 기반 전통 식문화인 \"사찰음식\"을 현지에 소개하고, 스웨덴 현지에도 적용 가능한 다이닝 모델로서의 가능성을 모색하기 위해 마련되었다. '사찰음식(Temple Food)'은 육류와 인공조미료 없이도 균형 잡힌 영양과 풍미를 구현하는 한국의 전통 채식주의 조리 문화로, 생명 존중과 절제, 감사의 철학을 담고 있다. 최근 북유럽에서 확산되는 지속가능성과 윤리적 식사문화의 흐름과도 맞닿아 있다. 이번 프로그램은 한식의 철학적 깊이와 현대적 확장 가능성을 동시에 보여줄 예정이다. 행사는 3일간 진행되며, 사찰음식 장인인 법송 스님과 오경순 셰프가 함께한다.\n\n법송 스님은 영선사 주지로, 르꼬르동블루 런던캠퍼스에서 사찰음식 정규 강의를 맡은 바 있다. 스님은 11.25일 주스웨덴 한국문화원에서 진행될 '발우공양 체험행사'를 직접 진행하며 스웨덴 시민들과 요식업계 전문가들이 전통 공양의 예법과 명상을 결합한 '마음챙김 식사'의 과정을 체험할 수 있도록 할 예정이다.\n\n오경순 셰프는 두수고방의 오너셰프로 한식의 세계적 권위자인 정관스님의 수석 셰프로 활동한 바 있는 한국 전통채식 연구가이다. 오셰프는 11.26일 주스웨덴 한국문화원에서 '라이브쿠킹 및 테이스팅 행사'를 통해 현지 식재료를 활용한 조리 시연과 시식행사를 진행한다.\n\n마지막 날인 11.27일에는 쿠킹스튜디오 AVEQIA(스톡홀름)에서 법송 스님과 오경순 셰프가 스웨덴 전문가들을 만나 사찰음식에 관한 세미나를 진행한다. 특히 이날 세미나에서는 스웨덴 학교 및 기관 급식 관계자가 참석해 종교, 채식, 알레르기 등 다양한 조건이 존재하는 스웨덴의 급식 환경에 사찰음식을 응용한 비건 급식 모델이 적용될 수 있는지 집중논의 한다.\n\n이번 프로그램은 한식의 전통과 철학을 단순한 체험 차원을 넘어 지속가능하고 포용적인 글로벌 식문화 모델로 확장하려는 시도로 평가된다. 유지만 원장은 \"이번 행사는 한식이 지닌 절제와 균형, 감사의 철학을 통해 지속가능한 식문화의 방향을 함께 모색하는 자리\"라며 \"사찰음식이 한국을 대표하는 전통문화이자 현대적인 라이프스타일로서 현지 사회에 새로운 영감을 주길 바란다\"고 전했다.\n\n'The Monk's Table: Philosophy of Temple Cuisine'은 주스웨덴한국문화원이 주최·주관하며, 모든 프로그램은 사전 등록을 통해 참여할 수 있다."
+  },
+  {
+    "label": "개관식, 리셉션 행사 스타일",
+    "content": "주스웨덴한국문화원, 8월 17일 '북카페' 개관... 한국 문학과 스웨덴 '피카(Fika)' 문화의 만남\n- 북카페 내 '이달의 책 페어링' 프로그램 상시 운영 통해 한국 문학을 스웨덴 국민에게 지속 소개\n- 가야금 공연 및 한국 음악 디제잉으로 함께하는 '컬렉티브 리딩 라운지' 운영\n- 꽃샘식품과 MOU 체결해 한국 전통차로 오프닝 리셉션 마련\n\n주스웨덴한국문화원(원장 유지만, 이하 문화원)은 오는 8월 17일(월) 오후 5시부터 7시 30분까지 문화원에서 '북카페' 선(先) 오프닝 행사를 개최한다고 밝혔다.\n\n북카페는 스웨덴 시민들에게 한국 문학을 소개하는 상시 거점을 마련하기 위해 조성되는 공간으로, 문화원은 이를 계기로 매달 우수 한국 문학 작품을 소개하는 '이달의 책 페어링' 프로그램을 북카페에서 상시 운영하며 스웨덴 내 한국 문학의 중심지이자 허브로 자리매김한다는 목표를 밝혔다. 특히 한국 문학을 소개하는 데 그치지 않고, 스웨덴 고유의 커피 휴식 문화인 '피카(Fika)' 문화와 접목함으로써 현지 생활 문화에 자연스럽게 스며드는 한국 문학 플랫폼으로 기능하도록 할 계획이다.\n\n■ 축사와 공연, 리딩 라운지로 이어지는 오프닝 프로그램\n\n행사는 한국 전통차 리셉션으로 시작해, 유지만 문화원장을 비롯해 이형종 주스웨덴 대한민국 대사, ISDP 코리아센터장의 축사가 이어질 예정이다. 이후 가야금 축하 공연이 진행되며, 공연 종료 후에는 참가자들이 모여 자유롭게 책을 읽으며 여유를 즐길 수 있도록 '컬렉티브 리딩 라운지(Collective Reading Lounge)'가 함께 운영되어 북카페 특유의 차분한 분위기를 완성할 예정이다.\n\n다채로운 한국 문학과 티(Tea) 페어링 프로그램이 상시 운영될 이 북카페는 스웨덴 시민들이 일상적으로 편안하게 이용할 수 있는 공간으로 조성되어, 향후 시민들이 언제든 방문해 한국 전통차와 함께 한국 문학을 접할 수 있는 플랫폼으로 자리잡을 전망이다.\n\n■ 꽃샘식품과 손잡고 선보이는 한국 전통차로 마련한 오프닝 리셉션\n\n이날 리셉션에서는 문화원이 꽃샘식품과 업무협약(MOU)을 체결해 선보이는 '블랙보리차'를 비롯한 한국 전통차가 제공된다. 이는 스웨덴 특유의 커피 휴식 문화 '피카(Fika)'에 익숙한 현지인들에게 한국 전통차를 자연스럽게 소개하려는 취지로, 북카페가 문학과 차라는 두 가지 한국 문화 콘텐츠를 동시에 경험할 수 있는 공간으로 자리잡도록 하기 위함이다.\n\n박나연 주스웨덴문화원 팀장은 \"북카페는 스웨덴 시민들이 일상 속에서 자연스럽게 한국 문학을 접하고 향유할 수 있는 상시적인 거점이 될 것\"이라며, \"한국의 음악, 문학, 한국 전통차가 어우러진 이번 오프닝을 통해 북카페가 시민들에게 편안하게 책과 함께 머무는 일상적인 공간으로 인식되기를 바란다\"고 전했다.\n\n유지만 주스웨덴한국문화원장은 \"이번 북카페 개관은 스웨덴 내에서 한국 문학의 중심이자 허브로 자리매김하기 위한 첫걸음\"이라며, \"매달 이달의 책 프로그램을 통해 우수한 한국 문학 작품을 꾸준히 소개함으로써, 스웨덴 국민들이 한국 문학을 가깝고 친숙하게 느낄 수 있도록 다양한 프로그램을 지속적으로 마련해 나가겠다\"고 강조했다."
+  },
+  {
+    "label": "시즌제 다중행사 서사형 스타일",
+    "content": "보도시점: 배포 즉시\n\n배 포: 2026. 05. 29.(금)\n\n주스웨덴한국문화원, 스웨덴의 여름에 K-컬처를 새기다 — '역동(Puls)' 시즌 개막\n\n- 미드소마르·여름 축제의 나라 스웨덴, 6~8월을 겨냥한 K-컬처 집중 공세 본격화\n\n- 한강 노벨상 수상 계기, 이금이 작가 초청 북토크 & 북카페 오픈으로 한국 문학 저변 확대 (6.11.)\n\n- 케이팝 노르딕 페스티벌·한국문화축제 10주년 통합 개최, 스톡홀름 왕의 정원에서 역대 최대 규모로 (8.22.)\n\n- 스웨덴 제2도시 예테보리까지 뻗어나가는 K-컬처, 예테보리 문화축제 첫 파트너 참가 (8.27.~28.)\n\n주스웨덴한국문화원(원장 유지만, 이하 문화원)은 2026년 연간기획 '2026 시즌 테마(Säsongstema)'의 두 번째 시즌인 '역동(Puls)'을 6월부터 본격 가동한다고 밝혔다.\n\n  스웨덴에서 6~8월은 단순한 계절이 아니다. 긴 겨울의 어둠을 견뎌낸 스웨덴인들에게 여름은 한 해 최대의 문화적 해방감을 누리는 시간이다. 크리스마스에 버금가는 스웨덴 최대 명절 미드소마르(Midsommar, 하지 축제)를 시작으로, 직장인 대부분이 7월 한 달을 통째로 쉬는 여름 휴가(semestern) 전통이 사회 전반에 뿌리내리고 있다. 야외 페스티벌과 문화 이벤트가 집중되는 이 시기에 스웨덴 시민의 문화 소비는 연중 가장 높은 수준에 이른다. 예테보리에서는 매년 8월 Way Out West(일 3만 5천 명 규모), 예테보리 문화축제 등 대형 문화 행사가 잇따라 열리며 도시 전체가 축제의 무대로 변한다.\n\n문화원이 이 시기를 '역동(Puls)'으로 이름 붙인 것은 그 때문이다. 봄 시즌 '근원(Rot)'에서 한국 문화의 깊은 뿌리를 선보인 데 이어, 현지인의 문화 소비가 연중 가장 집중되는 이 여름에 한국의 문학·공연·음식을 문화원 안팎의 다양한 플랫폼을 통해 소개함으로써, K-컬처의 스웨덴 시장 진출을 위한 실질적인 교두보를 마련한다는 것이 이번 시즌의 핵심 전략이다.\n\n■ '이달의 책 페어링' — 이금이 작가 초청 북토크 & 북카페 오픈 (6.11.)\n\n역동 시즌의 문을 여는 첫 행사는 6월 11일(목) 이금이 작가 초청 북토크다. 2024년 한강 작가의 노벨문학상 수상을 계기로 스웨덴 내 한국문학에 대한 관심이 어느 때보다 높아진 가운데, 문화원은 현지 독자들의 지적 호기심을 충족시킬 깊이 있는 콘텐츠를 직접 선보이는 자리를 마련한다. 미드소마르로 향하는 여름의 문턱에서, 한국 문학의 서사적 힘을 스웨덴 독자들에게 직접 전달하는 자리다.\n\n이금이 작가는 일제강점기 조선 여성의 삶을 섬세하게 다룬 작품 세계로 국내외에서 폭넓은 독자층을 보유하고 있다. 이번 북토크는 문화원이 새롭게 기획한 정기 프로그램 '이달의 책 페어링(Book Pairing)'의 첫 행사로, 선정 작가와의 대화와 한국 도서 소개를 결합한 독자 참여형 포맷으로 운영된다.\n\n아울러 이 행사를 기점으로 문화원은 7월 말 북카페 공식 오픈을 예정하고 있다. 문화원 출입층(Entrance)에 조성되는 북카페는 한국 문학·문화 관련 서적을 상시 비치하고 시민 누구나 자유롭게 머물 수 있는 복합문화 라운지로 운영된다. 스웨덴인들이 여름 휴가철에 특히 즐기는 독서·카페 문화를 한국적으로 재해석한 공간으로, 이후 전시·행사 연계 공간으로도 활용될 계획이다.\n\n■ 케이팝 노르딕 페스티벌 × 한국문화축제 10주년 통합 개최 (8.22.)\n\n스웨덴의 여름 축제 열기가 정점에 달하는 8월 22일(토), 스톡홀름 도심 '왕의 정원(Kungsträdgården)'에서 「제4회 케이팝 노르딕 페스티벌 × 2026 한국문화축제(10주년)」이 통합 개최된다. 그간 별도로 운영되던 두 행사를 하나의 플랫폼으로 통합함으로써, K-팝 경연의 에너지와 종합 한국문화 축제의 풍성함을 단 하루에 집약해 선보이는 새로운 시도다.\n\n케이팝 노르딕 페스티벌은 2023년 첫 출범 이후 북유럽5개국(스웨덴·노르웨이· 덴마크·핀란드·아이슬란드)을 아우르는 유일한 통합 K-팝 경연 플랫폼으로 성장해왔다. 4회차인 올해는 보컬·댄스 경연뿐 아니라 워크숍과 업계 전문가 참여 프로그램을 더하며 한층 심화된 K-팝 문화교류의 장이 될 예정이다.\n\n2016년부터 9년간 이어진 한국문화축제는 올해 10주년을 맞아 역대 최대 규모로 개최된다. K-팝·태권도·전통음악·무용 등 현대와 전통을 아우르는 무대 공연, 전통공예·한복 체험·케이팝 댄스 등 수요 맞춤형 체험 프로그램, K-뷰티·한식 판매 부스가 함께 운영된다. 한국관광공사·한국콘텐츠진흥원·농수산식품유통공사·코트라 등 재외 유관기관과 현지 진출 한국 기업들의 협력 시너지를 극대화하며, 지난해 약 45,000명의 방문객을 기록한 성과를 바탕으로 올해도 4만 명 이상의 관람객 유치를 목표로 한다.\n\n■ 스웨덴 제2도시로 뻗어나가는 K-컬처, 예테보리 문화축제 첫 파트너 참가 (8.27.~28.)\n\n8월 27일(목)~28일(금)에는 예테보리 시 주최의 「예테보리 문화축제(Gothenburg Culture Festival)」에 주스웨덴한국문화원이 공식 파트너로 첫 참가한다. 1991년 시작된 이 북유럽 최대 규모 종합 문화축제는, 같은 시기 예테보리에서 열리는 Way Out West(일 3만 5천 명)와 함께 스웨덴 여름 문화 소비의 중심축을 형성한다. 문화원이 이 축제에 파트너로 합류하는 것은 개원 이래 처음으로, 스톡홀름 중심이었던 K-컬처 확산 거점을 스웨덴 제2의 도시 예테보리까지 확장하는 전략적 발판이 마련된다.\n\nK-팝 공연과 한국 영화 프로그램을 선보이며, 스웨덴 전역으로 K-컬처 수혜 대상을 넓히는 이번 참가는 문체부가 강조하는 해외문화거점의 플랫폼 기능 강화를 현장에서 실현하는 사례다. 수혜자 총 1만 명 이상을 성과목표로 설정하였다.\n\n  유지만 주스웨덴한국문화원장은 \"미드썸머 이후 스웨덴 사람들이 여름 내내 축제와 야외 문화활동에 온 에너지를 쏟아붓는 이 시기가 K-컬처를 현지 일상에 깊이 새길 수 있는 가장 좋은 기회\"라며, \"특히 케이팝 노르딕 페스티벌과 한국문화축제 10주년 행사를 하나로 통합해 두 행사의 에너지를 한 자리에서 느낄 수 있는 특별한 경험을 제공하고, 예테보리라는 새로운 무대를 통해 스웨덴 전역에 K-컬처의 역동적 물결을 전할 것\"이라고 밝혔다.\n\n■ 2026 역동(Puls) 시즌 주요행사 개요\n\n  -------------------------------------------------------------------------------------------------------------------------------------------\n  행사명                                         일시        장소                                      주요내용\n  ---------------------------------------------- ----------- ----------------------------------------- --------------------------------------\n  이달의 책 페어링 (이금이 작가 북토크)          6.11.(목)   주스웨덴한국문화원 (7월 말 북카페 오픈)   북토크, 독자 대화 한국 문학 소개\n\n  케이팝 노르딕 페스티벌 × 한국문화축제 10주년   8.22.(토)   왕의 정원 스톡홀름                        K-팝 경연·워크숍 종합 공연·체험 부스\n\n  예테보리 문화축제 (첫 파트너 참가)             8.27.~28.   예테보리 시내                             K-팝 공연 한국 영화 상영\n  -------------------------------------------------------------------------------------------------------------------------------------------\n\n(끝)"
+  },
+  {
+    "label": "업무협약(MOU), 파트너십 스타일",
+    "content": "온·오프라인 경계 허무는 'K-컬처 디지털 실크로드' 열린다… 주스웨덴한국문화원, 현지 AI기업 KODARI AB와 업무협약\n\n보도시점: 배포 즉시\n\n배포: 2026. 03. 24.(화)\n\n-   2월 27일 공개 모집 거쳐 우수 민간 IT 플랫폼 'KODARI AB' 최종 파트너 선정\n\n-   민간 혁신 역량과 공공 콘텐츠의 결합… '콘텐츠 우선(First)' O2O 생태계 구축\n\n-   KOTRA 스톡홀름 무역관 등 유관기관 협력으로 K-소비재 수출 교두보 역할 기대\n\n-   유지만 원장 \"혁신적 O2O 플랫폼, 북유럽 전역 K-컬처 폭발적 확산의 기폭제 될 것\"\n\n주스웨덴한국문화원(원장 유지만, 이하 문화원)은 3월 24일(화), 스웨덴 현지 기업 KODARI AB(대표 구윤진)와 'K-Culture 디지털 플랫폼 활성화 및 공동 홍보'를 위한 업무협약(MOU)을 체결했다고 밝혔다.\n\n이번 협약은 지난 2월 27일부터 진행된 공개 모집 공고를 통해 우수한 디지털 서비스 역량을 갖춘 KODARI AB가 최종 파트너로 선정됨에 따라 성사되었다. 문화체육관광부의 2026년 핵심 정책 기조인 '민간 역량 활용'과 'K-컬처의 산업적 가치 확장'을 북유럽 현지에서 구현하는 혁신적인 민관 협력 모델이 될 전망이다.\n\n■ 민간의 혁신 역량 활용, 비예산(Non-budget) 고효율 K-컬처 확산망 구축\n\n이번 협약은 전면적인 비예산(Non-budget) 및 비독점(Non-exclusive) 협력을 원칙으로 한다. 공공기관이 대규모 예산을 투입해 직접 시스템을 구축하는 기존 방식에서 벗어나, 현지 시장의 트렌드를 가장 잘 아는 민간 기업의 IT 인프라와 운영 노하우를 적극 활용하는 방식이다.\n\n협약에 따라 문화원은 KODARI AB의 플랫폼(Bridge) 내에 '한국문화원 전용 채널'을 개설하여 양질의 한국 문화 콘텐츠와 행사 정보를 제공하며, 대외 공신력 확보를 위한 명칭(Logo) 후원 등을 지원한다. 반면 KODARI AB는 플랫폼 시스템 개발, 서버 운영, 회원 관리 및 이용자 민원 처리(CS) 등 기술적, 실무적 운영 일체를 자체 비용으로 전담하게 된다.\n\n(참고: KODARI AB는 현지 K-컬처 관심층을 타겟으로 오프라인 모임, 소셜 커뮤니티, 게이미피케이션 요소를 결합한 K-컬처 특화 앱 서비스 'Bridge'를 기획·운영하는 유망 IT 플랫폼 기업이다.)\n\n■ 온·오프라인 잇는 O2O 서비스… 게이미피케이션·스마트 시스템 탑재한 '콘텐츠 우선(First)' 생태계\n\n새롭게 선보일 플랫폼은 단순한 정보 제공을 넘어, 온라인에서의 소통이 오프라인 K-생활양식(푸드·언어·여가 등) 체험으로 즉각 이어지는 강력한 O2O(Online to Offline) 생태계를 구축한다. 스웨덴 현지인들은 앱을 통해 'K-드라마 감성 한강 라면 파티'와 같은 트렌디한 소셜 모임부터, '한국어 원서 딥 토크(Deep Talk)' 등 깊이 있는 문화 교류까지 취향에 맞는 오프라인 행사를 직관적으로 탐색하고 참여할 수 있다.\n\n특히, 오프라인 모임 현장에서의 'QR 체크인', 어색함을 깨는 '아이스브레이킹 미니게임(사다리 타기, 한글 퀴즈 등)', 문화 활동 내역에 따른 '경험치(XP) 획득 및 프로필(다리) 진화' 등 MZ세대를 겨냥한 게이미피케이션(Gamification) 요소를 전면 도입했다. 이를 통해 K-컬처 소비가 일회성 이벤트에 그치지 않고, 지속적이고 재미있는 '자발적 문화 습관'으로 자리 잡도록 유도한다.\n\n또한, 매년 수만 명이 몰리는 대규모 '한국문화축제' 등 대형 이벤트에 특화된 스마트 기능도 전격 지원한다. 디지털 행사장 맵(Map) 제공은 물론, 부스 대기열 혼잡을 방지하기 위한 '모바일 스마트 오더 및 실시간 대기 알림(콜)' 시스템을 도입하여 방문객의 쾌적한 관람과 안전을 보장한다.\n\n■ K-소비재 스웨덴 진출의 교두보… 유관기관 협업 통한 '문화 주도 K-수출' 견인\n\n향후 문화원은 이 플랫폼을 K-푸드, 뷰티, 패션 등 K-컬처를 대표하는 소비재의 스웨덴 시장 유통을 위한 핵심 교두보로도 적극 활용할 계획이다. 단순한 문화 체험을 넘어 플랫폼 이용자들의 관심이 실제 한국 제품 소비로 이어질 수 있도록, 코트라(KOTRA) 스톡홀름 무역관 및 비즈니스 스웨덴(Business Sweden) 등 양국의 주요 경제·무역 유관기관과 긴밀히 협력할 예정이다. 플랫폼 내 디지털 쇼룸 연계, 현지 맞춤형 팝업스토어 홍보 등을 통해 '문화가 이끄는 K-수출'의 선순환 생태계를 북유럽 시장에 확고히 안착시킨다는 복안이다.\n\n■ 투명한 거버넌스와 지역사회 재투자… \"지속 가능한 공익 플랫폼\"\n\n문화원은 민간 플랫폼을 통한 공공 서비스 제공의 신뢰성을 담보하기 위해 강력한 안전장치도 마련했다. KODARI AB는 플랫폼의 지속 가능성을 위해 자체적인 수익 모델을 운영할 수 있으나, 발생한 수익의 일부를 스웨덴 내 한국 문화 확산 및 커뮤니티 지원 등 공익적 목적을 위해 재투자하도록 노력해야 한다.\n\n또한, 연 1회 이상의 정기 운영위원회를 통해 가입자 수, 콘텐츠 노출 수 등 핵심 성과 지표(KPI)를 엄격히 점검하며, 유럽 개인정보보호법(GDPR) 및 현지 법령을 철저히 준수하여 이용자 데이터 보호에도 만전을 기할 예정이다.\n\n유지만 주스웨덴한국문화원장은 \"K-컬처가 대한민국 경제를 이끄는 미래 핵심 성장 산업으로 도약하기 위해서는 우수한 기술력과 아이디어를 갖춘 민간과의 협력이 필수적\"이라며, \"KODARI AB와의 협력을 통해 구축될 혁신적인 O2O 플랫폼은 북유럽 전역에 K-컬처를 폭발적으로 확산시키고 우리 기업들의 수출길을 넓히는 강력한 기폭제가 될 것\"이라고 강조했다.\n\n[담당 부서] 주스웨덴한국문화원\n\n-   책임자: 원장 유지만 (+46-8-5090-7320)\n\n-   담당자: [담당자 성명 및 연락처 기입]"
+  }
+];
+
+// --- 초안 생성 ---
+function buildPressReleaseSystemPrompt(weightIndex){
+  const allStyleSamples = [...DEFAULT_PRESS_STYLE_SAMPLES, ...pressStyleLibrary];
+  const styleCorpus = allStyleSamples.map((s, i) => `[참고 자료 ${i+1}: ${s.label}]\n${s.content}`).join('\n\n---\n\n');
+  const hasWeight = weightIndex !== '' && weightIndex !== undefined && weightIndex !== null && allStyleSamples[weightIndex];
+  const weightNote = hasWeight
+    ? `\n이번 보도자료는 특히 [참고 자료 ${Number(weightIndex)+1}: ${allStyleSamples[weightIndex].label}]의 문체·형식·구성을 가장 우선적으로 따라 작성하세요. 나머지 참고 자료는 보조적으로만 참고하세요.\n`
+    : '';
+  return `당신은 주스웨덴한국문화원(KKC Sweden)의 보도자료 작성 담당자입니다.
+
+[배경 참고자료 — 사실관계 확인용. 문체를 따라할 필요는 없고, 정확한 사실(비전, 예산, 기관명, 정책 맥락 등)을 인용하거나 자연스럽게 연계할 때 참고하세요]
+${DEFAULT_PRESS_BACKGROUND}
+
+${styleCorpus ? `[문체 참고자료 — 아래는 과거에 작성된 보도자료입니다. 이 문체·형식·구성 방식을 최대한 따라서 작성하세요]\n${styleCorpus}\n` : '등록된 문체 참고자료가 없으니, 일반적인 문화기관 보도자료 형식(제목 - 리드문단 - 본문 - 행사 개요 - 문의처)을 따르세요.'}
+${weightNote}
+행사 정보, 추가 자료, 작성 방향을 최대한 충실히 반영해서 완성도 있는 보도자료 초안을 작성하세요.
+격식있는 한국어 보도자료 문체를 사용하세요.
+결과는 순수 텍스트로만 작성하고, 마크다운 기호(#, **, - 등)나 JSON 형식은 쓰지 마세요.`;
+}
+
+document.getElementById('generatePressBtn').addEventListener('click', async () => {
+  const info = getEventInfo();
+  const btn = document.getElementById('generatePressBtn');
+  const loading = document.getElementById('pressLoading');
+  const errorBox = document.getElementById('pressErrorBox');
+  errorBox.style.display = 'none';
+  btn.disabled = true; loading.style.display = 'flex';
+
+  try{
+    const uploadsText = currentPressUploads.length
+      ? currentPressUploads.map(u => `[첨부: ${u.filename}]\n${u.content}`).join('\n\n---\n\n')
+      : '(첨부된 자료 없음)';
+    const direction = document.getElementById('pressDirection').value.trim() || '(특별한 요청 없음)';
+    const userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n날짜: ${info.eventDateText || '미정'}\n시간: ${info.eventTime || '미정'}\n장소: ${info.eventVenue || '미정'}\n담당자: ${info.ownerName || '미정'}\n\n[이번 보도자료 참고 자료]\n${uploadsText}\n\n[작성 방향]\n${direction}`;
+    const styleWeight = document.getElementById('pressStyleWeight').value;
+    const data = await callClaude(buildPressReleaseSystemPrompt(styleWeight), userPrompt, false, 3000);
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    if(!text) throw new Error('응답에서 텍스트를 찾을 수 없습니다');
+
+    document.getElementById('pressDraft').value = text;
+    document.getElementById('pressDraftField').style.display = 'block';
+  } catch(err){
+    errorBox.textContent = '생성 중 오류가 발생했습니다: ' + err.message;
+    errorBox.style.display = 'block';
+  } finally {
+    btn.disabled = false; loading.style.display = 'none';
+  }
+});
+
+document.getElementById('copyPressBtn').addEventListener('click', () => {
+  const text = document.getElementById('pressDraft').value;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyPressBtn');
+    const original = btn.textContent; btn.textContent = '복사됨 ✓';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(() => alert('복사에 실패했습니다. 텍스트를 직접 선택해서 복사해주세요'));
+});
+
+document.getElementById('savePressBtn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('pressSaveStatus');
+  statusEl.textContent = '저장 중...';
+  statusEl.style.color = 'var(--ink-soft)';
+  try{
+    if(!stageStore[selectedStage]) stageStore[selectedStage] = snapshotStageState();
+    await saveCurrentEvent(document.getElementById('saveEventStatus'), false);
+    statusEl.style.color = 'var(--green)';
+    statusEl.textContent = '✓ 저장되었습니다';
+  } catch(err){
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = '저장 실패: ' + err.message;
+  }
+});
 
 // ============ Content Archive ============
 let archiveActiveFilter = '전체';
