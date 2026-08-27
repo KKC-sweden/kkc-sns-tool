@@ -9,6 +9,15 @@
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <!-- .docx 파일에서 텍스트를 추출하기 위한 라이브러리 (보도자료 스타일 학습 자료 업로드용) -->
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<!-- 보도자료 초안을 실제 .docx(워드) 파일로 내보내기 위한 라이브러리 -->
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.iife.js"></script>
+<!-- PDF 참고자료(사업계획서 등)에서 텍스트를 추출하기 위한 라이브러리 -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
+<script>
+  if(typeof pdfjsLib !== 'undefined'){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js';
+  }
+</script>
 <style>
   #tab-board, #tab-board * { font-family:"Pretendard",-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif !important; }
 </style>
@@ -310,6 +319,9 @@
   .post-link-item a:hover{text-decoration:underline;}
   .post-link-item button{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;flex-shrink:0;padding:0 2px;}
   .post-link-item button:hover{color:var(--danger);}
+  /* 2주전 탭 콘텐츠 업로드/보도자료 작성 토글 — 다른 토글보다 눈에 잘 띄도록 이 토글만 더 크게 */
+  #stage2ModeToggle{max-width:420px;padding:8px;}
+  #stage2ModeToggle .mode-btn{padding:14px 10px;font-size:14.5px;}
   .hashtag .tag-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;border-radius:50%;}
   .hashtag .tag-del:hover{color:var(--danger);background:var(--line-soft);}
 
@@ -1147,9 +1159,10 @@
 
         <div class="field">
           <label for="pressUploadFiles">이번 보도자료 작성에 참고할 자료 (사업계획서 등)</label>
-          <p style="font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;">txt 또는 docx 파일을 올리면 내용을 참고해서 보도자료를 작성해드려요<br>hwpx와 PDF는 등록이 안되니 참고해주세요</p>
+          <p style="font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;">txt, docx, pdf 파일을 올리면 내용을 참고해서 보도자료를 작성해드려요<br>hwpx는 등록이 안되니 참고해주세요</p>
+          <input type="file" id="pressUploadFiles" accept=".txt,.docx,.pdf" multiple style="display:none;">
           <div style="display:flex;justify-content:flex-end;">
-            <input type="file" id="pressUploadFiles" accept=".txt,.docx" multiple>
+            <button type="button" class="secondary" id="pressUploadFilesBtn">파일 선택</button>
           </div>
           <div id="pressUploadList" style="margin-top:8px;"></div>
         </div>
@@ -1173,10 +1186,10 @@
         <div class="field" id="pressDraftField" style="margin-top:20px;display:none;">
           <label for="pressDraft">보도자료 초안 (수정 가능)</label>
           <textarea id="pressDraft" rows="20" style="font-family:inherit;line-height:1.7;"></textarea>
+          <p style="font-size:11px;color:var(--ink-soft);margin-top:6px;">이 내용은 "대시보드에 저장"을 누르면 행사 정보와 함께 자동으로 저장돼요</p>
           <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;">
-            <span id="pressSaveStatus" style="font-size:12.5px;color:var(--ink-soft);align-self:center;"></span>
             <button class="secondary" id="copyPressBtn">전체 복사</button>
-            <button class="primary" id="savePressBtn">보도자료 저장</button>
+            <button class="primary" id="exportPressBtn">파일로 만들기</button>
           </div>
         </div>
       </div>
@@ -1433,8 +1446,8 @@
     <h2>보도자료 레퍼런스</h2>
     <p class="modal-sub">과거에 작성한 보도자료를 등록하면 문체와 형식을 참고해 초안을 작성할 수 있어요</p>
     <div class="field">
-      <label for="pressStyleFiles">파일로 추가 (.txt, .docx)</label>
-      <input type="file" id="pressStyleFiles" accept=".txt,.docx" multiple>
+      <label for="pressStyleFiles">파일로 추가 (.txt, .docx, .pdf)</label>
+      <input type="file" id="pressStyleFiles" accept=".txt,.docx,.pdf" multiple>
     </div>
     <div id="pressStyleList" style="margin-top:10px;"></div>
     <div class="modal-footer">
@@ -4269,7 +4282,7 @@ document.getElementById('saveCsManualBtn').addEventListener('click', async () =>
 
 // ============ 보도자료 초안 작성 (2주전 탭 전용) ============
 
-// 파일에서 텍스트 추출 — .txt는 그대로 읽고, .docx는 mammoth.js로 본문 텍스트만 뽑아냄
+// 파일에서 텍스트 추출 — .txt는 그대로 읽고, .docx는 mammoth.js, .pdf는 pdf.js로 텍스트만 뽑아냄
 async function extractTextFromFile(file){
   const name = file.name.toLowerCase();
   if(name.endsWith('.txt')){
@@ -4280,7 +4293,20 @@ async function extractTextFromFile(file){
     const result = await mammoth.extractRawText({ arrayBuffer });
     return result.value || '';
   }
-  throw new Error('지원하지 않는 파일 형식이에요 (.txt 또는 .docx만 가능해요)');
+  if(name.endsWith('.pdf')){
+    if(typeof pdfjsLib === 'undefined') throw new Error('PDF 인식 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침 후 다시 시도해주세요');
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for(let i = 1; i <= pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(' ') + '\n\n';
+    }
+    if(!text.trim()) throw new Error('이 PDF에서 텍스트를 찾지 못했어요 (스캔된 이미지 PDF일 수 있어요)');
+    return text;
+  }
+  throw new Error('지원하지 않는 파일 형식이에요 (.txt, .docx, .pdf만 가능해요)');
 }
 
 // --- 2주전 탭: "콘텐츠 업로드" / "보도자료 작성" 모드 전환 ---
@@ -4322,6 +4348,9 @@ function renderPressUploadList(){
     </div>
   `).join('');
 }
+document.getElementById('pressUploadFilesBtn').addEventListener('click', () => {
+  document.getElementById('pressUploadFiles').click();
+});
 document.getElementById('pressUploadFiles').addEventListener('change', async (e) => {
   const files = Array.from(e.target.files || []);
   for(const file of files){
@@ -4538,18 +4567,58 @@ document.getElementById('copyPressBtn').addEventListener('click', () => {
   }).catch(() => alert('복사에 실패했습니다. 텍스트를 직접 선택해서 복사해주세요'));
 });
 
-document.getElementById('savePressBtn').addEventListener('click', async () => {
-  const statusEl = document.getElementById('pressSaveStatus');
-  statusEl.textContent = '저장 중...';
-  statusEl.style.color = 'var(--ink-soft)';
+document.getElementById('exportPressBtn').addEventListener('click', async () => {
+  const text = document.getElementById('pressDraft').value;
+  if(!text.trim()){ alert('내보낼 보도자료 내용이 없어요'); return; }
+  if(typeof docx === 'undefined'){ alert('워드 파일 생성 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침 후 다시 시도해주세요'); return; }
+
+  const btn = document.getElementById('exportPressBtn');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = '만드는 중...';
+
   try{
-    if(!stageStore[selectedStage]) stageStore[selectedStage] = snapshotStageState();
-    await saveCurrentEvent(document.getElementById('saveEventStatus'), false);
-    statusEl.style.color = 'var(--green)';
-    statusEl.textContent = '✓ 저장되었습니다';
+    const info = getEventInfo();
+    const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const safeName = (info.eventName || '보도자료').replace(/[\\/:*?"<>|]/g, '');
+    const filename = `보도자료_${safeName}_${dateStr}.docx`;
+
+    const { Document, Packer, Paragraph, TextRun, AlignmentType } = docx;
+    const lines = text.split('\n');
+    let titleDone = false;
+    const paragraphs = lines.map(line => {
+      const trimmed = line.trim();
+      // 첫 번째로 나오는 내용이 있는 줄을 제목으로 취급해 굵게, 가운데 정렬
+      if(!titleDone && trimmed){
+        titleDone = true;
+        return new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 320 },
+          children: [ new TextRun({ text: trimmed, bold: true, size: 32, font: '맑은 고딕' }) ]
+        });
+      }
+      return new Paragraph({
+        spacing: { after: 160 },
+        children: [ new TextRun({ text: line, size: 22, font: '맑은 고딕' }) ]
+      });
+    });
+
+    const doc = new Document({ sections: [{ properties: {}, children: paragraphs }] });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   } catch(err){
-    statusEl.style.color = 'var(--danger)';
-    statusEl.textContent = '저장 실패: ' + err.message;
+    console.error('워드 파일 생성 실패:', err);
+    alert('워드 파일 생성에 실패했습니다: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 });
 
