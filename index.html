@@ -781,15 +781,6 @@
         <label for="ownerEmail">담당자 이메일</label>
         <input type="text" id="ownerEmail" placeholder="name@kkultur.org">
       </div>
-      <div class="field">
-        <label>관련 게시물 링크 <span style="font-weight:400;color:var(--ink-soft);">(선택)</span></label>
-        <p style="font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;">이 행사로 직접 올린 인스타그램/페이스북 게시물 주소를 붙여넣어두면, 그 게시물에 달리는 댓글·문의가 CS 데스크에서 자동으로 이 담당자에게 연결돼요</p>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <input type="url" id="postLinkInput" placeholder="https://www.instagram.com/p/... 또는 https://www.facebook.com/...">
-          <button type="button" class="secondary" id="addPostLinkBtn" style="white-space:nowrap;flex-shrink:0;">+ 추가</button>
-        </div>
-        <div id="postLinkList"></div>
-      </div>
     </div>
   </div>
   </div>
@@ -797,6 +788,18 @@
   <!-- AI Suggestion (D-10 only) -->
 
   <div id="suggestSection" style="margin-top:16px;">
+    <div class="card" style="margin-bottom:16px;">
+      <div class="field" style="margin-bottom:14px;">
+        <label>게시물 링크 연결하기 <span style="font-weight:400;color:var(--ink-soft);">(선택)</span></label>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;">대시보드 밖에서 업로드한 인스타그램, 페이스북 게시물 주소를 등록해주세요.<br>해당 게시글의 댓글 문의가 자동으로 행사 담당자님게 연결됩니다.</p>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input type="url" id="postLinkInput" placeholder="https://www.instagram.com/p/... 또는 https://www.facebook.com/...">
+          <button type="button" class="secondary" id="addPostLinkBtn" style="white-space:nowrap;flex-shrink:0;">+ 추가</button>
+        </div>
+        <div id="postLinkList"></div>
+      </div>
+    </div>
+
     <div class="suggest-banner" id="suggestBanner">
       <div class="suggest-banner-text">
         <h3>콘텐츠 아이디어가 필요하신가요?</h3>
@@ -1443,7 +1446,7 @@ function getEventInfo(){
   };
 }
 
-// ============ 관련 게시물 링크 (CS 데스크 자동 연결용) ============
+// ============ 게시물 링크 연결하기 (CS 데스크 자동 연결용, D-10 리마인더 탭에서만 입력) ============
 let currentPostLinks = [];
 
 function renderPostLinkList(){
@@ -3703,7 +3706,7 @@ function renderCsInboxList(){
     const isHandled = csHandledInSession.has(item.key);
     const eventTag = item.eventName ? `<span class="ci-event-tag">${escapeHtml(item.eventName)}${item.assignedStaff ? ` · ${escapeHtml(item.assignedStaff)}` : ''}</span>` : '';
     // 어느 게시물에 달린 댓글인지 한눈에 알 수 있도록, 캡션 텍스트 대신 그 게시물의 포스터(썸네일)를 왼쪽에 보여줌
-    // (행사 연결은 이제 댓글 하나하나가 아니라, 행사 등록 시 붙여넣은 "관련 게시물 링크"로 자동 처리됨)
+    // (행사 연결은 이제 댓글 하나하나가 아니라, D-10 탭에서 등록한 "게시물 링크 연결하기"로 자동 처리됨)
     const posterHtml = item.mediaThumbnail
       ? `<img class="ci-poster" src="${item.mediaThumbnail}" alt="게시물 포스터">`
       : (item.mediaId ? `<div class="ci-poster ci-poster-empty">포스터<br>없음</div>` : '');
