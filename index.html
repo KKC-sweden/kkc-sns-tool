@@ -830,7 +830,7 @@
 
   <!-- STEP 3~6: 콘텐츠 제작 단계 (6주전에는 숨김 — 아직 SNS 콘텐츠 업로드가 필요 없는 단계라서) -->
   <div id="contentStepsWrap">
-    <div class="mode-toggle" id="stage2ModeToggle" style="max-width:320px;margin:0 auto 16px;display:none;">
+    <div class="mode-toggle" id="stage2ModeToggle" style="max-width:320px;margin:20px auto 16px;display:none;">
       <button class="mode-btn active" data-stage2mode="content">콘텐츠 업로드</button>
       <button class="mode-btn" data-stage2mode="press">보도자료 작성</button>
     </div>
@@ -1146,14 +1146,16 @@
         </div>
 
         <div class="field">
-          <label for="pressUploadFiles">이번 보도자료에 참고할 자료 (선택)</label>
-          <p style="font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;">.txt 또는 .docx 파일을 올리면 내용을 학습합니다. hwpx와 PDF는 자동으로 못 읽으니, 필요하면 내용을 복사해서 아래 작성 방향 칸에 붙여넣기 해주세요</p>
-          <input type="file" id="pressUploadFiles" accept=".txt,.docx" multiple>
+          <label for="pressUploadFiles">보도자료 작성에 참고할 자료</label>
+          <p style="font-size:11.5px;color:var(--ink-soft);margin:-2px 0 8px;">txt 또는 docx 파일을 올리면 내용을 참고해서 보도자료를 작성해드려요<br>hwpx와 PDF는 등록이 안되니 참고해주세요</p>
+          <div style="display:flex;justify-content:flex-end;">
+            <input type="file" id="pressUploadFiles" accept=".txt,.docx" multiple>
+          </div>
           <div id="pressUploadList" style="margin-top:8px;"></div>
         </div>
 
         <div class="field">
-          <label for="pressDirection">작성 방향 (선택)</label>
+          <label for="pressDirection">작성 방향</label>
           <textarea id="pressDirection" rows="4" placeholder="행사의 문화 교류 의미를 강조해주세요"></textarea>
         </div>
 
@@ -4376,7 +4378,7 @@ function populatePressStyleWeightSelect(){
   if(!sel) return;
   const all = [...DEFAULT_PRESS_STYLE_SAMPLES, ...pressStyleLibrary];
   const prevValue = sel.value;
-  sel.innerHTML = `<option value="">전체 골고루 참고</option>` + all.map((s, i) => `<option value="${i}">${escapeHtml(s.label)}</option>`).join('');
+  sel.innerHTML = `<option value="">일반적인 스타일</option>` + all.map((s, i) => `<option value="${i}">${escapeHtml(s.label)}</option>`).join('');
   if([...sel.options].some(o => o.value === prevValue)) sel.value = prevValue;
 }
 document.getElementById('openPressStyleBtn').addEventListener('click', async () => {
