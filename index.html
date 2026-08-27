@@ -70,12 +70,12 @@
   /* Event info */
   .field{margin-bottom:18px;}
   .field label{display:block;font-size:12.5px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;color:var(--navy-deep);margin-bottom:8px;letter-spacing:.02em;}
-  .field input[type=text], .field textarea, .field select{
+  .field input[type=text], .field input[type=password], .field input[type=datetime-local], .field textarea, .field select{
     width:100%;padding:12px 15px;border:1.5px solid var(--line);border-radius:14px;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif;font-size:14px;color:var(--ink);background:var(--paper);
     transition:border-color .15s ease, box-shadow .15s ease;
   }
-  .field input:focus, .field textarea:focus, .field select:focus{outline:none;border-color:var(--navy-soft);box-shadow:0 0 0 4px rgba(46,117,182,.12);background:#fff;}
+  .field input:focus, .field input[type=password]:focus, .field input[type=datetime-local]:focus, .field textarea:focus, .field select:focus{outline:none;border-color:var(--navy-soft);box-shadow:0 0 0 4px rgba(46,117,182,.12);background:#fff;}
   .field textarea{resize:vertical;min-height:64px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .sidebar-sns{display:flex;gap:8px;margin-top:2px;padding:0 6px;}
@@ -1094,10 +1094,13 @@
     <div id="historyList"></div>
   </div>
 
-  <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:32px;">
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:32px;flex-wrap:wrap;">
     <span id="saveEventStatus" class="workflow-save-status" style="margin:0;display:inline-block;"></span>
     <button class="primary" id="saveEventBtn">저장</button>
+    <button class="secondary" id="openPublishModalBtn" style="background:#f5c518;color:var(--navy-deep);border-color:#f5c518;font-weight:800;">인스타그램에 게시하기</button>
+    <button class="secondary" id="openFbPublishModalBtn" style="background:#1877f2;color:#fff;border-color:#1877f2;font-weight:800;">페이스북에 게시하기</button>
   </div>
+  <p id="igPublishHint" style="font-size:11.5px;color:var(--ink-soft);margin-top:8px;text-align:right;"></p>
 
   </div>
   </div>
@@ -1331,6 +1334,77 @@
       <button class="primary" id="saveCsManualBtn">저장</button>
     </div>
     <span id="csManualStatus" style="display:block;margin-top:10px;font-size:12.5px;font-weight:600;"></span>
+  </div>
+</div>
+
+<!-- 인스타그램 실제 게시 확인 모달 — 실제 계정에 공개로 올라가는 되돌리기 어려운 작업이라 미리보기+최종 확인을 거치도록 함 -->
+<div class="modal-overlay" id="igPublishModal">
+  <div class="modal" style="max-width:640px;">
+    <h2>인스타그램에 게시하기</h2>
+    <p class="modal-sub" style="color:var(--danger);font-weight:700;">⚠️ 확인 버튼을 누르면 실제로 @kculture.sweden 계정에 공개로 게시됩니다. 게시 후에는 이 도구에서 되돌릴 수 없어요.</p>
+
+    <div id="igPublishThumbs" style="display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;"></div>
+
+    <div class="field">
+      <label for="igPublishCaption">게시될 캡션 (수정 가능)</label>
+      <textarea id="igPublishCaption" rows="8"></textarea>
+    </div>
+
+    <div class="mode-toggle" id="igPublishTimingToggle" style="max-width:280px;margin:14px 0;">
+      <button class="mode-btn active" data-timing="now">지금 바로 게시</button>
+      <button class="mode-btn" data-timing="scheduled">예약 게시</button>
+    </div>
+    <div class="field" id="igPublishScheduleField" style="display:none;">
+      <label for="igPublishScheduleAt">예약 시각</label>
+      <input type="datetime-local" id="igPublishScheduleAt">
+    </div>
+
+    <div class="field">
+      <label for="igPublishPin">게시 확인 PIN</label>
+      <input type="password" id="igPublishPin" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="4자리 PIN" style="max-width:120px;" autocomplete="off">
+    </div>
+
+    <div id="igPublishStatus" style="font-size:13px;font-weight:600;margin-top:8px;"></div>
+
+    <div class="modal-footer">
+      <button class="secondary" id="closeIgPublishBtn">취소</button>
+      <button class="primary" id="confirmIgPublishBtn" style="background:#c13584;">게시하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="fbPublishModal">
+  <div class="modal" style="max-width:640px;">
+    <h2>페이스북에 게시하기</h2>
+    <p class="modal-sub" style="color:var(--danger);font-weight:700;">⚠️ 확인 버튼을 누르면 실제로 Koreanskt Kulturcenter 페이스북 페이지에 공개로 게시됩니다. 게시 후에는 이 도구에서 되돌릴 수 없어요.</p>
+
+    <div id="fbPublishThumbs" style="display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;"></div>
+
+    <div class="field">
+      <label for="fbPublishCaption">게시될 캡션 (수정 가능)</label>
+      <textarea id="fbPublishCaption" rows="8"></textarea>
+    </div>
+
+    <div class="mode-toggle" id="fbPublishTimingToggle" style="max-width:280px;margin:14px 0;">
+      <button class="mode-btn active" data-timing="now">지금 바로 게시</button>
+      <button class="mode-btn" data-timing="scheduled">예약 게시</button>
+    </div>
+    <div class="field" id="fbPublishScheduleField" style="display:none;">
+      <label for="fbPublishScheduleAt">예약 시각</label>
+      <input type="datetime-local" id="fbPublishScheduleAt">
+    </div>
+
+    <div class="field">
+      <label for="fbPublishPin">게시 확인 PIN</label>
+      <input type="password" id="fbPublishPin" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="4자리 PIN" style="max-width:120px;" autocomplete="off">
+    </div>
+
+    <div id="fbPublishStatus" style="font-size:13px;font-weight:600;margin-top:8px;"></div>
+
+    <div class="modal-footer">
+      <button class="secondary" id="closeFbPublishBtn">취소</button>
+      <button class="primary" id="confirmFbPublishBtn" style="background:#1877f2;">게시하기</button>
+    </div>
   </div>
 </div>
 
@@ -1997,6 +2071,7 @@ function restoreStageState(snap){
   document.getElementById('generateBtn').textContent = captionMode==='ai-write' ? 'AI 캡션, 해시태그, 번역 생성' : '번역 + 해시태그 생성';
   updateCaptionVisibility();
   updateMbsState();
+  updateIgPublishButtonState();
 }
 
 // stageStore를 JSON 저장 가능한 형태로 변환 (Image 객체 → dataURL 문자열)
@@ -2317,6 +2392,7 @@ function onImagesReady(){
     updateMbsState();
     saveToArchiveAuto();
   }
+  updateIgPublishButtonState();
 }
 
 function renderThumbs(){
@@ -2348,6 +2424,7 @@ function renderThumbs(){
       feedIndex = Math.min(feedIndex, uploadedImages.length-1);
       storyIndex = Math.min(storyIndex, uploadedImages.length-1);
       renderThumbs(); renderCrops(); updateMbsState();
+      updateIgPublishButtonState();
     });
   });
 }
@@ -2365,6 +2442,7 @@ function resetAllImages(){
   document.getElementById('thumbStrip').style.display = 'none';
   fileInput.value = '';
   updateMbsState();
+  updateIgPublishButtonState();
 }
 document.getElementById('resetImage').addEventListener('click', resetAllImages);
 
@@ -2424,6 +2502,287 @@ function getFbDims(){
   if(r==='1:1') return {w:1200,h:1200};
   return {w:1200,h:630};
 }
+
+// ============ 인스타그램 실제 게시 ============
+// "완료 처리"(로컬 저장/아카이브, 위 onImagesReady에서 자동으로 됨)와는 완전히 별개의 기능.
+// 이 버튼을 직접 눌러야만 실제로 @kculture.sweden 계정에 게시됨.
+function updateIgPublishButtonState(){
+  const igBtn = document.getElementById('openPublishModalBtn');
+  const fbBtn = document.getElementById('openFbPublishModalBtn');
+  const hint = document.getElementById('igPublishHint');
+  if(!igBtn) return;
+
+  // 6주전 탭은 행사 정보만 입력하는 단계라 게시할 콘텐츠 자체가 없음 — 버튼을 아예 숨김
+  if(selectedStage === '6주전'){
+    igBtn.style.display = 'none';
+    if(fbBtn) fbBtn.style.display = 'none';
+    hint.textContent = '';
+    return;
+  }
+  igBtn.style.display = '';
+  if(fbBtn) fbBtn.style.display = '';
+
+  const imageItems = uploadedImages.filter(i => i.kind !== 'video');
+  const hasVideo = uploadedImages.some(i => i.kind === 'video');
+  const disabled = !imageItems.length;
+  igBtn.disabled = disabled;
+  if(fbBtn) fbBtn.disabled = disabled;
+  if(disabled){
+    hint.textContent = hasVideo
+      ? '영상(릴스)은 자동 게시 대상이 아니에요 — 인스타그램/페이스북 앱에서 직접 업로드해주세요'
+      : '먼저 사진을 업로드해주세요';
+  } else {
+    hint.textContent = hasVideo
+      ? `사진 ${imageItems.length}장만 게시돼요 (영상은 자동 게시 대상이 아니라 앱에서 직접 업로드해주세요)`
+      : `사진 ${imageItems.length}장이 게시돼요`;
+  }
+}
+
+// 피드 미리보기에서 쓰던 크롭(줌/위치) 설정을 그대로 캔버스에 다시 그려서, 실제 게시될 이미지와 화면 미리보기가 정확히 일치하게 함
+function buildFinalImageDataUrl(item){
+  const fd = getFeedDims();
+  const canvas = document.createElement('canvas');
+  if(shouldCover(item, feedMode)) drawCoverCrop(item.img, canvas, fd.w, fd.h, item.feedZoom, item.feedOffsetX, item.feedOffsetY);
+  else drawContainWithBlur(item.img, canvas, fd.w, fd.h);
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
+// 원본/스웨덴어/영어 캡션 + 해시태그를 하나로 합쳐서 게시용 기본 캡션을 만듦 (모달에서 직접 수정 가능)
+function buildDefaultPublishCaption(){
+  const orig = document.getElementById('captionOrig').value.trim();
+  const sv = document.getElementById('captionSv').value.trim();
+  const en = document.getElementById('captionEn').value.trim();
+  const hashtags = Array.from(document.querySelectorAll('#hashtagList .hashtag .tag-text')).map(el => el.textContent.trim()).filter(Boolean);
+  const parts = [];
+  if(orig) parts.push(orig);
+  if(sv) parts.push(sv); // 스웨덴 현지 도달이 목적이라 스웨덴어를 영어보다 먼저 배치
+  if(en) parts.push(en);
+  if(hashtags.length) parts.push(hashtags.map(h => h.startsWith('#') ? h : '#'+h).join(' '));
+  return parts.join('\n\n');
+}
+
+let igPublishTiming = 'now';
+
+function openIgPublishModal(){
+  const imageItems = uploadedImages.filter(i => i.kind !== 'video');
+  if(!imageItems.length) return;
+
+  const thumbsEl = document.getElementById('igPublishThumbs');
+  thumbsEl.innerHTML = '미리보기 만드는 중...';
+  document.getElementById('igPublishCaption').value = buildDefaultPublishCaption();
+  document.getElementById('igPublishPin').value = '';
+  document.getElementById('igPublishStatus').textContent = '';
+  igPublishTiming = 'now';
+  document.querySelectorAll('#igPublishTimingToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.timing === 'now'));
+  document.getElementById('igPublishScheduleField').style.display = 'none';
+  document.getElementById('confirmIgPublishBtn').disabled = false;
+
+  // 캔버스로 이미지를 다시 그리는 작업이 살짝 걸릴 수 있어 모달을 먼저 띄운 뒤 다음 프레임에 처리
+  document.getElementById('igPublishModal').classList.add('open');
+  requestAnimationFrame(() => {
+    thumbsEl.innerHTML = '';
+    imageItems.forEach(item => {
+      const dataUrl = buildFinalImageDataUrl(item);
+      item._publishDataUrl = dataUrl; // 실제 게시 시 다시 계산하지 않고 재사용
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.style.cssText = 'width:100px;height:100px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex-shrink:0;';
+      thumbsEl.appendChild(img);
+    });
+  });
+}
+
+document.getElementById('openPublishModalBtn').addEventListener('click', openIgPublishModal);
+document.getElementById('closeIgPublishBtn').addEventListener('click', () => {
+  document.getElementById('igPublishModal').classList.remove('open');
+});
+document.getElementById('igPublishTimingToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.mode-btn');
+  if(!btn) return;
+  igPublishTiming = btn.dataset.timing;
+  document.querySelectorAll('#igPublishTimingToggle .mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+  document.getElementById('igPublishScheduleField').style.display = igPublishTiming === 'scheduled' ? 'block' : 'none';
+});
+
+document.getElementById('confirmIgPublishBtn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('igPublishStatus');
+  const btn = document.getElementById('confirmIgPublishBtn');
+  const imageItems = uploadedImages.filter(i => i.kind !== 'video');
+  if(!imageItems.length){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '게시할 사진이 없어요'; return; }
+
+  const pin = document.getElementById('igPublishPin').value.trim();
+  if(pin !== '0508'){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = 'PIN이 일치하지 않아요'; return; }
+
+  const caption = document.getElementById('igPublishCaption').value;
+
+  let scheduledFor;
+  if(igPublishTiming === 'scheduled'){
+    const raw = document.getElementById('igPublishScheduleAt').value;
+    if(!raw){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 시각을 선택해주세요'; return; }
+    const dt = new Date(raw);
+    if(isNaN(dt.getTime()) || dt.getTime() <= Date.now()){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 시각은 현재보다 미래여야 해요'; return; }
+    scheduledFor = dt.toISOString();
+  }
+
+  const info = getEventInfo();
+  const body = {
+    key: pin, // 게시 전용 PIN — 이 값 자체가 Worker의 PUBLISH_PIN과 대조되는 인증값 (다른 관리자 기능용 마스터 키와는 무관)
+    caption,
+    staffName: info.ownerName,
+    staffEmail: info.ownerEmail,
+    eventName: info.eventName,
+  };
+  if(scheduledFor) body.scheduledFor = scheduledFor;
+
+  if(imageItems.length === 1){
+    body.mediaType = 'IMAGE';
+    body.imageBase64 = imageItems[0]._publishDataUrl || buildFinalImageDataUrl(imageItems[0]);
+  } else {
+    body.mediaType = 'CAROUSEL';
+    body.items = imageItems.map(item => ({ kind: 'image', base64: item._publishDataUrl || buildFinalImageDataUrl(item) }));
+  }
+
+  btn.disabled = true;
+  statusEl.style.color = 'var(--ink-soft)';
+  statusEl.textContent = igPublishTiming === 'scheduled' ? '예약 등록하는 중...' : '게시하는 중... (몇 초 정도 걸려요, 창을 닫지 말아주세요)';
+
+  try{
+    const res = await fetch(RELAY_SERVER_URL + 'publish/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok || data.error || data.success === false){
+      const errMsg = data.error?.error?.message || data.error?.message || data.response?.error?.message || JSON.stringify(data.response || data.error || data);
+      statusEl.style.color = 'var(--danger)';
+      statusEl.textContent = '게시 실패: ' + errMsg;
+      btn.disabled = false;
+      return;
+    }
+    if(data.scheduled){
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = `예약 완료! ${new Date(scheduledFor).toLocaleString('ko-KR')}에 자동으로 게시돼요.`;
+    } else {
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '게시 완료! 인스타그램에서 확인해보세요 ✓';
+    }
+    setTimeout(() => { document.getElementById('igPublishModal').classList.remove('open'); btn.disabled = false; }, 2500);
+  } catch(err){
+    console.error('게시 실패:', err);
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = '게시 요청에 실패했습니다 (네트워크 오류). 다시 시도해주세요';
+    btn.disabled = false;
+  }
+});
+
+// ============ 페이스북 실제 게시 (인스타그램과 동일한 사진/크롭을 재사용, 별도 엔드포인트로 게시) ============
+let fbPublishTiming = 'now';
+
+function openFbPublishModal(){
+  const imageItems = uploadedImages.filter(i => i.kind !== 'video');
+  if(!imageItems.length) return;
+
+  const thumbsEl = document.getElementById('fbPublishThumbs');
+  thumbsEl.innerHTML = '미리보기 만드는 중...';
+  document.getElementById('fbPublishCaption').value = buildDefaultPublishCaption();
+  document.getElementById('fbPublishPin').value = '';
+  document.getElementById('fbPublishStatus').textContent = '';
+  fbPublishTiming = 'now';
+  document.querySelectorAll('#fbPublishTimingToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.timing === 'now'));
+  document.getElementById('fbPublishScheduleField').style.display = 'none';
+  document.getElementById('confirmFbPublishBtn').disabled = false;
+
+  document.getElementById('fbPublishModal').classList.add('open');
+  requestAnimationFrame(() => {
+    thumbsEl.innerHTML = '';
+    imageItems.forEach(item => {
+      const dataUrl = item._publishDataUrl || buildFinalImageDataUrl(item); // 인스타그램 모달을 먼저 열었으면 이미 만들어둔 걸 재사용
+      item._publishDataUrl = dataUrl;
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.style.cssText = 'width:100px;height:100px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex-shrink:0;';
+      thumbsEl.appendChild(img);
+    });
+  });
+}
+
+document.getElementById('openFbPublishModalBtn').addEventListener('click', openFbPublishModal);
+document.getElementById('closeFbPublishBtn').addEventListener('click', () => {
+  document.getElementById('fbPublishModal').classList.remove('open');
+});
+document.getElementById('fbPublishTimingToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.mode-btn');
+  if(!btn) return;
+  fbPublishTiming = btn.dataset.timing;
+  document.querySelectorAll('#fbPublishTimingToggle .mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+  document.getElementById('fbPublishScheduleField').style.display = fbPublishTiming === 'scheduled' ? 'block' : 'none';
+});
+
+document.getElementById('confirmFbPublishBtn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('fbPublishStatus');
+  const btn = document.getElementById('confirmFbPublishBtn');
+  const imageItems = uploadedImages.filter(i => i.kind !== 'video');
+  if(!imageItems.length){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '게시할 사진이 없어요'; return; }
+
+  const pin = document.getElementById('fbPublishPin').value.trim();
+  if(pin !== '0508'){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = 'PIN이 일치하지 않아요'; return; }
+
+  const caption = document.getElementById('fbPublishCaption').value;
+
+  let scheduledFor;
+  if(fbPublishTiming === 'scheduled'){
+    const raw = document.getElementById('fbPublishScheduleAt').value;
+    if(!raw){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 시각을 선택해주세요'; return; }
+    const dt = new Date(raw);
+    if(isNaN(dt.getTime()) || dt.getTime() <= Date.now()){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 시각은 현재보다 미래여야 해요'; return; }
+    scheduledFor = dt.toISOString();
+  }
+
+  const info = getEventInfo();
+  const body = {
+    key: pin,
+    caption,
+    staffName: info.ownerName,
+    staffEmail: info.ownerEmail,
+    eventName: info.eventName,
+    items: imageItems.map(item => ({ base64: item._publishDataUrl || buildFinalImageDataUrl(item) })),
+  };
+  if(scheduledFor) body.scheduledFor = scheduledFor;
+
+  btn.disabled = true;
+  statusEl.style.color = 'var(--ink-soft)';
+  statusEl.textContent = fbPublishTiming === 'scheduled' ? '예약 등록하는 중...' : '게시하는 중... (몇 초 정도 걸려요, 창을 닫지 말아주세요)';
+
+  try{
+    const res = await fetch(RELAY_SERVER_URL + 'publish/facebook-create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok || data.error || data.success === false){
+      const errMsg = data.error?.error?.message || data.error?.message || data.response?.error?.message || JSON.stringify(data.response || data.error || data);
+      statusEl.style.color = 'var(--danger)';
+      statusEl.textContent = '게시 실패: ' + errMsg;
+      btn.disabled = false;
+      return;
+    }
+    if(data.scheduled){
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = `예약 완료! ${new Date(scheduledFor).toLocaleString('ko-KR')}에 자동으로 게시돼요.`;
+    } else {
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = '게시 완료! 페이스북에서 확인해보세요 ✓';
+    }
+    setTimeout(() => { document.getElementById('fbPublishModal').classList.remove('open'); btn.disabled = false; }, 2500);
+  } catch(err){
+    console.error('게시 실패:', err);
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = '게시 요청에 실패했습니다 (네트워크 오류). 다시 시도해주세요';
+    btn.disabled = false;
+  }
+});
 
 function renderCrops(){
   if(!uploadedImages.length) return;
