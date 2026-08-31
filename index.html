@@ -1763,13 +1763,20 @@ async function loadEvents(){
     const listResult = await kkcStorage.list('kkc:event:', true);
     registeredEvents = [];
     if(listResult && listResult.keys && listResult.keys.length){
-      for(const key of listResult.keys){
+      // ⚠️ 2026-08-31: 예전엔 행사를 하나씩 순서대로(for...await) 불러와서, 행사 수가 늘어날수록
+      // 홈 화면 로딩이 선형으로(행사당 왕복 통신 1번씩) 느려지는 문제가 있었음.
+      // Promise.allSettled로 전부 동시에 요청하도록 바꿔서, 전체 로딩 시간이 "가장 느린 요청 1번" 수준으로 단축됨.
+      const results = await Promise.allSettled(listResult.keys.map(key => kkcStorage.get(key, true)));
+      for(let idx = 0; idx < listResult.keys.length; idx++){
+        const key = listResult.keys[idx];
+        const r = results[idx];
         try{
-          const res = await kkcStorage.get(key, true);
-          if(res && res.value){
-            const ev = {key, ...JSON.parse(res.value)};
+          if(r.status === 'fulfilled' && r.value && r.value.value){
+            const ev = {key, ...JSON.parse(r.value.value)};
             await migrateOldStageData(ev);
             registeredEvents.push(ev);
+          } else if(r.status === 'rejected'){
+            throw r.reason;
           }
         } catch(e){
           console.error('행사 로드 실패:', key, e);
@@ -1794,8 +1801,9 @@ async function loadEvents(){
     const archListResult = await kkcStorage.list('kkc:archive:', true);
     contentUploads = [];
     if(archListResult && archListResult.keys && archListResult.keys.length){
-      for(const key of archListResult.keys){
-        try{ const res = await kkcStorage.get(key, true); if(res && res.value) contentUploads.push(JSON.parse(res.value)); } catch(e){}
+      const archResults = await Promise.allSettled(archListResult.keys.map(key => kkcStorage.get(key, true)));
+      for(const r of archResults){
+        try{ if(r.status === 'fulfilled' && r.value && r.value.value) contentUploads.push(JSON.parse(r.value.value)); } catch(e){}
       }
     }
   } catch(err){
