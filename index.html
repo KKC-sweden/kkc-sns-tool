@@ -4857,10 +4857,18 @@ function buildBodyXml(bodyGroups){
   const s = HWPX_STYLE.body;
   if(!bodyGroups.length) return hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing);
   let xml = '';
-  bodyGroups.forEach((group, gi) => {
-    if(gi > 0) xml += hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing);
-    if(group.header) xml += hwpxMakeP(s.paraPr, s.charPr, group.header, s.width, s.height, s.lineSpacing);
-    group.paragraphs.forEach(p => { xml += hwpxMakeP(s.paraPr, s.charPr, p, s.width, s.height, s.lineSpacing); });
+  let isFirstParagraph = true;
+  bodyGroups.forEach((group) => {
+    if(!isFirstParagraph) xml += hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing);
+    if(group.header){
+      xml += hwpxMakeP(s.paraPr, s.charPr, group.header, s.width, s.height, s.lineSpacing);
+      isFirstParagraph = false;
+    }
+    group.paragraphs.forEach(p => {
+      if(!isFirstParagraph) xml += hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing); // 문단마다 빈 줄로 구분
+      xml += hwpxMakeP(s.paraPr, s.charPr, p, s.width, s.height, s.lineSpacing);
+      isFirstParagraph = false;
+    });
   });
   return xml;
 }
