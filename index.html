@@ -4703,12 +4703,14 @@ function parsePressDraft(text){
 
   skipBlank();
   let urgency = '', date = '';
-  while(i < lines.length && (lines[i].startsWith('보도시점') || lines[i].startsWith('배포'))){
+  while(i < lines.length && (lines[i].startsWith('보도시점') || lines[i].startsWith('배포') || !lines[i])){
     const line = lines[i];
+    if(!line){ i++; continue; } // 보도시점/배포 줄 사이 빈 줄은 건너뛰고 계속 찾음
     const colonIdx = line.indexOf(':');
     const value = colonIdx >= 0 ? line.slice(colonIdx+1).trim() : '';
     if(line.startsWith('보도시점')) urgency = value;
-    else date = value;
+    else if(line.startsWith('배포')) date = value;
+    else break; // 보도시점/배포도 아닌 실제 내용 줄을 만나면 중단
     i++;
   }
 
@@ -4797,10 +4799,12 @@ function buildTitleXml(title){
 }
 function buildSubtitlesXml(subtitles){
   const s = HWPX_STYLE.subtitle;
+  if(!subtitles.length) return hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing);
   return subtitles.map(t => hwpxMakeP(s.paraPr, s.charPr, t, s.width, s.height, s.lineSpacing)).join('');
 }
 function buildBodyXml(bodyGroups){
   const s = HWPX_STYLE.body;
+  if(!bodyGroups.length) return hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing);
   let xml = '';
   bodyGroups.forEach((group, gi) => {
     if(gi > 0) xml += hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing);
