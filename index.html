@@ -4703,15 +4703,32 @@ function parsePressDraft(text){
 
   skipBlank();
   let urgency = '', date = '';
-  while(i < lines.length && (lines[i].startsWith('보도시점') || lines[i].startsWith('배포') || !lines[i])){
+  const readLabeledValue = (label) => {
+    if(i >= lines.length || !lines[i].startsWith(label)) return null;
     const line = lines[i];
-    if(!line){ i++; continue; } // 보도시점/배포 줄 사이 빈 줄은 건너뛰고 계속 찾음
     const colonIdx = line.indexOf(':');
-    const value = colonIdx >= 0 ? line.slice(colonIdx+1).trim() : '';
-    if(line.startsWith('보도시점')) urgency = value;
-    else if(line.startsWith('배포')) date = value;
-    else break; // 보도시점/배포도 아닌 실제 내용 줄을 만나면 중단
-    i++;
+    if(colonIdx >= 0 && line.slice(0, colonIdx).trim() === label){
+      // "라벨: 값" 한 줄 형식
+      i++;
+      return line.slice(colonIdx+1).trim();
+    }
+    if(line.trim() === label){
+      // "라벨" 한 줄 + 다음 줄이 값인 형식
+      i++;
+      const value = (i < lines.length) ? lines[i] : '';
+      i++;
+      return value || '';
+    }
+    return null;
+  };
+  for(let guard = 0; guard < 4; guard++){ // 보도시점/배포 순서가 바뀌어도 안전하게 최대 2회씩 시도
+    skipBlank();
+    const uv = readLabeledValue('보도시점');
+    if(uv !== null){ urgency = uv; continue; }
+    skipBlank();
+    const dv = readLabeledValue('배포');
+    if(dv !== null){ date = dv; continue; }
+    break;
   }
 
   skipBlank();
