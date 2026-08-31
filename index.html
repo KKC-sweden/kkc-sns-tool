@@ -4343,6 +4343,13 @@ document.getElementById('stage2ModeToggle').addEventListener('click', (e) => {
 
 // --- 이번 보도자료에 참고할 자료 (행사/발행 건마다 다름, stageStore에 같이 저장됨) ---
 let currentPressUploads = []; // [{filename, content}]
+// 참고자료 하나가 지나치게 길면 프롬프트가 무한정 커져서 AI 응답이 잘리거나 빈 응답이 오는 원인이 됨(2026-08-31 확인) —
+// 개별 파일 텍스트를 안전한 길이로 잘라 넣음(잘렸다는 사실을 파일 목록에 표시).
+const PRESS_REF_MAX_CHARS = 6000;
+function capReferenceText(text){
+  if(text.length <= PRESS_REF_MAX_CHARS) return { text, truncated: false };
+  return { text: text.slice(0, PRESS_REF_MAX_CHARS) + '\n\n[...분량이 길어 이후 내용은 생략됨...]', truncated: true };
+}
 
 function renderPressUploadList(){
   const el = document.getElementById('pressUploadList');
@@ -4361,8 +4368,9 @@ document.getElementById('pressUploadFiles').addEventListener('change', async (e)
   const files = Array.from(e.target.files || []);
   for(const file of files){
     try{
-      const text = await extractTextFromFile(file);
-      currentPressUploads.push({ filename: file.name, content: text });
+      const rawText = await extractTextFromFile(file);
+      const { text, truncated } = capReferenceText(rawText);
+      currentPressUploads.push({ filename: file.name + (truncated ? ' (일부만 반영됨)' : ''), content: text });
     } catch(err){
       alert(`${file.name}: ${err.message}`);
     }
@@ -4431,8 +4439,9 @@ document.getElementById('pressStyleFiles').addEventListener('change', async (e) 
   statusEl.textContent = '';
   for(const file of files){
     try{
-      const text = await extractTextFromFile(file);
-      pressStyleLibrary.push({ label: file.name, content: text, addedAt: new Date().toISOString() });
+      const rawText = await extractTextFromFile(file);
+      const { text, truncated } = capReferenceText(rawText);
+      pressStyleLibrary.push({ label: file.name + (truncated ? ' (일부만 반영됨)' : ''), content: text, addedAt: new Date().toISOString() });
     } catch(err){
       statusEl.style.color = 'var(--danger)';
       statusEl.textContent = `${file.name}: ${err.message}`;
@@ -4550,9 +4559,18 @@ document.getElementById('generatePressBtn').addEventListener('click', async () =
     const direction = document.getElementById('pressDirection').value.trim() || '(특별한 요청 없음)';
     const userPrompt = `행사명: ${info.eventName}\n카테고리: ${info.category}\n날짜: ${info.eventDateText || '미정'}\n시간: ${info.eventTime || '미정'}\n장소: ${info.eventVenue || '미정'}\n담당자: ${info.ownerName || '미정'}\n\n[이번 보도자료 참고 자료]\n${uploadsText}\n\n[작성 방향]\n${direction}`;
     const styleWeight = document.getElementById('pressStyleWeight').value;
-    const data = await callClaude(buildPressReleaseSystemPrompt(styleWeight), userPrompt, false, 3000);
+    const data = await callClaude(buildPressReleaseSystemPrompt(styleWeight), userPrompt, false, 8000);
     const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-    if(!text) throw new Error('응답에서 텍스트를 찾을 수 없습니다');
+    if(!text){
+      // 왜 비었는지(예: max_tokens 도달, 다른 stop_reason 등) 알 수 있게 원인을 같이 보여줌
+      const reason = data.stop_reason ? `(stop_reason: ${data.stop_reason})` : '';
+      throw new Error(`응답에서 텍스트를 찾을 수 없습니다 ${reason}`.trim());
+    }
+    if(data.stop_reason === 'max_tokens'){
+      errorBox.style.color = 'var(--danger)';
+      errorBox.textContent = '⚠️ 글이 중간에 잘렸을 수 있어요(길이 제한 도달). 내용을 확인하고 필요하면 이어서 다시 생성해주세요.';
+      errorBox.style.display = 'block';
+    }
 
     document.getElementById('pressDraft').value = text;
     document.getElementById('pressDraftField').style.display = 'block';
