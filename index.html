@@ -1673,6 +1673,11 @@ document.getElementById('backToDashboardBtn').addEventListener('click', () => {
   loadEvents();
 });
 
+// 행사 키("kkc:event:1234")에서 사진/캡션 등 무거운 데이터를 저장할 별도 키를 만듦 ("kkc:eventdata:1234")
+function eventDataKey(eventKey){
+  return eventKey.replace('kkc:event:', 'kkc:eventdata:');
+}
+
 async function saveCurrentEvent(statusEl, closeAfter){
   const info = getEventInfo();
   statusEl.style.color = 'var(--danger)';
@@ -1695,11 +1700,14 @@ async function saveCurrentEvent(statusEl, closeAfter){
     // 현재 보고 있는 단계(사진·캡션·체크리스트)를 먼저 스냅샷에 반영한 뒤 전체 단계를 함께 저장
     stageStore[selectedStage] = snapshotStageState();
     const stageData = stageStoreToJSON(stageStore);
+    // ⚠️ 2026-08-31: 사진이 포함된 stageData는 별도 키에 저장 — 행사 메인 레코드(kkc:event:)는 가볍게 유지해서
+    // 홈 화면 목록 로딩 속도에 영향 없게 함. 실제로 그 행사를 열 때만 kkc:eventdata: 키에서 따로 불러옴.
+    await kkcStorage.set(eventDataKey(key), JSON.stringify(stageData), true);
     await kkcStorage.set(key, JSON.stringify({
       eventName: info.eventName, category: info.category, eventDate: info.eventDate,
       eventEndDate: info.eventEndDate, eventDateText: info.eventDateText, eventTime: info.eventTime, eventVenue: info.eventVenue,
       ownerName: info.ownerName, ownerEmail: info.ownerEmail, postLinks: info.postLinks,
-      stageData, updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString()
     }), true);
     currentEditingEventKey = key;
     computeCompletedStages(info.eventName);
@@ -1757,6 +1765,25 @@ async function migrateOldStageData(ev){
   return true;
 }
 
+// ⚠️ 2026-08-31: 예전엔 사진(stageData)이 행사 메인 레코드 안에 같이 저장돼서, 사진이 많이 쌓인 행사는
+// 레코드 하나가 최대 8MB까지 커져 홈 화면 로딩이 20초 넘게 걸리는 문제가 있었음. 사진 데이터를 별도 키
+// (kkc:eventdata:)로 옮기고, 메인 레코드는 가볍게 만드는 1회성 자동 이관. 아직 이관 안 된(=stageData가
+// 메인 레코드에 그대로 남아있는) 행사를 불러올 때 자동으로 실행되며, 한 번 이관되면 그 다음부터는
+// 해당 행사의 홈 화면 로딩이 빨라짐.
+async function migrateHeavyStageData(ev){
+  if(!ev.stageData) return false; // 이미 이관된(가벼운) 행사는 여기 안 걸림
+  try{
+    await kkcStorage.set(eventDataKey(ev.key), JSON.stringify(ev.stageData), true);
+    const { key, stageData, ...rest } = ev;
+    await kkcStorage.set(ev.key, JSON.stringify(rest), true);
+    delete ev.stageData; // 메모리 상의 registeredEvents에도 무거운 데이터를 남겨두지 않음
+    return true;
+  } catch(err){
+    console.error('사진 데이터 이관 실패:', ev.key, err);
+    return false;
+  }
+}
+
 async function loadEvents(){
   const failedEvents = [];
   try{
@@ -1774,6 +1801,7 @@ async function loadEvents(){
           if(r.status === 'fulfilled' && r.value && r.value.value){
             const ev = {key, ...JSON.parse(r.value.value)};
             await migrateOldStageData(ev);
+            await migrateHeavyStageData(ev);
             registeredEvents.push(ev);
           } else if(r.status === 'rejected'){
             throw r.reason;
@@ -2048,8 +2076,18 @@ function renderEventList(){
       renderWorkflowTasks();
       computeCompletedStages(ev.eventName || '');
 
-      if(ev.stageData){
-        try{ stageStore = await stageStoreFromJSON(ev.stageData); }
+      // ⚠️ 2026-08-31: 사진 데이터(stageData)를 행사 메인 레코드에 같이 저장했더니, 홈 화면에서 목록만 보여줄 때도
+      // 매번 사진까지 전부 다운로드하게 되어 로딩이 매우 느려지는 문제 발견(행사 하나가 최대 8MB 이상). 사진 데이터는
+      // 별도 키(kkc:eventdata:)로 분리 저장하도록 바꾸고, 실제로 그 행사를 열 때만 이 키에서 불러오도록 변경.
+      let loadedStageData = ev.stageData;
+      if(!loadedStageData){
+        try{
+          const heavyRes = await kkcStorage.get(eventDataKey(ev.key), true);
+          if(heavyRes && heavyRes.value) loadedStageData = JSON.parse(heavyRes.value);
+        } catch(err){ /* 아직 저장된 사진 데이터가 없는 행사일 수 있음 — 정상 */ }
+      }
+      if(loadedStageData){
+        try{ stageStore = await stageStoreFromJSON(loadedStageData); }
         catch(err){ console.error('저장된 사진/캡션 복원 실패:', err); stageStore = {}; }
       } else {
         stageStore = {};
@@ -2067,6 +2105,7 @@ function renderEventList(){
       if(!confirm(`"${target ? target.eventName : '이 행사'}" 행사를 삭제할까요? 행사 관리 홈에서도 함께 삭제됩니다`)) return;
       try{
         await kkcStorage.delete(delKey, true);
+        try{ await kkcStorage.delete(eventDataKey(delKey), true); } catch(e2){ /* 사진 데이터가 없던 행사일 수 있음 — 무시 */ }
         // 삭제 직후 목록을 서버에서 즉시 다시 불러오면(list) Cloudflare KV 반영 지연 때문에
         // 방금 지운 항목이 잠깐 남아있다가 get()에서 "찾을 수 없음" 에러로 잡혀
         // "행사를 불러오지 못했습니다" 배너가 잘못 뜨는 경우가 있음.
@@ -5243,6 +5282,7 @@ async function bdDeleteEvent(eventKey){
   if(!confirm(`"${ev.eventName}" 행사를 삭제할까요? 행사 관리 홈에서도 함께 삭제됩니다`)) return;
   try{
     await kkcStorage.delete(eventKey, true);
+    try{ await kkcStorage.delete(eventDataKey(eventKey), true); } catch(e2){ /* 사진 데이터가 없던 행사일 수 있음 — 무시 */ }
     if(bdSelKey===eventKey) bdSelKey=null;
     // 삭제 직후 서버에서 목록을 즉시 다시 불러오면(list) Cloudflare KV 반영 지연으로
     // 방금 지운 항목이 잠깐 남아있다가 get()에서 에러로 잡혀 오류 배너가 잘못 뜰 수 있음.
