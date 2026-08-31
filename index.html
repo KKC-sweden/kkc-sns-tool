@@ -8,12 +8,12 @@
 <!-- 단, 행사 현황판(#tab-board)만 원장님 원본 디자인과 동일하게 Pretendard 사용 -->
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <!-- .docx 파일에서 텍스트를 추출하기 위한 라이브러리 (보도자료 스타일 학습 자료 업로드용) -->
-<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <!-- 보도자료 초안을 실제 .docx(워드) 파일로 내보내기 위한 라이브러리 -->
-<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.iife.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.iife.js"></script>
 <!-- PDF 참고자료(사업계획서 등)에서 텍스트를 추출하기 위한 라이브러리 -->
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
-<script>
+<script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
+<script defer>
   if(typeof pdfjsLib !== 'undefined'){
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js';
   }
@@ -22,7 +22,7 @@
      ⚠️ 2026-08-28: @ssabrojs/hwpxjs 라이브러리로 생성한 hwpx는 한컴오피스에서 "파일이 손상되었습니다" 오류가 발생해 실사용 불가로 확인됨
      (필수 <hp:secPr> 블록 누락, 속성 네임스페이스 접두사 오류, mimetype 값 오류 등). 대신 실제 한컴오피스가 생성한 빈 문서(assets/hwpx-template.hwpx)를
      템플릿으로 그대로 사용하고 JSZip으로 내용만 갈아끼우는 방식으로 교체함 (buildHwpxFromTemplate 함수, 아래쪽 스크립트 참고) -->
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   #tab-board, #tab-board * { font-family:"Pretendard",-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',Helvetica,Arial,sans-serif !important; }
 </style>
@@ -1463,7 +1463,7 @@
   </div>
 </div>
 
-<script>
+<script defer>
 // Cloudflare Worker 중계 서버 주소 (API 키를 안전하게 보관하고 요청을 대신 전달해줌)
 const RELAY_SERVER_URL = "https://kkc-api-relay.bada-c87.workers.dev/";
 const STORAGE_URL = "https://kkc-api-relay.bada-c87.workers.dev/storage";
@@ -4551,7 +4551,7 @@ ${weightNote}
 1번째 줄: "보도시점" 이라는 글자만 단독으로
 2번째 줄: 보도시점 값만 단독으로 (예: 배포 즉시 / 2026. 10. 27.(화) 배포 등)
 3번째 줄: "배포" 라는 글자만 단독으로
-4번째 줄: 배포 날짜 값만 단독으로 (예: 2026. 10. 20.(화))
+4번째 줄: 배포 날짜와 시간 값 (예: 2026. 10. 20.(화) 09:00 — 날짜 뒤에 반드시 시:분까지 포함. 정확한 시간이 정해지지 않았으면 09:00을 기본값으로 사용)
 그다음 줄: 제목 (한 줄, 굵게 강조할 핵심 문장)
 그다음 줄들: 부제 — 반드시 각 줄을 하이픈과 공백("- ")으로 시작. 2~4개. 다른 기호(•, ▪ 등)는 절대 쓰지 말고 반드시 "- "만 사용
 빈 줄 하나
@@ -4767,6 +4767,10 @@ function parsePressDraft(text){
     const dv = readLabeledValue('배포');
     if(dv !== null){ date = dv; continue; }
     break;
+  }
+  // 배포 값에 시:분 시간이 없으면(예: "2026. 10. 20.(화)"만 있고 시간 누락) 기본 시간을 붙여줌
+  if(date && !/\d{1,2}:\d{2}/.test(date)){
+    date = date + ' 09:00';
   }
 
   skipBlank();
