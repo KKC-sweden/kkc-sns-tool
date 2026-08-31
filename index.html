@@ -4871,7 +4871,7 @@ function buildBodyXml(bodyGroups){
     }
     group.paragraphs.forEach(p => {
       if(!isFirstParagraph) xml += hwpxMakeP(s.paraPr, s.charPr, '', s.width, s.height, s.lineSpacing); // 문단마다 빈 줄로 구분
-      xml += hwpxMakeP(s.paraPr, s.charPr, p, s.width, s.height, s.lineSpacing);
+      xml += hwpxMakeP(s.paraPr, s.charPr, ' ' + p, s.width, s.height, s.lineSpacing); // 원본 문서와 동일하게 문단 첫머리 들여쓰기(공백 1칸)
       isFirstParagraph = false;
     });
   });
