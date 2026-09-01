@@ -2127,6 +2127,12 @@ async function openEventWorkflow(ev, opts = {}){
     stageStore = {};
   }
   restoreStageState(stageStore[selectedStage]);
+  // opts.forceStage2Mode가 지정된 경우, restoreStageState가 저장된 값(snap.stage2Mode)으로 되돌려놨을 수 있으므로 다시 강제 적용
+  if(opts.forceStage2Mode){
+    stage2Mode = opts.forceStage2Mode;
+    document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === stage2Mode));
+    updateStage2Mode();
+  }
   renderStageDoneDots();
   openWorkflow();
 }
