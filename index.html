@@ -3978,9 +3978,13 @@ function renderCsInboxList(){
     const eventTag = item.eventName ? `<span class="ci-event-tag">${escapeHtml(item.eventName)}${item.assignedStaff ? ` · ${escapeHtml(item.assignedStaff)}` : ''}</span>` : '';
     // 어느 게시물에 달린 댓글인지 한눈에 알 수 있도록, 캡션 텍스트 대신 그 게시물의 포스터(썸네일)를 왼쪽에 보여줌
     // (행사 연결은 이제 댓글 하나하나가 아니라, D-10 탭에서 등록한 "게시물 링크 연결하기"로 자동 처리됨)
+    // ⚠️ 2026-09-01: 댓글 수신 시 저장해둔 썸네일 URL(인스타/페북 CDN)은 시간이 지나면 만료되어 깨진 이미지로 보이는
+    // 문제가 있었음 — data-media-id/data-platform을 달아두고, 렌더링 직후 refreshCsThumbnails()가 그 순간 유효한
+    // URL로 다시 받아와 교체함(저장된 값은 새 URL을 받아올 때까지 보여주는 임시 표시일 뿐).
+    const platform = item.channel === 'Facebook 댓글' ? 'facebook' : 'instagram';
     const posterHtml = item.mediaThumbnail
-      ? `<img class="ci-poster" src="${item.mediaThumbnail}" alt="게시물 포스터">`
-      : (item.mediaId ? `<div class="ci-poster ci-poster-empty">포스터<br>없음</div>` : '');
+      ? `<img class="ci-poster" src="${item.mediaThumbnail}" alt="게시물 포스터" data-media-id="${item.mediaId || ''}" data-platform="${platform}" onerror="this.style.visibility='hidden'">`
+      : (item.mediaId ? `<div class="ci-poster ci-poster-empty" data-media-id="${item.mediaId}" data-platform="${platform}">포스터<br>없음</div>` : '');
     const permalinkHtml = item.mediaPermalink ? `<a class="ci-poster-link" href="${item.mediaPermalink}" target="_blank" rel="noopener">게시물 보기 ↗</a>` : '';
     return `<div class="cs-inbox-item${isHandled ? ' ci-handled' : ''}">
       ${posterHtml ? `<div class="ci-poster-wrap">${posterHtml}${permalinkHtml}</div>` : ''}
@@ -4022,6 +4026,7 @@ function renderCsInboxList(){
   const start = (csInboxPage - 1) * CS_INBOX_PAGE_SIZE;
   const pageItems = items.slice(start, start + CS_INBOX_PAGE_SIZE);
   listEl.innerHTML = pageItems.map(renderItem).join('');
+  refreshCsThumbnails(pageItems);
 
   const pagerEl = document.getElementById('csInboxPager');
   if(totalPages <= 1){
@@ -4033,6 +4038,24 @@ function renderCsInboxList(){
     }
     pagerEl.innerHTML = pagerHtml;
   }
+}
+
+// ⚠️ 2026-09-01: CS 데스크 포스터 썸네일 새로고침 — 화면에 보이는 항목만(페이지당 최대 5개) 그 순간
+// 유효한 URL로 다시 받아옴. Graph API 조회 자체는 무료라 추가 비용은 없음.
+async function refreshCsThumbnails(items){
+  const targets = items.filter(item => item.mediaId && item.channel !== 'Instagram DM');
+  await Promise.allSettled(targets.map(async (item) => {
+    const platform = item.channel === 'Facebook 댓글' ? 'facebook' : 'instagram';
+    try{
+      const res = await fetch(`${RELAY_SERVER_URL}media-thumbnail?mediaId=${encodeURIComponent(item.mediaId)}&platform=${platform}`);
+      const data = await res.json();
+      if(!data || !data.thumbnail) return;
+      document.querySelectorAll(`img.ci-poster[data-media-id="${CSS.escape(item.mediaId)}"]`).forEach(img => {
+        img.src = data.thumbnail;
+        img.style.visibility = '';
+      });
+    } catch(err){ /* 새 URL을 못 받아오면 기존 표시(또는 깨진 상태) 그대로 둠 — 조용히 무시 */ }
+  }));
 }
 
 document.getElementById('csInboxPager').addEventListener('click', (e) => {
