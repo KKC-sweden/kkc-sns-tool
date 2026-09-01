@@ -645,6 +645,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
         CS 데스크
       </button>
+      <button class="nav-item" data-tab="tab-press">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 9h1"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+        보도자료 작성
+      </button>
       <button class="nav-item" data-tab="tab-archive">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
         콘텐츠 아카이브
@@ -652,10 +656,6 @@
       <button class="nav-item" data-tab="tab-board">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 4v5"/><path d="M8 13h3"/><path d="M8 17h6"/></svg>
         행사 현황판
-      </button>
-      <button class="nav-item" data-tab="tab-press">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v13a1 1 0 0 1-1.5.87L4 4z"/><path d="M4 4v14a2 2 0 0 0 2 2h12"/><path d="M7 8h8"/><path d="M7 11.5h8"/><path d="M7 15h5"/></svg>
-        보도자료 작성
       </button>
     </div>
 
@@ -724,6 +724,11 @@
   </div>
 
   <!-- ===== 행사 작업 뷰 ===== -->
+
+  </div>
+  </div>
+  <!-- /tab-sns -->
+
   <div id="workflowView" class="workflow-overlay">
   <div class="workflow-modal-box">
     <div class="workflow-topbar">
@@ -1228,10 +1233,6 @@
   </div>
   <!-- /workflowView -->
 
-  </div>
-  </div>
-  <!-- /tab-sns -->
-
   <div class="tab-content" id="tab-cs" style="display:none;">
   <div class="wrap">
 
@@ -1452,8 +1453,13 @@
   </header>
 
   <div class="step-label"><div class="step-num">★</div><div class="step-title">작성된 보도자료</div></div>
+  <div class="gallery-filters" id="pressFilters">
+    <button class="filter-chip active" data-filter="현재">현재 행사</button>
+    <button class="filter-chip" data-filter="지난">지난 행사</button>
+  </div>
   <div class="gallery-grid" id="pressListGrid" style="grid-template-columns:1fr;"></div>
   <div id="pressListEmpty" class="placeholder-empty" style="display:none;margin-top:10px;">아직 작성된 보도자료가 없습니다. "+ 새 보도자료 작성"으로 시작해보세요</div>
+  <div id="pressPagination" style="display:none;justify-content:center;gap:6px;margin-top:20px;flex-wrap:wrap;"></div>
 
   </div>
   </div>
@@ -1830,6 +1836,31 @@ async function migrateHeavyStageData(ev){
   }
 }
 
+// ⚠️ 2026-08-31: 사진 데이터 분리 이관이 이미 끝난(가벼운) 행사는 위 migrateHeavyStageData가 건드리지 않아서,
+// 나중에 추가된 hasPressRelease 표시가 채워질 기회가 없었음. hasPressRelease 필드 자체가 아직 한 번도 안 채워진
+// (undefined인) 가벼운 행사만 골라 무거운 데이터를 한 번만 확인해서 채워주는 1회성 보정.
+async function backfillPressFlag(ev){
+  if(ev.hasPressRelease !== undefined) return false; // 이미 확인된 적 있는 행사는 건너뜀 (매번 무거운 데이터 안 받도록)
+  try{
+    const heavyRes = await kkcStorage.get(eventDataKey(ev.key), true);
+    const stageData = (heavyRes && heavyRes.value) ? JSON.parse(heavyRes.value) : {};
+    const pressDraftText = (stageData['2주전'] && stageData['2주전'].pressDraft) ? stageData['2주전'].pressDraft.trim() : '';
+    const hasPressRelease = !!pressDraftText;
+    const pressReleaseTitle = hasPressRelease ? (parsePressDraft(pressDraftText).title || '') : '';
+    const { key, ...rest } = ev;
+    await kkcStorage.set(ev.key, JSON.stringify({ ...rest, hasPressRelease, pressReleaseTitle }), true);
+    ev.hasPressRelease = hasPressRelease;
+    ev.pressReleaseTitle = pressReleaseTitle;
+    return true;
+  } catch(err){
+    // 사진 데이터가 아예 없던(빈) 행사일 수 있음 — 보도자료 없음으로 확정하고 넘어감
+    ev.hasPressRelease = false;
+    const { key, ...rest } = ev;
+    try{ await kkcStorage.set(ev.key, JSON.stringify(rest), true); } catch(e2){}
+    return false;
+  }
+}
+
 async function loadEvents(){
   const failedEvents = [];
   try{
@@ -1848,6 +1879,7 @@ async function loadEvents(){
             const ev = {key, ...JSON.parse(r.value.value)};
             await migrateOldStageData(ev);
             await migrateHeavyStageData(ev);
+            await backfillPressFlag(ev);
             registeredEvents.push(ev);
           } else if(r.status === 'rejected'){
             throw r.reason;
@@ -2236,8 +2268,7 @@ function restoreStageState(snap){
     document.getElementById('editGrid').style.display = 'none';
     document.getElementById('thumbStrip').style.display = 'none';
     document.getElementById('fileInput').value = '';
-    stage2Mode = 'content';
-    document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === 'content'));
+    document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === stage2Mode));
     document.getElementById('pressDirection').value = '';
     document.getElementById('pressUrgency').value = '배포 즉시';
     document.getElementById('pressReleaseDate').value = '';
@@ -4115,19 +4146,59 @@ function resetCsForm(){
 
 
 // ============ 보도자료 작성 탭 ============
+let pressFilterMode = '현재'; // '현재' | '지난'
+let pressCurrentPage = 1;
+const PRESS_PAGE_SIZE = 7;
+
 function renderPressList(){
   const grid = document.getElementById('pressListGrid');
   const empty = document.getElementById('pressListEmpty');
+  const pager = document.getElementById('pressPagination');
   if(!grid) return; // 탭 마크업이 아직 없는 이전 버전 캐시 대비
   const withPress = registeredEvents.filter(ev => ev.hasPressRelease);
-  if(!withPress.length){
+  const filtered = pressFilterMode === '지난'
+    ? withPress.filter(ev => isPastEvent(ev))
+    : withPress.filter(ev => !isPastEvent(ev));
+
+  if(!filtered.length){
     grid.innerHTML = '';
     empty.style.display = 'block';
+    empty.textContent = pressFilterMode === '지난' ? '지난 행사 중 작성된 보도자료가 없습니다' : '아직 작성된 보도자료가 없습니다. "+ 새 보도자료 작성"으로 시작해보세요';
+    pager.style.display = 'none';
     return;
   }
   empty.style.display = 'none';
-  const sorted = [...withPress].sort((a,b) => eventProximityKey(a) - eventProximityKey(b));
-  grid.innerHTML = sorted.map(ev => {
+  const sorted = [...filtered].sort((a,b) => eventProximityKey(a) - eventProximityKey(b));
+
+  // 지난 행사만 7개씩 페이지네이션 (현재 행사는 보통 개수가 적어 한 번에 다 보여줌)
+  let pageItems = sorted;
+  if(pressFilterMode === '지난'){
+    const totalPages = Math.max(1, Math.ceil(sorted.length / PRESS_PAGE_SIZE));
+    if(pressCurrentPage > totalPages) pressCurrentPage = totalPages;
+    const start = (pressCurrentPage - 1) * PRESS_PAGE_SIZE;
+    pageItems = sorted.slice(start, start + PRESS_PAGE_SIZE);
+
+    if(totalPages > 1){
+      pager.style.display = 'flex';
+      let pagerHtml = '';
+      for(let p = 1; p <= totalPages; p++){
+        pagerHtml += `<button class="secondary${p === pressCurrentPage ? ' active' : ''}" data-page="${p}" style="min-width:36px;padding:6px 10px;${p === pressCurrentPage ? 'background:var(--navy);color:#fff;' : ''}">${p}</button>`;
+      }
+      pager.innerHTML = pagerHtml;
+      pager.querySelectorAll('button[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          pressCurrentPage = Number(btn.dataset.page);
+          renderPressList();
+        });
+      });
+    } else {
+      pager.style.display = 'none';
+    }
+  } else {
+    pager.style.display = 'none';
+  }
+
+  grid.innerHTML = pageItems.map(ev => {
     const dateLabel = ev.eventDate ? escapeHtml(ev.eventDate) : '날짜 미정';
     const titleLabel = ev.pressReleaseTitle ? escapeHtml(ev.pressReleaseTitle) : '(제목 없음)';
     return `
@@ -4148,13 +4219,25 @@ function renderPressList(){
   });
 }
 
+document.getElementById('pressFilters').addEventListener('click', (e) => {
+  const chip = e.target.closest('.filter-chip');
+  if(!chip) return;
+  document.querySelectorAll('#pressFilters .filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  pressFilterMode = chip.dataset.filter;
+  pressCurrentPage = 1;
+  renderPressList();
+});
+
 function openPressEventPicker(){
   const overlay = document.getElementById('pressEventPickerOverlay');
   const list = document.getElementById('pressEventPickerList');
-  if(!registeredEvents.length){
-    list.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">등록된 행사가 없어요. 먼저 "행사 관리 홈"에서 행사를 등록해주세요</p>';
+  // 새 보도자료는 현재(진행 예정) 행사 기준으로만 작성 — 지난 행사는 보도자료 작성 홈의 "지난 행사" 필터에서 확인
+  const currentEvents = registeredEvents.filter(ev => !isPastEvent(ev));
+  if(!currentEvents.length){
+    list.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">현재 등록된 행사가 없어요. 먼저 "행사 관리 홈"에서 행사를 등록해주세요</p>';
   } else {
-    const sorted = [...registeredEvents].sort((a,b) => eventProximityKey(a) - eventProximityKey(b));
+    const sorted = [...currentEvents].sort((a,b) => eventProximityKey(a) - eventProximityKey(b));
     list.innerHTML = sorted.map(ev => `
       <button class="secondary" data-key="${ev.key}" style="text-align:left;justify-content:flex-start;">
         ${escapeHtml(ev.eventName)} <span style="color:var(--ink-soft);font-weight:400;">${ev.eventDate ? '· '+escapeHtml(ev.eventDate) : ''}</span>
