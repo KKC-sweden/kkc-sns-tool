@@ -1350,9 +1350,9 @@
       <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--line);">
         <label for="csSendLang" style="font-size:13px;font-weight:600;color:var(--ink-soft);margin:0;">보낼 언어</label>
         <select id="csSendLang" style="width:auto;padding:8px 10px;"></select>
-        <button class="primary" id="csSendBtn">🚧 보내기 (준비 중)</button>
+        <button class="primary" id="csSendBtn">답글 전송</button>
       </div>
-      <p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">실제 댓글·DM 자동 전송 기능은 아직 테스트 중이라 비활성화돼 있어요. 지금은 위 "전체 복사"로 복사해서 직접 답장해주세요</p>
+      <p id="csSendNote" style="font-size:12px;color:var(--ink-soft);margin-top:8px;">전송하면 실제로 인스타그램/페이스북에 공개 답글이 등록돼요. DM은 API로 전송할 수 없어서(메타 정책상 별도 심사가 필요) 이 버튼이 비활성화돼요 — "전체 복사"로 복사해서 직접 답장해주세요</p>
     </div>
   </div>
 
@@ -4199,6 +4199,16 @@ async function useCsInboxItem(key){
   currentCsInboxKey = key;
   document.getElementById('csMarkDoneBtn').style.display = 'inline-flex';
   // 아직 "완료 처리"는 안 함 — 실제로 답변까지 다 쓰고 나서 완료 버튼을 눌러야 목록에서 정리됨
+
+  // DM은 API로 실제 전송이 안 되므로(메타 정책상 Advanced Access 별도 심사 필요) 댓글일 때만 전송 버튼 활성화
+  const isComment = item.type === 'comment' && item.commentId;
+  const sendBtn = document.getElementById('csSendBtn');
+  const sendNote = document.getElementById('csSendNote');
+  sendBtn.disabled = !isComment;
+  sendBtn.style.opacity = isComment ? '1' : '0.5';
+  sendNote.textContent = isComment
+    ? '전송하면 실제로 인스타그램/페이스북에 공개 답글이 등록돼요'
+    : 'DM은 API로 전송할 수 없어서(메타 정책상 별도 심사가 필요) "전체 복사"로 복사해서 직접 답장해주세요';
 }
 document.getElementById('csInboxList').addEventListener('click', async e => {
   const loadBtn = e.target.closest('[data-load-inbox]');
@@ -4249,8 +4259,50 @@ document.getElementById('csMarkDoneBtn').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('csSendBtn').addEventListener('click', () => {
-  alert('실제 댓글·DM 자동 전송 기능은 아직 준비 중이에요. 충분히 테스트되면 눈에 띄게 알려드리고 활성화할게요.\n\n지금은 "전체 복사"로 복사해서 인스타그램/페이스북에 직접 붙여넣어 답장해주세요');
+document.getElementById('csSendBtn').addEventListener('click', async () => {
+  if(!currentCsInboxKey) return;
+  const item = csInboxItems.find(i => i.key === currentCsInboxKey);
+  if(!item || item.type !== 'comment' || !item.commentId){
+    alert('이 문의는 실제 전송을 지원하지 않아요 (DM은 API 전송이 불가능해요)');
+    return;
+  }
+  const lang = document.getElementById('csSendLang').value;
+  const textareaId = { ko: 'csReplyKo', en: 'csReplyEn', sv: 'csReplySv' }[lang];
+  const message = (document.getElementById(textareaId)?.value || '').trim();
+  if(!message){ alert('보낼 답변 내용이 비어있어요'); return; }
+
+  const platform = item.channel === 'Facebook 댓글' ? 'facebook' : 'instagram';
+  if(!confirm(`이 답글을 실제로 ${platform === 'facebook' ? '페이스북' : '인스타그램'}에 등록할까요? 등록 후에는 여기서 취소할 수 없어요.\n\n"${message.slice(0,80)}${message.length>80?'...':''}"`)) return;
+
+  const btn = document.getElementById('csSendBtn');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = '전송하는 중...';
+
+  try{
+    const res = await fetch(RELAY_SERVER_URL + 'cs/send-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentId: item.commentId, platform, message })
+    });
+    const data = await res.json();
+    if(!res.ok || data.success === false){
+      const errMsg = data.error?.error?.message || data.error?.message || JSON.stringify(data.error || data);
+      throw new Error(errMsg);
+    }
+    // 전송 성공 시 자동으로 완료 처리(목록에서 정리)까지 같이 진행
+    await kkcStorage.set(currentCsInboxKey, JSON.stringify({ ...item, key: undefined, handled: true }), true);
+    csHandledInSession.add(currentCsInboxKey);
+    renderCsInboxList();
+    alert('답글이 실제로 등록됐어요 ✓');
+    resetCsForm();
+  } catch(err){
+    console.error('답글 전송 실패:', err);
+    alert('답글 전송에 실패했습니다: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 });
 
 loadCsInbox();
