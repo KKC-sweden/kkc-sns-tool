@@ -929,8 +929,8 @@
       <div class="field" style="max-width:220px;margin-bottom:16px;">
         <label for="previewLang">미리보기 캡션 언어</label>
         <select id="previewLang">
-          <option value="영어" selected>영어(English)</option>
-          <option value="스웨덴어">스웨덴어(Svenska)</option>
+          <option value="영어" selected>영어</option>
+          <option value="스웨덴어">스웨덴어</option>
           <option value="스웨덴어+영어">스웨덴어+영어</option>
         </select>
       </div>
@@ -1126,8 +1126,8 @@
       <div class="field">
         <label for="publishLang">게시할 캡션 언어</label>
         <select id="publishLang">
-          <option value="영어" selected>영어(English)</option>
-          <option value="스웨덴어">스웨덴어(Svenska)</option>
+          <option value="영어" selected>영어</option>
+          <option value="스웨덴어">스웨덴어</option>
           <option value="스웨덴어+영어">스웨덴어+영어</option>
         </select>
       </div>
@@ -2299,7 +2299,13 @@ function restoreStageState(snap){
     document.getElementById('translateSvChk').checked = snap.translateSv !== false;
     document.getElementById('translateTargetField').style.display = snap.captionMode === 'ai-translate' ? 'block' : 'none';
     document.getElementById('stageDesc').value = snap.stageDesc || '';
-    if(document.getElementById('previewLang')) document.getElementById('previewLang').value = snap.previewLang || '영어';
+    if(document.getElementById('previewLang')){
+      const psel = document.getElementById('previewLang');
+      const wanted = snap.previewLang || '영어';
+      // 예전에 저장된 값(예: '한국어')이 지금은 없는 옵션이면 그대로 대입해도 브라우저가 아무것도 못 골라 빈 칸으로 보임 —
+      // 실제로 존재하는 옵션인지 확인하고, 없으면 기본값(영어)으로
+      psel.value = [...psel.options].some(o => o.value === wanted) ? wanted : '영어';
+    }
     if(document.getElementById('copyLang')) document.getElementById('copyLang').value = snap.copyLang || '한국어';
     generatedCaptions = snap.generatedCaptions;
     document.getElementById('captionOrig').value = snap.captionOrig;
@@ -2796,8 +2802,10 @@ function getFbDims(item){
 
 // 실제 게시(인스타그램/페이스북)에 쓸 이미지를 만듦 — 피드 미리보기와 동일한 크롭(줌/위치) 설정을 그대로 캔버스에 다시 그려서
 // 실제로 게시되는 이미지와 화면 미리보기가 정확히 일치하게 함
-function buildFinalImageDataUrl(item){
-  const fd = getFeedDims(item);
+// forceDims를 주면 "원본 비율" 계산을 이 사진 기준으로 다시 하지 않고 그 크기를 그대로 사용함
+// (카드뉴스처럼 여러 장을 한 번에 올릴 때, 인스타그램이 첫 장 비율로 전체를 맞추기 때문에 전 장에 동일한 크기를 써야 함)
+function buildFinalImageDataUrl(item, forceDims){
+  const fd = forceDims || getFeedDims(item);
   const canvas = document.createElement('canvas');
   if(shouldCover(item, feedMode)) drawCoverCrop(item.img, canvas, fd.w, fd.h, item.feedZoom, item.feedOffsetX, item.feedOffsetY);
   else drawContainWithBlur(item.img, canvas, fd.w, fd.h);
@@ -3708,8 +3716,11 @@ function refreshPublishThumbs(){
     return;
   }
   thumbsEl.innerHTML = '';
+  // 카드뉴스(2장 이상)는 인스타그램이 첫 장 비율로 전체 캐러셀을 맞추므로, 사진마다 따로 "원본 비율"을 계산하지 않고
+  // 첫 장 기준으로 계산한 크기를 모든 장에 동일하게 적용함 (그래야 2번째 장부터 여백이 안 생김)
+  const sharedDims = imageItems.length > 1 ? getFeedDims(imageItems[0]) : null;
   imageItems.forEach(item => {
-    const dataUrl = buildFinalImageDataUrl(item);
+    const dataUrl = buildFinalImageDataUrl(item, sharedDims);
     item._publishDataUrl = dataUrl;
     const img = document.createElement('img');
     img.src = dataUrl;
@@ -3776,9 +3787,12 @@ function buildPublishRequest(platform, { imageItems, caption, info, pin, schedul
   if(scheduledFor) body.scheduledFor = scheduledFor;
 
   let endpoint;
+  // 카드뉴스(2장 이상)는 첫 장 비율로 전체를 통일 — refreshPublishThumbs에서 이미 캐시해둔 _publishDataUrl이 있으면
+  // 그걸 그대로 쓰고, 없을 때만(안전장치) 여기서 첫 장 기준 크기로 다시 계산함
+  const sharedDims = imageItems.length > 1 ? getFeedDims(imageItems[0]) : null;
   if(platform === 'facebook'){
     endpoint = 'publish/facebook-create';
-    body.items = imageItems.map(item => ({ base64: item._publishDataUrl || buildFinalImageDataUrl(item) }));
+    body.items = imageItems.map(item => ({ base64: item._publishDataUrl || buildFinalImageDataUrl(item, sharedDims) }));
   } else {
     endpoint = 'publish/create';
     if(imageItems.length === 1){
@@ -3786,7 +3800,7 @@ function buildPublishRequest(platform, { imageItems, caption, info, pin, schedul
       body.imageBase64 = imageItems[0]._publishDataUrl || buildFinalImageDataUrl(imageItems[0]);
     } else {
       body.mediaType = 'CAROUSEL';
-      body.items = imageItems.map(item => ({ kind: 'image', base64: item._publishDataUrl || buildFinalImageDataUrl(item) }));
+      body.items = imageItems.map(item => ({ kind: 'image', base64: item._publishDataUrl || buildFinalImageDataUrl(item, sharedDims) }));
     }
   }
   return { endpoint, body };
