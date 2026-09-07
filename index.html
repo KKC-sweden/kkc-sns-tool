@@ -948,8 +948,8 @@
           </select>
         </div>
         <div class="mode-toggle" id="feedModeToggle">
-          <button class="mode-btn" data-mode="contain">전체 보이기(여백)</button>
-          <button class="mode-btn active" data-mode="cover">꽉 채우기(크롭)</button>
+          <button class="mode-btn active" data-mode="contain">전체 보이기</button>
+          <button class="mode-btn" data-mode="cover">꽉 채우기(크롭)</button>
         </div>
         <div class="mockup-feed">
           <div class="mockup-header">
@@ -1030,8 +1030,8 @@
           <select style="padding:8px 10px;font-size:12.5px;"><option>-</option></select>
         </div>
         <div class="mode-toggle" id="storyModeToggle">
-          <button class="mode-btn" data-mode="contain">전체 보이기(여백)</button>
-          <button class="mode-btn active" data-mode="cover">꽉 채우기(크롭)</button>
+          <button class="mode-btn active" data-mode="contain">전체 보이기</button>
+          <button class="mode-btn" data-mode="cover">꽉 채우기(크롭)</button>
         </div>
         <div class="mockup-story-wrap">
           <div class="carousel-wrap">
@@ -1071,8 +1071,8 @@
           </select>
         </div>
         <div class="mode-toggle" id="fbModeToggle">
-          <button class="mode-btn" data-mode="contain">전체 보이기(여백)</button>
-          <button class="mode-btn active" data-mode="cover">꽉 채우기(크롭)</button>
+          <button class="mode-btn active" data-mode="contain">전체 보이기</button>
+          <button class="mode-btn" data-mode="cover">꽉 채우기(크롭)</button>
         </div>
         <div class="mockup-feed">
           <div class="mockup-header">
@@ -2265,7 +2265,7 @@ function restoreStageState(snap){
   publishCardWasVisible = false; // 단계/행사를 전환할 때마다 게시 카드가 새로 나타난 것으로 취급해, 그 단계의 캡션을 다시 채워 넣음
   if(!snap){
     uploadedImages = []; feedIndex = 0; storyIndex = 0;
-    feedMode = 'cover'; storyMode = 'cover'; fbMode = 'cover';
+    feedMode = 'contain'; storyMode = 'contain'; fbMode = 'contain';
     document.getElementById('feedRatio').value = '원본';
     document.getElementById('fbRatio').value = '원본';
     captionMode = 'ai-write'; resultsRevealed = false;
@@ -2303,7 +2303,7 @@ function restoreStageState(snap){
     // ⚠️ 2026-09-01: 예전엔 저장된 모드/비율(feedMode 등)을 그대로 복원했는데, 이 기능이 생긴 이후 계속
     // 예전 기본값(여백 채우기/세로형)으로 저장된 행사가 많아서 매번 그 안 좋은 값으로 되돌아가는 문제가 있었음.
     // "원본 비율 그대로 + 꽉 채우기"가 항상 맞는 기본값이므로, 저장된 값과 상관없이 항상 이 기본값을 사용함.
-    feedMode = 'cover'; storyMode = 'cover'; fbMode = 'cover';
+    feedMode = 'contain'; storyMode = 'contain'; fbMode = 'contain';
     document.getElementById('feedRatio').value = '원본';
     document.getElementById('fbRatio').value = '원본';
     captionMode = snap.captionMode; resultsRevealed = snap.resultsRevealed;
@@ -2742,7 +2742,7 @@ function resetAllImages(){
 document.getElementById('resetImage').addEventListener('click', resetAllImages);
 
 // ============ STEP 4: Cropping (carousel-aware) ============
-let feedMode = 'cover', storyMode = 'cover', fbMode = 'cover';
+let feedMode = 'contain', storyMode = 'contain', fbMode = 'contain';
 // 영상은 실제 인스타그램에서 항상 꽉 채워서 보여지므로, 모드 설정과 상관없이 항상 cover로 그림
 function shouldCover(item, mode){ return item.kind === 'video' || mode === 'cover'; }
 
