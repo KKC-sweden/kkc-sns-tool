@@ -1312,9 +1312,9 @@
     <div class="field">
       <label>생성할 언어</label>
       <div class="chips" id="csLangChips">
-        <div class="chip selected" data-lang="ko">한국어</div>
-        <div class="chip selected" data-lang="en">영어</div>
-        <div class="chip selected" data-lang="sv">스웨덴어</div>
+        <div class="chip" data-lang="ko">한국어</div>
+        <div class="chip" data-lang="en">영어</div>
+        <div class="chip" data-lang="sv">스웨덴어</div>
       </div>
     </div>
     <div style="display:flex;justify-content:flex-end;">
@@ -4190,10 +4190,21 @@ document.getElementById('csKindToggle').addEventListener('click', (e) => {
 let csHandledInSession = new Set(); // 완료 처리까지 끝난 항목 — 목록에서 안 지우고 표시만 바꿈
 let currentCsInboxKey = null; // 지금 STEP1~2에 불러와 작업 중인 인박스 항목 (없으면 null)
 
+// 문의 내용에서 자주 나오는 단어로 "문의 유형"을 짐작함 (API 호출 없이 무료로 즉시 처리 — 틀리면 직접 바꾸면 됨)
+function guessCsType(text){
+  const t = (text || '').toLowerCase();
+  const has = (words) => words.some(w => t.includes(w));
+  if(has(['수강','신청','클래스','수업','등록','register','sign up','anmäl','kurs','anmälan'])) return '수강 신청';
+  if(has(['위치','어디','주소','오시는','location','where','address','ligger','adress','hitta'])) return '위치·오시는 길';
+  if(has(['운영 시간','몇 시','언제 열','영업시간','hours','open','close','stänger','öppettider','öppnar'])) return '운영 시간';
+  return '행사 문의'; // 인스타/페북 댓글 문의는 대부분 행사 관련이라 기본값으로 둠
+}
+
 async function useCsInboxItem(key){
   const item = csInboxItems.find(i => i.key === key);
   if(!item) return;
   document.getElementById('csChannel').value = '인스타그램 DM, 댓글';
+  document.getElementById('csType').value = guessCsType(item.text);
   document.getElementById('csInquiry').value = item.text || '';
   document.getElementById('csStep1Label').scrollIntoView({behavior:'smooth', block:'start'});
   currentCsInboxKey = key;
@@ -4320,6 +4331,8 @@ function resetCsForm(){
   document.getElementById('csReplyKo').value = '';
   document.getElementById('csReplyEn').value = '';
   document.getElementById('csReplySv').value = '';
+  document.querySelectorAll('#csLangChips .chip').forEach(c => c.classList.remove('selected'));
+  csSelectedLangs = [];
   document.getElementById('csResults').style.display = 'none';
   document.getElementById('csEmpty').style.display = 'block';
   document.getElementById('csError').style.display = 'none';
@@ -4466,7 +4479,7 @@ document.getElementById('sidebarBrand').addEventListener('click', () => {
 
 // ============ Module 4-B: CS 답변 초안 생성 ============
 let csManualContent = '';
-let csSelectedLangs = ['ko','en','sv'];
+let csSelectedLangs = []; // ⚠️ 2026-09-01: 예전엔 3개 언어가 기본으로 다 켜져 있어서 매번 API 호출 3개국어분 비용이 들었음 — 이제 직접 선택하게 바꿈
 
 function buildCsSystemPrompt(langs){
   const langNames = { ko:'한국어', en:'영어(English)', sv:'스웨덴어(svenska)' };
@@ -4500,6 +4513,12 @@ document.getElementById('csLangChips').addEventListener('click', (e) => {
   } else {
     csSelectedLangs = csSelectedLangs.filter(l => l !== lang);
   }
+  // ⚠️ 2026-09-01: 예전엔 "생성" 버튼을 눌러 AI가 답을 채워야만 답변 칸이 나타났는데, 그러면 직접 손으로만
+  // 쓰고 싶을 때도 API를 한 번 호출해야 했음. 이제 언어를 고르는 즉시 그 칸이 나타나서(비어있는 채로) 바로
+  // 타이핑할 수 있고, "답변 생성"은 그 칸을 AI로 채워주는 보조 수단일 뿐 — 안 눌러도 됨.
+  document.getElementById('csEmpty').style.display = 'none';
+  document.getElementById('csResults').style.display = csSelectedLangs.length ? 'block' : 'none';
+  updateCsResultVisibility(csSelectedLangs);
 });
 
 function updateCsResultVisibility(langs){
