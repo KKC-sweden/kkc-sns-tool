@@ -2802,7 +2802,7 @@ function computeOriginalRatioDims(item, baseWidth, minRatio, maxRatio){
 
 function getFeedDims(item){
   const r = document.getElementById('feedRatio').value;
-  if(r==='원본') return computeOriginalRatioDims(item || uploadedImages[feedIndex], 1080, 0.8, 1.91); // 인스타그램 Graph API 허용 범위: 4:5(0.8) ~ 1.91:1
+  if(r==='원본') return computeOriginalRatioDims(item || uploadedImages[feedIndex], 1080, 0.75, 1.91); // ⚠️ 2026-09-01: 메타 공식 문서는 4:5(0.8)까지라 하지만, 실제 API 대행 서비스(Buffer 등)는 0.75(3:4)도 허용된다고 안내함 — 인스타그램 앱 자체도 2025년부터 3:4를 지원해서 실측 테스트로 확인 중. 실제 게시가 거부되면 0.8로 되돌려야 함.
   if(r==='1:1') return {w:1080,h:1080};
   if(r==='4:5') return {w:1080,h:1350};
   return {w:1080,h:566};
