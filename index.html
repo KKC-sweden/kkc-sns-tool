@@ -1761,7 +1761,7 @@ async function saveCurrentEvent(statusEl, closeAfter){
     currentEditingEventKey = key;
     computeCompletedStages(info.eventName);
     statusEl.style.color = 'var(--green)';
-    statusEl.textContent = '✓ 저장되었습니다. (업로드한 사진, 캡션도 함께 저장돼요)';
+    statusEl.textContent = '✓ 저장되었습니다';
     if(closeAfter){
       setTimeout(() => {
         closeWorkflow();
@@ -2103,18 +2103,6 @@ async function openEventWorkflow(ev, opts = {}){
   document.getElementById('saveEventStatus').textContent = '';
   updateWorkflowTitle();
 
-  selectedStage = opts.forceStage || computeCurrentStageKey(ev.eventDate);
-  document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === selectedStage));
-  document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
-  document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
-  document.getElementById('eventInfoWrap').style.display = selectedStage === '6주전' ? 'block' : 'none';
-  document.getElementById('suggestHistorySection').style.display = selectedStage === 'D-10' ? 'block' : 'none';
-  stage2Mode = opts.forceStage2Mode || 'content';
-  document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === stage2Mode));
-  updateStage2Mode();
-  renderWorkflowTasks();
-  computeCompletedStages(ev.eventName || '');
-
   // ⚠️ 2026-08-31: 사진 데이터(stageData)를 행사 메인 레코드에 같이 저장했더니, 홈 화면에서 목록만 보여줄 때도
   // 매번 사진까지 전부 다운로드하게 되어 로딩이 매우 느려지는 문제 발견(행사 하나가 최대 8MB 이상). 사진 데이터는
   // 별도 키(kkc:eventdata:)로 분리 저장하도록 바꾸고, 실제로 그 행사를 열 때만 이 키에서 불러오도록 변경.
@@ -2131,6 +2119,28 @@ async function openEventWorkflow(ev, opts = {}){
   } else {
     stageStore = {};
   }
+
+  // ⚠️ 2026-09-01: 예전엔 오늘 날짜와 행사일 차이만으로 단계를 골랐는데, 그러면 2주전까지 이미 작업해놓고 다시
+  // 들어와도(예: 리마인더 테스트하려고 날짜를 계속 바꿔온 경우) 날짜 계산 결과가 이전 단계로 되돌아가곤 했음.
+  // 이미 저장된 데이터가 있는 단계 중 가장 나중 단계가 있으면, 날짜 계산 결과보다 그쪽을 우선함.
+  const dateBasedStage = computeCurrentStageKey(ev.eventDate);
+  const savedStageKeys = BD_GATES.map(g => g.k).filter(k => stageStore[k]);
+  const latestSavedStage = savedStageKeys.length ? savedStageKeys[savedStageKeys.length - 1] : null;
+  const dateIdx = BD_GATES.findIndex(g => g.k === dateBasedStage);
+  const savedIdx = latestSavedStage ? BD_GATES.findIndex(g => g.k === latestSavedStage) : -1;
+  selectedStage = opts.forceStage || (savedIdx > dateIdx ? latestSavedStage : dateBasedStage);
+
+  document.querySelectorAll('#timeline .stage').forEach(s => s.classList.toggle('active', s.dataset.stage === selectedStage));
+  document.getElementById('suggestSection').classList.toggle('hidden', selectedStage !== 'D-10');
+  document.getElementById('contentStepsWrap').style.display = selectedStage === '6주전' ? 'none' : 'block';
+  document.getElementById('eventInfoWrap').style.display = selectedStage === '6주전' ? 'block' : 'none';
+  document.getElementById('suggestHistorySection').style.display = selectedStage === 'D-10' ? 'block' : 'none';
+  stage2Mode = opts.forceStage2Mode || 'content';
+  document.querySelectorAll('#stage2ModeToggle .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.stage2mode === stage2Mode));
+  updateStage2Mode();
+  renderWorkflowTasks();
+  computeCompletedStages(ev.eventName || '');
+
   restoreStageState(stageStore[selectedStage]);
   // opts.forceStage2Mode가 지정된 경우, restoreStageState가 저장된 값(snap.stage2Mode)으로 되돌려놨을 수 있으므로 다시 강제 적용
   if(opts.forceStage2Mode){
@@ -2290,9 +2300,12 @@ function restoreStageState(snap){
     renderPressUploadList();
   } else {
     uploadedImages = snap.uploadedImages; feedIndex = snap.feedIndex; storyIndex = snap.storyIndex;
-    feedMode = snap.feedMode; storyMode = snap.storyMode; fbMode = snap.fbMode;
-    document.getElementById('feedRatio').value = snap.feedRatio;
-    document.getElementById('fbRatio').value = snap.fbRatio;
+    // ⚠️ 2026-09-01: 예전엔 저장된 모드/비율(feedMode 등)을 그대로 복원했는데, 이 기능이 생긴 이후 계속
+    // 예전 기본값(여백 채우기/세로형)으로 저장된 행사가 많아서 매번 그 안 좋은 값으로 되돌아가는 문제가 있었음.
+    // "원본 비율 그대로 + 꽉 채우기"가 항상 맞는 기본값이므로, 저장된 값과 상관없이 항상 이 기본값을 사용함.
+    feedMode = 'cover'; storyMode = 'cover'; fbMode = 'cover';
+    document.getElementById('feedRatio').value = '원본';
+    document.getElementById('fbRatio').value = '원본';
     captionMode = snap.captionMode; resultsRevealed = snap.resultsRevealed;
     document.getElementById('origLang').value = snap.origLang;
     document.getElementById('translateEnChk').checked = snap.translateEn !== false;
