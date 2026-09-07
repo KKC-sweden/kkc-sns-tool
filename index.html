@@ -946,6 +946,7 @@
             <option value="4:5">세로형 (4:5) — 1080×1350</option>
             <option value="1.91:1">가로형 (1.91:1) — 1080×566</option>
           </select>
+          <div id="feedDimsDebug" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
         </div>
         <div class="mode-toggle" id="feedModeToggle">
           <button class="mode-btn active" data-mode="contain">전체 보이기</button>
@@ -2832,6 +2833,12 @@ function renderCrops(){
   const feedItem = uploadedImages[feedIndex];
   const storyItem = uploadedImages[storyIndex];
   const fd = getFeedDims(feedItem);
+  const debugEl = document.getElementById('feedDimsDebug');
+  if(debugEl){
+    const natSize = getMediaSize(feedItem.img);
+    const natRatio = natSize.w && natSize.h ? (natSize.w/natSize.h).toFixed(3) : '?';
+    debugEl.textContent = `원본 ${natSize.w}×${natSize.h} (비율 ${natRatio}) → 사용 크기 ${fd.w}×${fd.h} (비율 ${(fd.w/fd.h).toFixed(3)})`;
+  }
 
   if(shouldCover(feedItem, feedMode)) drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
   else drawContainWithBlur(feedItem.img, feedCanvas, fd.w, fd.h);
