@@ -929,9 +929,9 @@
       <div class="field" style="max-width:220px;margin-bottom:16px;">
         <label for="previewLang">미리보기 캡션 언어</label>
         <select id="previewLang">
-          <option value="한국어">한국어</option>
-          <option value="영어">영어(English)</option>
+          <option value="영어" selected>영어(English)</option>
           <option value="스웨덴어">스웨덴어(Svenska)</option>
+          <option value="스웨덴어+영어">스웨덴어+영어</option>
         </select>
       </div>
 
@@ -941,14 +941,15 @@
         <h3>인스타그램 피드</h3>
         <div class="field" style="margin-bottom:10px;">
           <select id="feedRatio" style="padding:8px 10px;font-size:12.5px;">
+            <option value="원본" selected>원본 비율 그대로 (권장)</option>
             <option value="1:1">정사각형 (1:1) — 1080×1080</option>
-            <option value="4:5" selected>세로형 (4:5) — 1080×1350</option>
+            <option value="4:5">세로형 (4:5) — 1080×1350</option>
             <option value="1.91:1">가로형 (1.91:1) — 1080×566</option>
           </select>
         </div>
         <div class="mode-toggle" id="feedModeToggle">
-          <button class="mode-btn active" data-mode="contain">전체 보이기(여백)</button>
-          <button class="mode-btn" data-mode="cover">꽉 채우기(크롭)</button>
+          <button class="mode-btn" data-mode="contain">전체 보이기(여백)</button>
+          <button class="mode-btn active" data-mode="cover">꽉 채우기(크롭)</button>
         </div>
         <div class="mockup-feed">
           <div class="mockup-header">
@@ -1029,8 +1030,8 @@
           <select style="padding:8px 10px;font-size:12.5px;"><option>-</option></select>
         </div>
         <div class="mode-toggle" id="storyModeToggle">
-          <button class="mode-btn active" data-mode="contain">전체 보이기(여백)</button>
-          <button class="mode-btn" data-mode="cover">꽉 채우기(크롭)</button>
+          <button class="mode-btn" data-mode="contain">전체 보이기(여백)</button>
+          <button class="mode-btn active" data-mode="cover">꽉 채우기(크롭)</button>
         </div>
         <div class="mockup-story-wrap">
           <div class="carousel-wrap">
@@ -1064,13 +1065,14 @@
         <h3>페이스북 게시물</h3>
         <div class="field" style="margin-bottom:10px;">
           <select id="fbRatio" style="padding:8px 10px;font-size:12.5px;">
-            <option value="1:1" selected>정사각형 (1:1) — 1200×1200</option>
+            <option value="원본" selected>원본 비율 그대로 (권장)</option>
+            <option value="1:1">정사각형 (1:1) — 1200×1200</option>
             <option value="1.91:1">가로형 (1.91:1) — 1200×630</option>
           </select>
         </div>
         <div class="mode-toggle" id="fbModeToggle">
-          <button class="mode-btn active" data-mode="contain">전체 보이기(여백)</button>
-          <button class="mode-btn" data-mode="cover">꽉 채우기(크롭)</button>
+          <button class="mode-btn" data-mode="contain">전체 보이기(여백)</button>
+          <button class="mode-btn active" data-mode="cover">꽉 채우기(크롭)</button>
         </div>
         <div class="mockup-feed">
           <div class="mockup-header">
@@ -1115,17 +1117,18 @@
     <div id="publishCard" style="display:none;">
       <div class="field">
         <label>업로드할 곳</label>
-        <div class="mode-toggle" id="publishPlatformToggle" style="max-width:260px;">
+        <div class="mode-toggle" id="publishPlatformToggle" style="max-width:400px;">
           <button class="mode-btn active" data-platform="instagram">인스타그램</button>
           <button class="mode-btn" data-platform="facebook">페이스북</button>
+          <button class="mode-btn" data-platform="both">동시 게시</button>
         </div>
       </div>
       <div class="field">
         <label for="publishLang">게시할 캡션 언어</label>
         <select id="publishLang">
-          <option value="한국어">한국어</option>
-          <option value="영어">영어(English)</option>
+          <option value="영어" selected>영어(English)</option>
           <option value="스웨덴어">스웨덴어(Svenska)</option>
+          <option value="스웨덴어+영어">스웨덴어+영어</option>
         </select>
       </div>
       <div class="field">
@@ -1775,11 +1778,13 @@ async function saveCurrentEvent(statusEl, closeAfter){
 
 document.getElementById('saveEventBtn').addEventListener('click', async () => {
   const statusEl = document.getElementById('saveEventStatus');
+  if(resyncInFlight){ statusEl.style.color = 'var(--ink-soft)'; statusEl.textContent = '캡션 번역 반영 중...'; try{ await resyncInFlight; }catch(e){} }
   await saveCurrentEvent(statusEl, true);
 });
 
 document.getElementById('saveCaptionBtn').addEventListener('click', async () => {
   const statusEl = document.getElementById('captionSaveStatus');
+  if(resyncInFlight){ statusEl.style.color = 'var(--ink-soft)'; statusEl.textContent = '캡션 번역 반영 중...'; try{ await resyncInFlight; }catch(e){} }
   await saveCurrentEvent(statusEl, false);
 });
 
@@ -2228,7 +2233,7 @@ function snapshotStageState(){
     translateEn: document.getElementById('translateEnChk').checked,
     translateSv: document.getElementById('translateSvChk').checked,
     stageDesc: document.getElementById('stageDesc').value,
-    previewLang: document.getElementById('previewLang') ? document.getElementById('previewLang').value : '한국어',
+    previewLang: document.getElementById('previewLang') ? document.getElementById('previewLang').value : '영어',
     copyLang: document.getElementById('copyLang') ? document.getElementById('copyLang').value : '한국어',
     generatedCaptions,
     captionOrig: document.getElementById('captionOrig').value,
@@ -2250,9 +2255,9 @@ function restoreStageState(snap){
   publishCardWasVisible = false; // 단계/행사를 전환할 때마다 게시 카드가 새로 나타난 것으로 취급해, 그 단계의 캡션을 다시 채워 넣음
   if(!snap){
     uploadedImages = []; feedIndex = 0; storyIndex = 0;
-    feedMode = 'contain'; storyMode = 'contain'; fbMode = 'contain';
-    document.getElementById('feedRatio').value = '4:5';
-    document.getElementById('fbRatio').value = '1:1';
+    feedMode = 'cover'; storyMode = 'cover'; fbMode = 'cover';
+    document.getElementById('feedRatio').value = '원본';
+    document.getElementById('fbRatio').value = '원본';
     captionMode = 'ai-write'; resultsRevealed = false;
     document.getElementById('origLang').value = '한국어';
     document.getElementById('translateEnChk').checked = true;
@@ -2266,7 +2271,7 @@ function restoreStageState(snap){
     document.getElementById('hashtagList').innerHTML = '';
     document.getElementById('feedCaptionPreview').textContent = '캡션이 여기 표시됩니다';
     document.getElementById('fbCaptionPreview').textContent = '캡션이 여기 표시됩니다';
-    if(document.getElementById('previewLang')) document.getElementById('previewLang').value = '한국어';
+    if(document.getElementById('previewLang')) document.getElementById('previewLang').value = '영어';
     if(document.getElementById('copyLang')) document.getElementById('copyLang').value = '한국어';
     checklistComplete = false;
     document.getElementById('uploadedInfo').style.display = 'none';
@@ -2294,7 +2299,7 @@ function restoreStageState(snap){
     document.getElementById('translateSvChk').checked = snap.translateSv !== false;
     document.getElementById('translateTargetField').style.display = snap.captionMode === 'ai-translate' ? 'block' : 'none';
     document.getElementById('stageDesc').value = snap.stageDesc || '';
-    if(document.getElementById('previewLang')) document.getElementById('previewLang').value = snap.previewLang || '한국어';
+    if(document.getElementById('previewLang')) document.getElementById('previewLang').value = snap.previewLang || '영어';
     if(document.getElementById('copyLang')) document.getElementById('copyLang').value = snap.copyLang || '한국어';
     generatedCaptions = snap.generatedCaptions;
     document.getElementById('captionOrig').value = snap.captionOrig;
@@ -2718,7 +2723,7 @@ function resetAllImages(){
 document.getElementById('resetImage').addEventListener('click', resetAllImages);
 
 // ============ STEP 4: Cropping (carousel-aware) ============
-let feedMode = 'contain', storyMode = 'contain', fbMode = 'contain';
+let feedMode = 'cover', storyMode = 'cover', fbMode = 'cover';
 // 영상은 실제 인스타그램에서 항상 꽉 채워서 보여지므로, 모드 설정과 상관없이 항상 cover로 그림
 function shouldCover(item, mode){ return item.kind === 'video' || mode === 'cover'; }
 
@@ -2762,14 +2767,29 @@ function drawContainWithBlur(img, canvas, targetW, targetH){
   const fw = mediaW*fgScale, fh = mediaH*fgScale;
   try{ ctx.drawImage(img, (targetW-fw)/2, (targetH-fh)/2, fw, fh); }catch(e){}
 }
-function getFeedDims(){
+// ⚠️ 2026-09-01: 예전엔 사진을 무조건 1:1/4:5/1.91:1 중 하나로 강제 변환해서, 원본 비율이 그 셋과
+// 조금이라도 다르면 여백(패딩)이나 크롭이 항상 생겼음. 실제로 인스타그램에 수동으로 올릴 때 여백이 안 생기는 건,
+// 인스타그램이 4:5~1.91:1 범위 안이면 원본 비율을 그대로 받아주기 때문 — 3개 프리셋 중 하나로 바꾸는 게 아님.
+// "원본 비율 그대로"를 기본값으로 만들어서, 이 범위 안의 이미지는 정확히 원본 비율 그대로(여백도 크롭도 없이) 쓰고,
+// 범위를 벗어난 경우에만 그 경계값(4:5 또는 1.91:1)까지만 최소한으로 맞춤.
+function computeOriginalRatioDims(item, baseWidth, minRatio, maxRatio){
+  if(!item || !item.img) return { w: baseWidth, h: baseWidth };
+  const size = getMediaSize(item.img);
+  if(!size.w || !size.h) return { w: baseWidth, h: baseWidth };
+  const ratio = Math.min(maxRatio, Math.max(minRatio, size.w / size.h)); // width/height, 범위 밖이면 경계값으로 clamp
+  return { w: baseWidth, h: Math.round(baseWidth / ratio) };
+}
+
+function getFeedDims(item){
   const r = document.getElementById('feedRatio').value;
+  if(r==='원본') return computeOriginalRatioDims(item || uploadedImages[feedIndex], 1080, 0.8, 1.91); // 인스타그램 Graph API 허용 범위: 4:5(0.8) ~ 1.91:1
   if(r==='1:1') return {w:1080,h:1080};
   if(r==='4:5') return {w:1080,h:1350};
   return {w:1080,h:566};
 }
-function getFbDims(){
+function getFbDims(item){
   const r = document.getElementById('fbRatio').value;
+  if(r==='원본') return computeOriginalRatioDims(item || uploadedImages[feedIndex], 1200, 0.2, 5); // 페이스북 사진 게시물은 범위 제약이 훨씬 느슨함
   if(r==='1:1') return {w:1200,h:1200};
   return {w:1200,h:630};
 }
@@ -2777,7 +2797,7 @@ function getFbDims(){
 // 실제 게시(인스타그램/페이스북)에 쓸 이미지를 만듦 — 피드 미리보기와 동일한 크롭(줌/위치) 설정을 그대로 캔버스에 다시 그려서
 // 실제로 게시되는 이미지와 화면 미리보기가 정확히 일치하게 함
 function buildFinalImageDataUrl(item){
-  const fd = getFeedDims();
+  const fd = getFeedDims(item);
   const canvas = document.createElement('canvas');
   if(shouldCover(item, feedMode)) drawCoverCrop(item.img, canvas, fd.w, fd.h, item.feedZoom, item.feedOffsetX, item.feedOffsetY);
   else drawContainWithBlur(item.img, canvas, fd.w, fd.h);
@@ -2788,9 +2808,9 @@ function renderCrops(){
   if(!uploadedImages.length) return;
   const feedCanvas = document.getElementById('feedCanvas');
   const storyCanvas = document.getElementById('storyCanvas');
-  const fd = getFeedDims();
   const feedItem = uploadedImages[feedIndex];
   const storyItem = uploadedImages[storyIndex];
+  const fd = getFeedDims(feedItem);
 
   if(shouldCover(feedItem, feedMode)) drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
   else drawContainWithBlur(feedItem.img, feedCanvas, fd.w, fd.h);
@@ -2817,7 +2837,7 @@ function renderCrops(){
 
   // 페이스북: 피드에서 선택한 사진과 동일한 사진 사용
   const fbCanvas = document.getElementById('fbCanvas');
-  const fbd = getFbDims();
+  const fbd = getFbDims(feedItem);
   if(shouldCover(feedItem, fbMode)) drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
   else drawContainWithBlur(feedItem.img, fbCanvas, fbd.w, fbd.h);
   document.getElementById('fbZoom').value = feedItem.fbZoom;
@@ -2844,11 +2864,11 @@ function redrawVideoCanvasesOnly(){
   const feedItem = uploadedImages[feedIndex];
   const storyItem = uploadedImages[storyIndex];
   if(feedItem && feedItem.kind === 'video'){
-    const fd = getFeedDims();
+    const fd = getFeedDims(feedItem);
     const feedCanvas = document.getElementById('feedCanvas');
     if(shouldCover(feedItem, feedMode)) drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
     else drawContainWithBlur(feedItem.img, feedCanvas, fd.w, fd.h);
-    const fbd = getFbDims();
+    const fbd = getFbDims(feedItem);
     const fbCanvas = document.getElementById('fbCanvas');
     if(shouldCover(feedItem, fbMode)) drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
     else drawContainWithBlur(feedItem.img, fbCanvas, fbd.w, fbd.h);
@@ -3367,6 +3387,12 @@ document.getElementById('captionEn').addEventListener('input', e => { if(generat
 
 // ============ 캡션 언어 간 자동 동기화 ============
 // 세 캡션 중 하나를 고쳐서 포커스를 벗어나면(blur), 실제로 바뀌었을 때만 나머지 언어로 재번역해서 반영함
+// ⚠️ 2026-09-01: "저장" 버튼을 눌러 캡션 칸이 blur될 때 이 번역이 백그라운드로 시작되는데, 저장은 그 즉시
+// (번역 완료를 기다리지 않고) 현재 값을 스냅샷해서 워크플로우를 닫아버렸음. 나중에 번역이 끝나면 그사이 다른
+// 행사/단계로 넘어갔거나 새로고침된 화면인데도 옛 텍스트칸에 결과를 덮어써서, 방금 수정한 내용이 사라진 것처럼
+// 보이는 경쟁 상태(race condition)가 있었음. 두 가지로 해결: (1) 저장 버튼이 진행 중인 번역을 기다렸다가 그 결과까지
+// 반영된 최신 값으로 저장하도록 함 (2) 번역이 끝났을 때 그사이 다른 행사/단계로 넘어갔으면 결과를 적용하지 않고 버림.
+let resyncInFlight = null;
 (function setupCaptionAutoSync(){
   const idMap = { orig: 'captionOrig', en: 'captionEn', sv: 'captionSv' };
   const focusSnapshot = {};
@@ -3375,12 +3401,14 @@ document.getElementById('captionEn').addEventListener('input', e => { if(generat
     el.addEventListener('focus', () => { focusSnapshot[key] = el.value; });
     el.addEventListener('blur', () => {
       const changed = el.value.trim() !== (focusSnapshot[key] || '').trim();
-      if(changed && el.value.trim()) resyncCaptionsFrom(key);
+      if(changed && el.value.trim()) resyncInFlight = resyncCaptionsFrom(key);
     });
   });
 })();
 
 async function resyncCaptionsFrom(editedKey){
+  const editingKeyAtStart = currentEditingEventKey;
+  const stageAtStart = selectedStage;
   const origLangVal = document.getElementById('origLang').value;
   const fields = {
     orig: { el: document.getElementById('captionOrig'), lang: origLangVal },
@@ -3412,6 +3440,13 @@ ${sourceText}
 {${targetKeys.map(k => `"${k}": "번역문"`).join(', ')}}`;
 
     const result = await callClaudeJson(system, user, false, 1200);
+
+    // 번역이 끝난 시점에 이미 다른 행사나 다른 단계로 넘어갔으면, 지금 화면의 텍스트칸에 반영하지 않고 버림
+    if(currentEditingEventKey !== editingKeyAtStart || selectedStage !== stageAtStart){
+      if(statusEl) statusEl.textContent = '';
+      return;
+    }
+
     targetKeys.forEach(k => {
       if(result[k]){
         fields[k].el.value = result[k];
@@ -3429,6 +3464,7 @@ ${sourceText}
     console.error('캡션 자동 동기화 실패:', err);
     if(statusEl) statusEl.textContent = '⚠ 자동 반영 실패 — 직접 수정해주세요';
   } finally {
+    resyncInFlight = null;
     setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 4000);
   }
 }
@@ -3439,9 +3475,11 @@ function getCaptionByLang(lang){
   const orig = document.getElementById('captionOrig').value.trim();
   const en = document.getElementById('captionEn').value.trim();
   const sv = document.getElementById('captionSv').value.trim();
+  const enText = origLang === '영어' ? orig : en;
   if(lang === '한국어') return origLang === '한국어' ? orig : '';
-  if(lang === '영어') return origLang === '영어' ? orig : en;
+  if(lang === '영어') return enText;
   if(lang === '스웨덴어') return sv;
+  if(lang === '스웨덴어+영어') return [sv, enText].filter(Boolean).join('\n\n');
   return '';
 }
 
@@ -3593,9 +3631,9 @@ async function saveToArchiveAuto(){
   if(!uploadedImages.length) return;
   try{
     const info = getEventInfo();
-    const fd = getFeedDims();
-    const tempCanvas = document.createElement('canvas');
     const first = uploadedImages[0];
+    const fd = getFeedDims(first);
+    const tempCanvas = document.createElement('canvas');
     if(shouldCover(first, feedMode)) drawCoverCrop(first.img, tempCanvas, fd.w, fd.h, first.feedZoom, first.feedOffsetX, first.feedOffsetY);
     else drawContainWithBlur(first.img, tempCanvas, fd.w, fd.h);
 
@@ -3726,29 +3764,8 @@ function updateScheduleBadge(){
 
 // 실제 게시 실행 — 완료 처리(로컬 저장, 위 onImagesReady에서 자동으로 됨)와는 완전히 별개의 기능.
 // 이 버튼을 직접 눌러야만 실제로 인스타그램/페이스북 공개 계정에 게시됨.
-document.getElementById('confirmPublishBtn').addEventListener('click', async () => {
-  const statusEl = document.getElementById('publishStatus');
-  const btn = document.getElementById('confirmPublishBtn');
-  const imageItems = uploadedImages.filter(i => i.kind !== 'video');
-  if(!imageItems.length){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '게시할 사진이 없어요 (영상은 지원하지 않아요)'; return; }
-
-  const pin = document.getElementById('publishPin').value.trim();
-  if(pin !== '0508'){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = 'PIN이 일치하지 않아요'; return; }
-
-  const platformBtn = document.querySelector('#publishPlatformToggle .mode-btn.active');
-  const platform = platformBtn ? platformBtn.dataset.platform : 'instagram';
-  const caption = document.getElementById('publishCaptionFinal').value;
-
-  let scheduledFor;
-  if(document.getElementById('publishScheduleToggle').checked){
-    const raw = document.getElementById('publishScheduleAt').value;
-    if(!raw){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 날짜 및 시간을 선택해주세요'; return; }
-    const dt = new Date(raw);
-    if(isNaN(dt.getTime()) || dt.getTime() <= Date.now()){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 시각은 현재보다 미래여야 해요'; return; }
-    scheduledFor = dt.toISOString();
-  }
-
-  const info = getEventInfo();
+// buildPublishRequest: 플랫폼 하나(instagram|facebook)에 대한 {endpoint, body}를 만듦 (동시 게시 시 두 번 재사용)
+function buildPublishRequest(platform, { imageItems, caption, info, pin, scheduledFor }){
   const body = {
     key: pin,
     caption,
@@ -3772,39 +3789,90 @@ document.getElementById('confirmPublishBtn').addEventListener('click', async () 
       body.items = imageItems.map(item => ({ kind: 'image', base64: item._publishDataUrl || buildFinalImageDataUrl(item) }));
     }
   }
+  return { endpoint, body };
+}
+
+async function sendPublishRequest(endpoint, body){
+  const res = await fetch(RELAY_SERVER_URL + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(!res.ok || data.error || data.success === false){
+    const errMsg = data.error?.error?.message || data.error?.message || data.response?.error?.message || JSON.stringify(data.response || data.error || data);
+    throw new Error(errMsg);
+  }
+  return data;
+}
+
+document.getElementById('confirmPublishBtn').addEventListener('click', async () => {
+  const statusEl = document.getElementById('publishStatus');
+  const btn = document.getElementById('confirmPublishBtn');
+  const imageItems = uploadedImages.filter(i => i.kind !== 'video');
+  if(!imageItems.length){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '게시할 사진이 없어요 (영상은 지원하지 않아요)'; return; }
+
+  const pin = document.getElementById('publishPin').value.trim();
+  if(pin !== '0508'){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = 'PIN이 일치하지 않아요'; return; }
+
+  const platformBtn = document.querySelector('#publishPlatformToggle .mode-btn.active');
+  const platform = platformBtn ? platformBtn.dataset.platform : 'instagram';
+  const caption = document.getElementById('publishCaptionFinal').value;
+
+  let scheduledFor;
+  if(document.getElementById('publishScheduleToggle').checked){
+    const raw = document.getElementById('publishScheduleAt').value;
+    if(!raw){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 날짜 및 시간을 선택해주세요'; return; }
+    const dt = new Date(raw);
+    if(isNaN(dt.getTime()) || dt.getTime() <= Date.now()){ statusEl.style.color = 'var(--danger)'; statusEl.textContent = '예약 시각은 현재보다 미래여야 해요'; return; }
+    scheduledFor = dt.toISOString();
+  }
+
+  const info = getEventInfo();
+  const ctx = { imageItems, caption, info, pin, scheduledFor };
 
   btn.disabled = true;
   statusEl.style.color = 'var(--ink-soft)';
   statusEl.textContent = scheduledFor ? '예약 등록하는 중...' : '게시하는 중... (몇 초 정도 걸려요, 창을 닫지 말아주세요)';
 
   try{
-    const res = await fetch(RELAY_SERVER_URL + endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if(!res.ok || data.error || data.success === false){
-      const errMsg = data.error?.error?.message || data.error?.message || data.response?.error?.message || JSON.stringify(data.response || data.error || data);
-      statusEl.style.color = 'var(--danger)';
-      statusEl.textContent = '게시 실패: ' + errMsg;
-      btn.disabled = false;
-      return;
-    }
-    const platformLabel = platform === 'facebook' ? '페이스북' : '인스타그램';
-    if(data.scheduled){
-      statusEl.style.color = 'var(--green)';
-      statusEl.textContent = `예약 완료! ${new Date(scheduledFor).toLocaleString('ko-KR')}에 ${platformLabel}에 자동으로 게시돼요.`;
+    if(platform === 'both'){
+      // 인스타그램·페이스북 동시 게시 — 두 요청을 동시에 보내고, 하나가 실패해도 다른 하나의 결과는 별도로 안내함
+      const ig = buildPublishRequest('instagram', ctx);
+      const fb = buildPublishRequest('facebook', ctx);
+      const [igResult, fbResult] = await Promise.allSettled([
+        sendPublishRequest(ig.endpoint, ig.body),
+        sendPublishRequest(fb.endpoint, fb.body),
+      ]);
+      const igOk = igResult.status === 'fulfilled';
+      const fbOk = fbResult.status === 'fulfilled';
+      if(igOk && fbOk){
+        statusEl.style.color = 'var(--green)';
+        statusEl.textContent = scheduledFor
+          ? `예약 완료! ${new Date(scheduledFor).toLocaleString('ko-KR')}에 인스타그램·페이스북에 자동으로 게시돼요.`
+          : '게시 완료! 인스타그램·페이스북에서 확인해보세요 ✓';
+      } else {
+        statusEl.style.color = igOk || fbOk ? 'var(--orange, #b8860b)' : 'var(--danger)';
+        const parts = [];
+        parts.push(`인스타그램: ${igOk ? '성공' : '실패(' + igResult.reason.message + ')'}`);
+        parts.push(`페이스북: ${fbOk ? '성공' : '실패(' + fbResult.reason.message + ')'}`);
+        statusEl.textContent = parts.join(' / ');
+      }
     } else {
+      const { endpoint, body } = buildPublishRequest(platform, ctx);
+      const data = await sendPublishRequest(endpoint, body);
+      const platformLabel = platform === 'facebook' ? '페이스북' : '인스타그램';
       statusEl.style.color = 'var(--green)';
-      statusEl.textContent = `게시 완료! ${platformLabel}에서 확인해보세요 ✓`;
+      statusEl.textContent = data.scheduled
+        ? `예약 완료! ${new Date(scheduledFor).toLocaleString('ko-KR')}에 ${platformLabel}에 자동으로 게시돼요.`
+        : `게시 완료! ${platformLabel}에서 확인해보세요 ✓`;
     }
     document.getElementById('publishPin').value = '';
     btn.disabled = false;
   } catch(err){
     console.error('게시 실패:', err);
     statusEl.style.color = 'var(--danger)';
-    statusEl.textContent = '게시 요청에 실패했습니다 (네트워크 오류). 다시 시도해주세요';
+    statusEl.textContent = '게시 실패: ' + err.message;
     btn.disabled = false;
   }
 });
