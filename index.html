@@ -1321,19 +1321,15 @@
           <textarea id="csManualReply" rows="4" placeholder="답변을 직접 입력하세요"></textarea>
         </div>
         <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;">
-          <select id="csManualLang" style="width:auto;padding:8px 10px;">
-            <option value="en">영어</option>
-            <option value="sv">스웨덴어</option>
-          </select>
           <button class="primary" id="csManualSendBtn">답글 전송</button>
         </div>
-        <p id="csManualSendNote" style="font-size:12px;color:var(--ink-soft);margin-top:8px;text-align:right;">전송하면 실제로 인스타그램/페이스북에 공개 답글이 등록되고, 목록에서도 자동으로 정리돼요. DM은 API로 전송할 수 없어서(메타 정책상 별도 심사가 필요) 이 버튼이 비활성화돼요 — 목록에서 ✕를 눌러 정리해주세요</p>
+        <p id="csManualSendNote" style="font-size:12px;color:var(--ink-soft);margin-top:8px;text-align:right;">답글 전송 버튼을 누르면 실제 SNS에 답글이 등록됩니다</p>
       </div>
 
       <!-- AI 작성 모드: 언어 선택 → 생성 → 결과 -->
       <div id="csAiSection" style="display:none;">
         <div class="field">
-          <label for="csMustInclude">참고할 메모 (선택)</label>
+          <label for="csMustInclude">답변에 들어가야 할 내용</label>
           <textarea id="csMustInclude" rows="2" placeholder="티켓 현장 판매, 6시 시작 — 답변에 꼭 들어갈 내용이 있으면 적어주세요"></textarea>
         </div>
         <div class="field">
@@ -1360,12 +1356,10 @@
             <h4>Svenskt svar</h4>
             <textarea id="csReplySv" rows="4"></textarea>
           </div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--line);">
-            <label for="csSendLang" style="font-size:13px;font-weight:600;color:var(--ink-soft);margin:0;">보낼 언어</label>
-            <select id="csSendLang" style="width:auto;padding:8px 10px;"></select>
+          <div style="display:flex;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--line);">
             <button class="primary" id="csSendBtn">답글 전송</button>
           </div>
-          <p id="csSendNote" style="font-size:12px;color:var(--ink-soft);margin-top:8px;">전송하면 실제로 인스타그램/페이스북에 공개 답글이 등록되고, 목록에서도 자동으로 정리돼요. DM은 API로 전송할 수 없어서(메타 정책상 별도 심사가 필요) 이 버튼이 비활성화돼요 — 목록에서 ✕를 눌러 정리해주세요</p>
+          <p id="csSendNote" style="font-size:12px;color:var(--ink-soft);margin-top:8px;text-align:right;">답글 전송 버튼을 누르면 실제 SNS에 답글이 등록됩니다</p>
         </div>
       </div>
     </div>
@@ -4309,7 +4303,8 @@ document.getElementById('csManualSendBtn').addEventListener('click', () => {
 });
 
 document.getElementById('csSendBtn').addEventListener('click', async () => {
-  const lang = document.getElementById('csSendLang').value;
+  // 위에서 이미 언어를 하나만 골라둔 상태이므로(csSelectedLangs는 항상 1개), 그 언어의 답변 칸 내용을 그대로 전송함
+  const lang = csSelectedLangs[0];
   const textareaId = { en: 'csReplyEn', sv: 'csReplySv' }[lang];
   const message = (document.getElementById(textareaId)?.value || '').trim();
   await sendCsReply(message, document.getElementById('csSendBtn'));
@@ -4520,26 +4515,20 @@ document.getElementById('csModeRadio').addEventListener('change', () => {
 document.getElementById('csLangChips').addEventListener('click', (e) => {
   const chip = e.target.closest('.chip');
   if(!chip) return;
-  chip.classList.toggle('selected');
-  const lang = chip.dataset.lang;
-  if(chip.classList.contains('selected')){
-    if(!csSelectedLangs.includes(lang)) csSelectedLangs.push(lang);
-  } else {
-    csSelectedLangs = csSelectedLangs.filter(l => l !== lang);
-  }
-  document.getElementById('csEmpty').style.display = csSelectedLangs.length ? 'none' : 'block';
-  document.getElementById('csResults').style.display = csSelectedLangs.length ? 'block' : 'none';
-  document.getElementById('csGenerateRow').style.display = csSelectedLangs.length ? 'flex' : 'none';
+  // ⚠️ 2026-09-02: 답글은 결국 한 언어로만 보내는 것이라, 여러 언어를 동시에 고를 수 있게 하면 "보낼 언어"를
+  // 또 골라야 하는 불필요한 단계가 생김 — 한 번에 하나만 선택되도록(라디오처럼) 바꿔서 그 단계 자체를 없앰.
+  document.querySelectorAll('#csLangChips .chip').forEach(c => c.classList.remove('selected'));
+  chip.classList.add('selected');
+  csSelectedLangs = [chip.dataset.lang];
+  document.getElementById('csEmpty').style.display = 'none';
+  document.getElementById('csResults').style.display = 'block';
+  document.getElementById('csGenerateRow').style.display = 'flex';
   updateCsResultVisibility(csSelectedLangs);
 });
 
 function updateCsResultVisibility(langs){
   document.getElementById('csReplyEnBlock').style.display = langs.includes('en') ? 'block' : 'none';
   document.getElementById('csReplySvBlock').style.display = langs.includes('sv') ? 'block' : 'none';
-
-  const langLabels = { en: '영어', sv: '스웨덴어' };
-  const sendLangSelect = document.getElementById('csSendLang');
-  sendLangSelect.innerHTML = langs.map(l => `<option value="${l}">${langLabels[l]}</option>`).join('');
 }
 
 document.getElementById('csGenerateBtn').addEventListener('click', async () => {
