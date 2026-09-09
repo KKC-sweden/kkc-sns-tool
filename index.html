@@ -1024,39 +1024,6 @@
           </div>
         </div>
       </div>
-      <div class="edit-col">
-        <h3>인스타그램 스토리 (9:16)</h3>
-        <div class="field" style="margin-bottom:10px;visibility:hidden;" aria-hidden="true">
-          <select style="padding:8px 10px;font-size:12.5px;"><option>-</option></select>
-        </div>
-        <div class="mode-toggle" id="storyModeToggle">
-          <button class="mode-btn active" data-mode="contain">전체 보이기</button>
-          <button class="mode-btn" data-mode="cover">꽉 채우기(크롭)</button>
-        </div>
-        <div class="mockup-story-wrap">
-          <div class="carousel-wrap">
-            <div class="mockup-story-frame">
-              <canvas class="mockup-story-image" id="storyCanvas"></canvas>
-              <div class="story-username-overlay">kculture.sweden</div>
-              <div class="carousel-progress" id="storyDots"></div>
-              <button class="carousel-nav prev" id="storyPrev" aria-label="이전 사진">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <button class="carousel-nav next" id="storyNext" aria-label="다음 사진">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="crop-controls" id="storyCropControls" style="display:none;">
-          <div class="slider-label">확대/축소</div>
-          <input type="range" id="storyZoom" min="100" max="300" value="100">
-          <div class="slider-label">가로 위치</div>
-          <input type="range" id="storyOffsetX" min="0" max="100" value="50">
-          <div class="slider-label">세로 위치</div>
-          <input type="range" id="storyOffsetY" min="0" max="100" value="50">
-        </div>
-      </div>
       </div>
 
       <div class="platform-group-label" style="margin-top:32px;">페이스북</div>
@@ -2360,11 +2327,10 @@ function restoreStageState(snap){
   }
 
   // 모드 토글 버튼 활성 표시 동기화
-  [['feedModeToggle',feedMode],['storyModeToggle',storyMode],['fbModeToggle',fbMode],['captionModeToggle',captionMode]].forEach(([id,mode]) => {
+  [['feedModeToggle',feedMode],['fbModeToggle',fbMode],['captionModeToggle',captionMode]].forEach(([id,mode]) => {
     document.querySelectorAll('#'+id+' .mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   });
   document.getElementById('feedCropControls').style.display = feedMode==='cover' ? 'block' : 'none';
-  document.getElementById('storyCropControls').style.display = storyMode==='cover' ? 'block' : 'none';
   document.getElementById('fbCropControls').style.display = fbMode==='cover' ? 'block' : 'none';
 
   updateOrigLangUI();
@@ -2831,9 +2797,7 @@ function buildFinalImageDataUrl(item, forceDims){
 function renderCrops(){
   if(!uploadedImages.length) return;
   const feedCanvas = document.getElementById('feedCanvas');
-  const storyCanvas = document.getElementById('storyCanvas');
   const feedItem = uploadedImages[feedIndex];
-  const storyItem = uploadedImages[storyIndex];
   const fd = getFeedDims(feedItem);
   const debugEl = document.getElementById('feedDimsDebug');
   if(debugEl){
@@ -2851,19 +2815,10 @@ function renderCrops(){
   updateTagSectionVisibility();
   renderTagOverlay();
 
-  if(shouldCover(storyItem, storyMode)) drawCoverCrop(storyItem.img, storyCanvas, 1080, 1920, storyItem.storyZoom, storyItem.storyOffsetX, storyItem.storyOffsetY);
-  else drawContainWithBlur(storyItem.img, storyCanvas, 1080, 1920);
-  document.getElementById('storyZoom').value = storyItem.storyZoom;
-  document.getElementById('storyOffsetX').value = storyItem.storyOffsetX;
-  document.getElementById('storyOffsetY').value = storyItem.storyOffsetY;
-
   renderDots('feedDots', feedIndex);
-  renderDots('storyDots', storyIndex);
   const multi = uploadedImages.length > 1;
   document.getElementById('feedPrev').style.display = (multi && feedIndex > 0) ? 'flex' : 'none';
   document.getElementById('feedNext').style.display = (multi && feedIndex < uploadedImages.length - 1) ? 'flex' : 'none';
-  document.getElementById('storyPrev').style.display = (multi && storyIndex > 0) ? 'flex' : 'none';
-  document.getElementById('storyNext').style.display = (multi && storyIndex < uploadedImages.length - 1) ? 'flex' : 'none';
 
   // 페이스북: 피드에서 선택한 사진과 동일한 사진 사용
   const fbCanvas = document.getElementById('fbCanvas');
@@ -2886,13 +2841,11 @@ let videoLoopRAF = null;
 function anyActiveIsVideo(){
   if(!uploadedImages.length) return false;
   const feedItem = uploadedImages[feedIndex];
-  const storyItem = uploadedImages[storyIndex];
-  return (feedItem && feedItem.kind === 'video') || (storyItem && storyItem.kind === 'video');
+  return feedItem && feedItem.kind === 'video';
 }
 function redrawVideoCanvasesOnly(){
   if(!uploadedImages.length) return;
   const feedItem = uploadedImages[feedIndex];
-  const storyItem = uploadedImages[storyIndex];
   if(feedItem && feedItem.kind === 'video'){
     const fd = getFeedDims(feedItem);
     const feedCanvas = document.getElementById('feedCanvas');
@@ -2903,17 +2856,10 @@ function redrawVideoCanvasesOnly(){
     if(shouldCover(feedItem, fbMode)) drawCoverCrop(feedItem.img, fbCanvas, fbd.w, fbd.h, feedItem.fbZoom, feedItem.fbOffsetX, feedItem.fbOffsetY);
     else drawContainWithBlur(feedItem.img, fbCanvas, fbd.w, fbd.h);
   }
-  if(storyItem && storyItem.kind === 'video'){
-    const storyCanvas = document.getElementById('storyCanvas');
-    if(shouldCover(storyItem, storyMode)) drawCoverCrop(storyItem.img, storyCanvas, 1080, 1920, storyItem.storyZoom, storyItem.storyOffsetX, storyItem.storyOffsetY);
-    else drawContainWithBlur(storyItem.img, storyCanvas, 1080, 1920);
-  }
 }
 function ensureVideoPreviewLoop(){
-  [feedIndex, storyIndex].forEach(idx => {
-    const item = uploadedImages[idx];
-    if(item && item.kind === 'video') item.img.play().catch(()=>{});
-  });
+  const item = uploadedImages[feedIndex];
+  if(item && item.kind === 'video') item.img.play().catch(()=>{});
   if(videoLoopRAF) return; // 이미 루프가 돌고 있음
   let lastDraw = 0;
   const FRAME_INTERVAL = 100; // 약 10fps — 미리보기용으로 충분히 부드럽고 부담은 훨씬 적음
@@ -3177,10 +3123,6 @@ document.getElementById('videoTagInput').addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('videoTagAddBtn').click(); }
 });
 
-document.getElementById('storyPrev').addEventListener('click', () => { if(storyIndex>0){ storyIndex--; renderCrops(); } });
-document.getElementById('storyNext').addEventListener('click', () => { if(storyIndex<uploadedImages.length-1){ storyIndex++; renderCrops(); } });
-
-
 document.getElementById('feedRatio').addEventListener('change', renderCrops);
 document.getElementById('feedZoom').addEventListener('input', (e) => { uploadedImages[feedIndex].feedZoom = e.target.value; renderCrops(); });
 document.getElementById('feedOffsetX').addEventListener('input', (e) => { uploadedImages[feedIndex].feedOffsetX = e.target.value; renderCrops(); });
@@ -3189,9 +3131,6 @@ document.getElementById('fbRatio').addEventListener('change', renderCrops);
 document.getElementById('fbZoom').addEventListener('input', (e) => { uploadedImages[feedIndex].fbZoom = e.target.value; renderCrops(); });
 document.getElementById('fbOffsetX').addEventListener('input', (e) => { uploadedImages[feedIndex].fbOffsetX = e.target.value; renderCrops(); });
 document.getElementById('fbOffsetY').addEventListener('input', (e) => { uploadedImages[feedIndex].fbOffsetY = e.target.value; renderCrops(); });
-document.getElementById('storyZoom').addEventListener('input', (e) => { uploadedImages[storyIndex].storyZoom = e.target.value; renderCrops(); });
-document.getElementById('storyOffsetX').addEventListener('input', (e) => { uploadedImages[storyIndex].storyOffsetX = e.target.value; renderCrops(); });
-document.getElementById('storyOffsetY').addEventListener('input', (e) => { uploadedImages[storyIndex].storyOffsetY = e.target.value; renderCrops(); });
 
 function setupModeToggle(toggleId, controlsId, setMode){
   const toggle = document.getElementById(toggleId);
@@ -3206,7 +3145,6 @@ function setupModeToggle(toggleId, controlsId, setMode){
 }
 setupModeToggle('feedModeToggle','feedCropControls',(m)=>feedMode=m);
 setupModeToggle('fbModeToggle','fbCropControls',(m)=>fbMode=m);
-setupModeToggle('storyModeToggle','storyCropControls',(m)=>storyMode=m);
 
 
 // ============ STEP 5: Caption generation ============
