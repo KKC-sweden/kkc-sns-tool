@@ -320,6 +320,9 @@
   .post-link-item a:hover{text-decoration:underline;}
   .post-link-item button{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;flex-shrink:0;padding:0 2px;}
   .post-link-item button:hover{color:var(--danger);}
+  .post-link-thumb{width:32px;height:32px;object-fit:cover;border-radius:6px;flex-shrink:0;}
+  .post-link-loading{color:var(--ink-soft);flex:1;}
+  .post-link-raw{font-family:monospace;font-size:11.5px;}
   /* 2주전 탭 콘텐츠 업로드/보도자료 작성 토글 — 다른 토글보다 눈에 잘 띄도록 이 토글만 더 크게 */
   #stage2ModeToggle{max-width:420px;padding:8px;}
   #stage2ModeToggle .mode-btn{padding:14px 10px;font-size:14.5px;}
@@ -943,7 +946,7 @@
             <option value="4:5">세로형 (4:5) — 1080×1350</option>
             <option value="1.91:1">가로형 (1.91:1) — 1080×566</option>
           </select>
-          <div id="feedDimsDebug" style="font-size:11px;color:var(--ink-soft);margin-top:4px;"></div>
+          <div id="feedDimsDebug" style="display:none;"></div>
         </div>
         <div class="mode-toggle" id="feedModeToggle">
           <button class="mode-btn active" data-mode="contain">전체 보이기</button>
@@ -1556,16 +1559,49 @@ function getEventInfo(){
 
 // ============ 게시물 링크 연결하기 (CS 데스크 자동 연결용, D-10 리마인더 탭에서만 입력) ============
 let currentPostLinks = [];
+let postLinkPreviewCache = {}; // { url: {found, caption, thumbnail} } — 같은 링크를 다시 조회하지 않도록 캐시
 
 function renderPostLinkList(){
   const container = document.getElementById('postLinkList');
   if(!currentPostLinks.length){ container.innerHTML = ''; return; }
-  container.innerHTML = currentPostLinks.map((link, idx) => `
+  container.innerHTML = currentPostLinks.map((link, idx) => {
+    const preview = postLinkPreviewCache[link];
+    let bodyHtml;
+    if(!preview){
+      bodyHtml = `<span class="post-link-loading">불러오는 중...</span>`;
+    } else if(!preview.found){
+      // 최근 게시물 목록(25개)에서 못 찾은 경우 — 오래된 게시물이거나 권한 문제일 수 있어 원본 링크로 대체 표시
+      bodyHtml = `<a href="${escapeHtml(link)}" target="_blank" rel="noopener" class="post-link-raw">${escapeHtml(link)}</a>`;
+    } else {
+      const snippet = (preview.caption || '(캡션 없음)').replace(/\n+/g, ' ').slice(0, 60);
+      bodyHtml = `
+        ${preview.thumbnail ? `<img class="post-link-thumb" src="${escapeHtml(preview.thumbnail)}" alt="">` : ''}
+        <a href="${escapeHtml(link)}" target="_blank" rel="noopener" class="post-link-caption">${escapeHtml(snippet)}${(preview.caption||'').length > 60 ? '…' : ''}</a>
+      `;
+    }
+    return `
     <div class="post-link-item">
-      <a href="${escapeHtml(link)}" target="_blank" rel="noopener">${escapeHtml(link)}</a>
+      ${bodyHtml}
       <button type="button" data-remove-link="${idx}" title="삭제">✕</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
+  resolvePostLinkPreviews();
+}
+
+async function resolvePostLinkPreviews(){
+  const targets = currentPostLinks.filter(link => !postLinkPreviewCache[link]);
+  if(!targets.length) return;
+  await Promise.allSettled(targets.map(async (link) => {
+    try{
+      const res = await fetch(`${RELAY_SERVER_URL}resolve-post-link?url=${encodeURIComponent(link)}`);
+      const data = await res.json();
+      postLinkPreviewCache[link] = data;
+    } catch(err){
+      postLinkPreviewCache[link] = { found: false };
+    }
+  }));
+  renderPostLinkList();
 }
 document.getElementById('addPostLinkBtn').addEventListener('click', () => {
   const input = document.getElementById('postLinkInput');
@@ -2795,12 +2831,6 @@ function renderCrops(){
   const feedCanvas = document.getElementById('feedCanvas');
   const feedItem = uploadedImages[feedIndex];
   const fd = getFeedDims(feedItem);
-  const debugEl = document.getElementById('feedDimsDebug');
-  if(debugEl){
-    const natSize = getMediaSize(feedItem.img);
-    const natRatio = natSize.w && natSize.h ? (natSize.w/natSize.h).toFixed(3) : '?';
-    debugEl.textContent = `원본 ${natSize.w}×${natSize.h} (비율 ${natRatio}) → 사용 크기 ${fd.w}×${fd.h} (비율 ${(fd.w/fd.h).toFixed(3)})`;
-  }
 
   if(shouldCover(feedItem, feedMode)) drawCoverCrop(feedItem.img, feedCanvas, fd.w, fd.h, feedItem.feedZoom, feedItem.feedOffsetX, feedItem.feedOffsetY);
   else drawContainWithBlur(feedItem.img, feedCanvas, fd.w, fd.h);
