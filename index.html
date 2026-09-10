@@ -2088,6 +2088,15 @@ function isPastEvent(ev){
   return end < today;
 }
 
+// 행사 종료일 기준으로 며칠이나 지났는지 확인 (CS 데스크 "행사별 보기" 필터에서 오래된 행사를 걸러낼 때 사용)
+function daysSinceEventEnded(ev){
+  if(!ev.eventDate) return -Infinity;
+  const endDate = ev.eventEndDate && ev.eventEndDate >= ev.eventDate ? ev.eventEndDate : ev.eventDate;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = new Date(endDate + 'T00:00:00');
+  return Math.floor((today - end) / (1000*60*60*24));
+}
+
 // 행사 하나를 눌러 작업 화면(워크플로우)을 여는 공통 로직.
 // opts.forceStage / opts.forceStage2Mode를 주면 기본 계산값(현재 시점 기준 단계) 대신 지정한 단계·모드로 바로 이동함
 // (보도자료 작성 탭에서 "2주전/보도자료 작성" 모드로 바로 열 때 사용).
@@ -3981,9 +3990,24 @@ let csInboxEventFilter = '전체';
 let csInboxStaffFilter = '전체';
 
 // 현재 문의 목록에 등장하는 행사명만 모아서 드롭다운을 채움 (행사가 없는 문의는 "담당 행사 미지정"으로 묶음)
+// ⚠️ 2026-09-02: 행사가 계속 쌓이면 이 목록도 끝없이 길어질 수 있어서, 행사 종료 5일이 지난 행사는 기본적으로
+// 목록에서 뺌 — 단, 그 행사에 최근 7일 이내 새로 들어온 미처리 문의가 있으면 놓치지 않도록 계속 보여줌.
+// (담당자별 보기 필터는 이 규칙과 무관하게 항상 전체 담당자를 그대로 보여줌)
 function populateCsEventFilter(){
   const sel = document.getElementById('csEventFilter');
-  const names = [...new Set(csInboxItems.map(i => i.eventName || '담당 행사 미지정'))].sort();
+  const eventByName = new Map(registeredEvents.map(ev => [ev.eventName, ev]));
+  const RECENT_DAYS = 7;
+  const now = Date.now();
+  const visibleNames = csInboxItems.filter(item => {
+    const eventName = item.eventName || '담당 행사 미지정';
+    if(eventName === '담당 행사 미지정') return true;
+    const ev = eventByName.get(eventName);
+    if(!ev) return true; // 매칭되는 행사 정보를 못 찾으면 안전하게 그대로 표시
+    if(daysSinceEventEnded(ev) <= 5) return true; // 최근 행사(종료 5일 이내)는 항상 표시
+    const receivedDaysAgo = (now - new Date(item.receivedAt).getTime()) / (1000*60*60*24);
+    return receivedDaysAgo <= RECENT_DAYS; // 오래된 행사는 최근 새로 들어온 문의가 있을 때만 표시
+  }).map(i => i.eventName || '담당 행사 미지정');
+  const names = [...new Set(visibleNames)].sort();
   const prevValue = csInboxEventFilter;
   sel.innerHTML = `<option value="전체">전체 보기</option>` + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
   // 이전에 선택돼 있던 값이 여전히 목록에 있으면 유지, 없으면 전체로 되돌림
