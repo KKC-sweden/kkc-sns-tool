@@ -5062,7 +5062,7 @@ function hwpxLinesegArray(text, width, charHeight, lineSpacingPct){
   // 통째로 유지하고, 한글/기타 문자는 한 글자 단위로 끊을 수 있는 "단위(토큰)" 목록을 만들어 채움.
   const tokens = []; // 각 원소: {text, start} — 한 번에 끊길 수 있는 최소 단위(라틴 단어 통째로, 또는 한글 한 글자)
   if(text){
-    const re = /[A-Za-z0-9][A-Za-z0-9'’\-]*|./gs; // 라틴 문자로 시작하면 이어지는 라틴 구간 전체, 아니면 글자 하나씩
+    const re = /[\p{Script=Latin}\p{Nd}][\p{Script=Latin}\p{Nd}'’\-.]*|./gsu; // 라틴 문자(유럽어 특수문자·마침표 포함 도메인 등)로 시작하면 이어지는 구간 전체, 아니면 글자 하나씩
     let m;
     while((m = re.exec(text)) !== null) tokens.push({ text: m[0], start: m.index });
   }
