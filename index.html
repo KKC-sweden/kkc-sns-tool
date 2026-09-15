@@ -5278,6 +5278,7 @@ async function buildHwpxFromPressTemplate(parsed){
     '___STAFF_ROLE___': parsed.staffRole,
     '___STAFF_NAME___': parsed.staffName,
     '___STAFF_PHONE___': parsed.staffPhone,
+    '___ATTACHMENT___': '붙임  행사 사진 등.', // 실제 문체부 보도참고자료 양식 그대로 문서 맨 끝에 항상 붙는 고정 문구
   };
   Object.entries(simpleFields).forEach(([marker, value]) => {
     section = section.replace(marker, escapeXml(value));
