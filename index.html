@@ -5122,10 +5122,12 @@ function parsePressDraft(text){
   skipBlank();
   const title = lines[i] || '';
   i++;
+  skipBlank(); // ⚠️ 2026-09-15: 제목과 부제 사이에 빈 줄이 있으면 부제를 아예 못 찾던 버그 — 여기도 건너뛰기 추가
   const subtitles = [];
   while(i < lines.length && lines[i].startsWith('-')){
     subtitles.push(lines[i]);
     i++;
+    skipBlank(); // 부제 항목들 사이에 빈 줄이 있어도 다음 "-" 줄을 계속 찾도록
   }
 
   // "담당 부서"/"책임자"/"담당자" 라벨 인식 — 대괄호("[담당 부서]")나 콜론("책임자:") 유무, 하이픈 유무에 관계없이 인식
