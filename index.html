@@ -5289,11 +5289,14 @@ async function buildHwpxFromPressTemplate(parsed){
   section = replacePlaceholderParagraph(section, '___TITLE___', buildTitleXml(parsed.title));
   section = replacePlaceholderParagraph(section, '___SUBTITLES___', buildSubtitlesXml(parsed.subtitles));
   section = replacePlaceholderParagraph(section, '___BODY___', buildBodyXml(parsed.bodyGroups));
+  // ⚠️ 2026-09-15: 배포일시는 예전엔 고정된 줄바꿈 위치(textpos)를 그대로 둔 채 글자만 바꿔 끼웠는데, 날짜
+  // 자릿수(한 자리/두 자리)에 따라 실제 알맞은 줄바꿈 위치가 달라져서 엉뚱한 데서 끊기는 문제가 있었음.
+  // 다른 필드들처럼 실제 텍스트 길이에 맞춰 줄바꿈을 다시 계산하도록 변경.
+  section = replacePlaceholderParagraph(section, '___DATE___', hwpxMakeP(19, 46, parsed.date, 12856, 1000, 160));
 
   // 짧은 단일 값 필드는 텍스트만 치환 (표 셀 안, 줄바꿈 없는 짧은 값들)
   const simpleFields = {
     '___URGENCY___': parsed.urgency,
-    '___DATE___': parsed.date,
     '___DEPT___': parsed.dept,
     '___CHIEF_ROLE___': parsed.chiefRole,
     '___CHIEF_NAME___': parsed.chiefName,
